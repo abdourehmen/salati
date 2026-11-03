@@ -1,0 +1,156 @@
+.header {
+  background-color: var(--bg-white);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+  width: 100%;
+}
+
+.container {
+  width: 100%;
+  max-width: 100%; /* تمديد الحاوي ليمتد على كامل عرض الشاشة 100% */
+  padding: 1rem 2.5rem; /* هوامش جانبية من أطراف الشاشة */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+  position: relative; /* للحفاظ على العناوين في منتصف الشاشة تماماً */
+}
+
+.logo {
+  font-family: var(--font-en);
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--primary-blue);
+  letter-spacing: -0.5px;
+  direction: ltr;
+  display: inline-flex;
+  align-items: center;
+}
+
+.dot {
+  color: var(--electric-blue);
+}
+
+/* محاذاة العناوين في المنتصف المطلق للشاشة */
+.mainLinks {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.navLink {
+  color: var(--text-dark);
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+
+.navLink:hover {
+  color: var(--primary-blue);
+}
+
+/* مجموعة الأزرار في نهاية الشاشة تماماً */
+.actionGroup {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.langBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--bg-light);
+  border: 1px solid var(--border-color);
+  color: var(--text-dark);
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-en);
+}
+
+.langBtn:hover {
+  border-color: var(--primary-blue);
+  color: var(--primary-blue);
+  background-color: var(--bg-white);
+}
+
+.flagContainer {
+  display: flex;
+  align-items: center;
+}
+
+.flagSvg {
+  border-radius: 2px;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.25);
+  display: block;
+}
+
+.langText {
+  letter-spacing: 0.5px;
+}
+
+.loginLink {
+  color: var(--text-dark);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+
+.loginLink:hover {
+  color: var(--primary-blue);
+}
+
+.registerBtn {
+  background-color: var(--primary-blue);
+  color: var(--bg-white);
+  padding: 0.65rem 1.3rem;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 82, 204, 0.2);
+  transition: all 0.2s ease;
+}
+
+.registerBtn:hover {
+  background-color: var(--primary-blue-hover);
+  transform: translateY(-1px);
+}
+
+/* التجاوب مع الهواتف والشاشات الصغيرة */
+@media (max-width: 900px) {
+  .mainLinks {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0.75rem 1rem;
+  }
+
+  .actionGroup {
+    gap: 0.5rem;
+  }
+
+  .loginLink {
+    display: none;
+  }
+
+  .registerBtn {
+    padding: 0.5rem 0.9rem;
+    font-size: 0.85rem;
+  }
+}

@@ -1,0 +1,138 @@
+/* src/pages/salle/RateHall.module.css */
+.wrapper {
+  min-height: calc(100vh - 70px);
+  background-color: var(--bg-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  box-sizing: border-box;
+}
+
+.card {
+  background-color: var(--bg-white);
+  max-width: 480px;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 10px 30px rgba(0, 52, 130, 0.08);
+  padding: 2.5rem;
+}
+
+.title {
+  font-size: 1.6rem;
+  color: var(--text-dark);
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.starsGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.starsGroup label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.stars {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.starBtn {
+  background: none;
+  border: none;
+  font-size: 2.2rem;
+  color: #d1d5db;
+  cursor: pointer;
+  transition: transform 0.1s ease, color 0.1s ease;
+}
+
+.starBtn:hover {
+  transform: scale(1.15);
+}
+
+.activeStar {
+  color: #f59e0b;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  text-align: initial;
+}
+
+.inputGroup label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.inputGroup input, .inputGroup textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.submitBtn {
+  background-color: var(--primary-blue);
+  color: white;
+  padding: 0.85rem;
+  border-radius: var(--radius-md);
+  border: none;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.googleBtn {
+  display: block;
+  text-align: center;
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+  border: 1px solid var(--border-color);
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.googleBtn:hover {
+  border-color: var(--primary-blue);
+  color: var(--primary-blue);
+}
+
+.successBox {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.successHeart {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+}
