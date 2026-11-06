@@ -68,6 +68,25 @@ const IconShield = () => (
   </svg>
 );
 
+const IconChevronDown = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 12 15 18 9"></polyline>
+  </svg>
+);
+
+const IconPhone = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+  </svg>
+);
+
+const IconMail = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+    <polyline points="22,6 12,13 2,6"></polyline>
+  </svg>
+);
+
 const content = {
   ar: {
     titlePrefix: 'إدارة صالة أفراحك أصبحت أسهل مع ',
@@ -156,7 +175,45 @@ const content = {
 
     guarantee1: 'تفعيل فوري خلال 5 دقائق',
     guarantee2: 'تشفير وحماية كاملة لبياناتك',
-    guarantee3: 'إلغاء أو تعديل الباقة متى شئت'
+    guarantee3: 'إلغاء أو تعديل الباقة متى شئت',
+
+    faqTitle: 'الأسئلة الشائعة',
+    faqSubtitle: 'إجابات على أكثر الأسئلة تداولاً من قبل أصحاب صالات الأفراح في الجزائر.',
+    faqs: [
+      {
+        q: 'هل تأخذ منصة salati نسبة أو عمولة من كل حجز؟',
+        a: 'لا إطلاقاً! نحن نعتمد نظام اشتراك ثابت وواضح دون أي عمولات على الإطلاق. كل المداخيل وعرابين الحجوزات تعود لك بنسبة 100%.'
+      },
+      {
+        q: 'هل يحتاج النظام إلى تثبيت برامج أو أجهزة خاصة؟',
+        a: 'لا، منصة salati تعمل بالكامل عبر السحابة. يمكنك استخدام المنصة والدخول للوحة التحكم مباشرة من هاتفك، التابلت، أو الكمبيوتر عبر المتصفح.'
+      },
+      {
+        q: 'كيف يُساعد نظام كود QR في رفع تقييمات الصالة على Google Maps؟',
+        a: 'نوفر لك كود QR مخصص لصالتك يمكنك طباعته أو عرضه للضيوف والعائلات أثناء العرس. بمسحة واحدة بالهاتف ينتقل الضيف فوراً لصفحة تقييم صالتك، مما يرفع ترتيبك ويجلب زبائن جدد.'
+      },
+      {
+        q: 'هل يمكنني تجربة المنصة قبل الالتزام بالدفع؟',
+        a: 'نعم! نمنحك تجربة مجانية كاملة لمدة 14 يوماً بدون الحاجة لإدخال أي بيانات بنكية، لتتمكن من تجربة جميع الخصائص والتأكد من ملاءمتها لصالتك.'
+      },
+      {
+        q: 'ما هي طرق الدفع المتاحة للاشتراك؟',
+        a: 'نوفر طرق دفع سهلة تناسب الجزائر مثل الدفع عبر البطاقة الذهبية، بطاقة CIB، أو التحويل عبر البريد الجاري CCP.'
+      }
+    ],
+
+    footerDesc: 'المنصة الجزائرية الأولى المتخصصة في إدارة صالات الأفراح والفعاليات وتوفير مواقع مخصصة لعرض التوافر أونلاين.',
+    footerCol1: 'الروابط السريعة',
+    footerCol2: 'القانونية والدعم',
+    footerCol3: 'تواصل معنا',
+    linkHome: 'الرئيسية',
+    linkWhy: 'لماذا salati',
+    linkHow: 'كيف تعمل',
+    linkPricing: 'الأسعار',
+    linkFaq: 'الأسئلة الشائعة',
+    linkTerms: 'شروط الخدمة',
+    linkPrivacy: 'سياسة الخصوصية',
+    copyright: 'جميع الحقوق محفوظة منصة salati © 2026'
   },
   fr: {
     titlePrefix: 'La gestion de votre salle des fêtes devient plus simple avec ',
@@ -195,8 +252,8 @@ const content = {
     cycleAnnual: 'Annuel (12 Mois)',
 
     perMonth: '/ mois',
-    perSemiAnnual: '/ total 6 mois',
-    perAnnual: '/ an (Total Global)',
+    perSemiAnnual: '/ 6 mois',
+    perAnnual: '/ an',
     popularBadge: '🔥 Le choix N°1 des propriétaires de salles',
     selectPlan: 'Essayer gratuitement',
     noHiddenFees: 'Sans aucun frais caché ni commission sur vos réservations',
@@ -245,14 +302,53 @@ const content = {
 
     guarantee1: 'Activation immédiate en 5 minutes',
     guarantee2: 'Cryptage & protection totale des données',
-    guarantee3: 'Annulation ou changement à tout moment'
+    guarantee3: 'Annulation ou changement à tout moment',
+
+    faqTitle: 'Foire Aux Questions',
+    faqSubtitle: 'Réponses aux questions les plus fréquentes des propriétaires de salles des fêtes en Algérie.',
+    faqs: [
+      {
+        q: 'Est-ce que salati prend une commission sur mes réservations ?',
+        a: 'Absolument pas ! Nous appliquons un système d’abonnement fixe sans aucune commission sur vos ventes. 100% de vos revenus restent à vous.'
+      },
+      {
+        q: 'Faut-il installer un logiciel ou du matériel spécifique ?',
+        a: 'Non, salati est 100% basé sur le cloud. Vous pouvez accéder à votre espace de gestion directement depuis votre smartphone, tablette ou ordinateur via un simple navigateur web.'
+      },
+      {
+        q: 'Comment le QR Code augmente-t-il mes avis Google Maps ?',
+        a: 'Nous générons un QR Code personnalisé pour votre salle. En le scannant durant les fêtes, vos invités sont redirigés immédiatement sur votre fiche Google Maps pour laisser un avis 5 étoiles.'
+      },
+      {
+        q: 'Puis-je tester la plateforme avant de m\'engager ?',
+        a: 'Oui ! Nous vous offrons 14 jours d’essai gratuit sans carte bancaire pour découvrir toutes les fonctionnalités et valider l\'outil.'
+      },
+      {
+        q: 'Quels sont les modes de paiement disponibles ?',
+        a: 'Nous acceptons la Carte Edahabia, les cartes CIB, ainsi que les virements CCP pour vous faciliter l\'abonnement.'
+      }
+    ],
+
+    footerDesc: 'La première plateforme algérienne dédiée à la gestion des salles des fêtes et complexes d\'événements avec minissites en ligne.',
+    footerCol1: 'Liens Rapides',
+    footerCol2: 'Légal & Support',
+    footerCol3: 'Contactez-nous',
+    linkHome: 'Accueil',
+    linkWhy: 'Pourquoi salati',
+    linkHow: 'Comment ça marche',
+    linkPricing: 'Tarifs',
+    linkFaq: 'FAQ',
+    linkTerms: 'Conditions d\'utilisation',
+    linkPrivacy: 'Politique de confidentialité',
+    copyright: 'Tous droits réservés salati © 2026'
   }
 };
 
 export default function Home() {
   const [lang, setLang] = useState(document.documentElement.lang || 'ar');
-  const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'semiAnnual' | 'annual'
+  const [billingCycle, setBillingCycle] = useState('monthly');
   const [tilt, setTilt] = useState({ x: 0, y: 0, active: false });
+  const [openFaq, setOpenFaq] = useState(null);
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -284,9 +380,12 @@ export default function Home() {
     setTilt({ x: 0, y: 0, active: false });
   };
 
+  const toggleFaq = (index) => {
+    setOpenFaq(openFaq === index ? null : index);
+  };
+
   const t = content[lang] || content.ar;
 
-  // دالة مساعدة لتحديد السعر والوصف بحسب الفترة المحددة
   const getPriceAndPeriod = (monthly, semiAnnual, annual) => {
     if (billingCycle === 'semiAnnual') {
       return { price: semiAnnual, period: t.perSemiAnnual };
@@ -437,7 +536,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 4. قسم خطط الأسعار والاشتراكات لـ 3 خيارات (شهري، 6 أشهر، سنوي) */}
+      {/* 4. قسم خطط الأسعار والاشتراكات */}
       <section id="pricing" className={styles.pricingSection}>
         <div className={styles.pricingHeader}>
           <span className={styles.pricingTagHeader}>{t.pricingTag}</span>
@@ -448,7 +547,6 @@ export default function Home() {
             {t.trialBadge}
           </div>
 
-          {/* شريط الاختيارات الثلاثي (Segmented Control) */}
           <div className={styles.cycleSegmentedControl}>
             <button
               className={`${styles.segmentBtn} ${billingCycle === 'monthly' ? styles.activeSegment : ''}`}
@@ -473,7 +571,7 @@ export default function Home() {
 
         <div className={styles.pricingGrid}>
           
-          {/* الباقة 1: الأساسية */}
+          {/* الباقة 1 */}
           {(() => {
             const plan1 = getPriceAndPeriod(t.plan1PriceMonthly, t.plan1PriceSemiAnnual, t.plan1PriceAnnual);
             return (
@@ -498,7 +596,7 @@ export default function Home() {
             );
           })()}
 
-          {/* الباقة 2: الاحترافية (Pro) */}
+          {/* الباقة 2 */}
           {(() => {
             const plan2 = getPriceAndPeriod(t.plan2PriceMonthly, t.plan2PriceSemiAnnual, t.plan2PriceAnnual);
             return (
@@ -524,7 +622,7 @@ export default function Home() {
             );
           })()}
 
-          {/* الباقة 3: المؤسسات والمجمعات */}
+          {/* الباقة 3 */}
           {(() => {
             const plan3 = getPriceAndPeriod(t.plan3PriceMonthly, t.plan3PriceSemiAnnual, t.plan3PriceAnnual);
             return (
@@ -564,8 +662,88 @@ export default function Home() {
             <IconShield /> <span>{t.guarantee3}</span>
           </div>
         </div>
-
       </section>
+
+      {/* 5. قسم الأسئلة الشائعة (FAQ) */}
+      <section id="faq" className={styles.faqSection}>
+        <div className={styles.faqHeader}>
+          <h2 className={styles.faqTitle}>{t.faqTitle}</h2>
+          <p className={styles.faqSubtitle}>{t.faqSubtitle}</p>
+        </div>
+
+        <div className={styles.faqContainer}>
+          {t.faqs.map((faq, index) => {
+            const isOpen = openFaq === index;
+            return (
+              <div 
+                key={index} 
+                className={`${styles.faqItem} ${isOpen ? styles.faqItemOpen : ''}`}
+              >
+                <button 
+                  className={styles.faqQuestion}
+                  onClick={() => toggleFaq(index)}
+                  aria-expanded={isOpen}
+                >
+                  <span>{faq.q}</span>
+                  <span className={`${styles.faqChevron} ${isOpen ? styles.faqChevronOpen : ''}`}>
+                    <IconChevronDown />
+                  </span>
+                </button>
+                {isOpen && (
+                  <div className={styles.faqAnswer}>
+                    <p>{faq.a}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 6. قسم الفوتر (Footer) */}
+      <footer className={styles.footer}>
+        <div className={styles.footerContainer}>
+          <div className={styles.footerBrand}>
+            <div className={styles.footerLogo}>salati<span>.work</span></div>
+            <p className={styles.footerDesc}>{t.footerDesc}</p>
+          </div>
+
+          <div className={styles.footerCol}>
+            <h4>{t.footerCol1}</h4>
+            <ul className={styles.footerList}>
+              <li><a href="#">{t.linkHome}</a></li>
+              <li><a href="#why-us">{t.linkWhy}</a></li>
+              <li><a href="#how-it-works">{t.linkHow}</a></li>
+              <li><a href="#pricing">{t.linkPricing}</a></li>
+              <li><a href="#faq">{t.linkFaq}</a></li>
+            </ul>
+          </div>
+
+          <div className={styles.footerCol}>
+            <h4>{t.footerCol2}</h4>
+            <ul className={styles.footerList}>
+              <li><a href="#">{t.linkTerms}</a></li>
+              <li><a href="#">{t.linkPrivacy}</a></li>
+            </ul>
+          </div>
+
+          <div className={styles.footerCol}>
+            <h4>{t.footerCol3}</h4>
+            <div className={styles.contactInfo}>
+              <div className={styles.contactItem}>
+                <IconPhone /> <span>+213 550 00 00 00</span>
+              </div>
+              <div className={styles.contactItem}>
+                <IconMail /> <span>contact@salati.work</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.footerBottom}>
+          <div>{t.copyright}</div>
+        </div>
+      </footer>
 
     </div>
   );
