@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import './index.css';
 import Navbar from './components/Navbar/Navbar';
 import Home from './pages/platform/Home';
@@ -9,12 +10,29 @@ import BookingSuccess from './pages/salle/BookingSuccess';
 import RateHall from './pages/salle/RateHall';
 import AdminDashboard from './admin/AdminDashboard';
 import HallsCatalog from './pages/platform/HallsCatalog';
+import Terms from './pages/platform/Terms';
+import Privacy from './pages/platform/Privacy';
 
 export default function App() {
-  const path = window.location.pathname;
+  const [path, setPath] = useState(window.location.pathname);
 
-  // إظهار Navbar المنصة في الصفحة الرئيسية وصفحة البحث والتسجيل والدخول
-  const isPlatformPage = path === '/' || path === '/login' || path === '/register' || path === '/halls';
+  useEffect(() => {
+    const handleLocationChange = () => {
+      setPath(window.location.pathname);
+    };
+
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
+
+  // إظهار Navbar المنصة في الصفحة الرئيسية، البحث، التسجيل، الدخول والصفحات القانونية
+  const isPlatformPage = 
+    path === '/' || 
+    path === '/login' || 
+    path === '/register' || 
+    path === '/halls' ||
+    path === '/terms' ||
+    path === '/privacy';
 
   const renderPage = () => {
     switch (path) {
@@ -26,6 +44,8 @@ export default function App() {
       case '/hall/demo': return <PublicHall />;
       case '/hall/success': return <BookingSuccess />;
       case '/hall/rate': return <RateHall />;
+      case '/terms': return <Terms />;
+      case '/privacy': return <Privacy />;
       default: return <Home />;
     }
   };

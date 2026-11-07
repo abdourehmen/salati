@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import styles from './Home.module.css';
 import homePc from '../../assets/home-pc.png';
 
+/* الأيقونات الأساسية */
 const IconGlobe = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10"></circle>
@@ -57,7 +58,7 @@ const IconShare = () => (
 );
 
 const IconCheck = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="20 6 9 17 4 12"></polyline>
   </svg>
 );
@@ -87,14 +88,68 @@ const IconMail = () => (
   </svg>
 );
 
+/* أيقونات Bento Grid */
+const IconMonitor = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect width="20" height="14" x="2" y="3" rx="2"></rect>
+    <line x1="8" x2="16" y1="21" y2="21"></line>
+    <line x1="12" x2="12" y1="17" y2="21"></line>
+  </svg>
+);
+
+const IconCalendarCheck = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M8 2v4"></path>
+    <path d="M16 2v4"></path>
+    <rect width="18" height="18" x="3" y="4" rx="2"></rect>
+    <path d="M3 10h18"></path>
+    <path d="m9 16 2 2 4-4"></path>
+  </svg>
+);
+
+const IconBuilding = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect width="16" height="20" x="4" y="2" rx="2" ry="2"></rect>
+    <path d="M9 22v-4h6v4"></path>
+    <path d="M8 6h.01"></path>
+    <path d="M16 6h.01"></path>
+    <path d="M12 6h.01"></path>
+    <path d="M12 10h.01"></path>
+    <path d="M12 14h.01"></path>
+    <path d="M16 10h.01"></path>
+    <path d="M16 14h.01"></path>
+    <path d="M8 10h.01"></path>
+    <path d="M8 14h.01"></path>
+  </svg>
+);
+
 const content = {
   ar: {
     titlePrefix: 'إدارة صالة أفراحك أصبحت أسهل مع ',
     subtitle: 'نظام سحابي متكامل لمتابعة الحجوزات، تنظيم مواعيد المعاينة، وتوفير موقع مخصص لصالتك يستعرض الصور والأيام المتاحة للزبائن.',
     primaryCta: 'ابدأ تجربتك الآن',
     secondaryCta: 'كيفية الاستخدام',
-    floatingTag: 'حجز متاح أونلاين',
     
+    aboutTitlePrefix: 'منظومة سحابية متكاملة تليق بمستوى ',
+    aboutTitleBrand: 'صالتك والمناسبات الفاخرة',
+    aboutSubtitle: 'نحن لا نكتفي بحفظ المواعيد، بل نمنح صالتك حضوراً رقمياً عالمياً ورابطاً خاصاً يتيح للعائلات اكتشاف خدماتك وتفادي تضارب الحجوزات نهائياً.',
+    
+    bento1Title: 'موقع مصغر خاص ببراند صالتك',
+    bento1Desc: 'احصل على موقع مستقل واحترافي يعرض الصور عالية الجودة، الخدمات، وطاقة الاستيعاب مع تقويم التوافر التفاعلي أونلاين.',
+    
+    bento2Title: 'إدارة المعاينات والحجوزات بنقرة واحدة',
+    bento2Desc: 'تتبع طلبات المعاينة الميدانية وأكد المواعيد مع العائلات مباشرة من هاتفك الذكي في أي وقت.',
+    
+    bento3Title: 'تغطية شاملة ومصممة خصيصاً للـ 58 ولاية',
+    bento3Desc: 'مصممة لتتناسب مع ديناميكية العملة، الأسعار الموسمية (صيف/شتاء)، وثقافة المناسبات المحلية في الجزائر.',
+
+    bentoStat1Val: '100%',
+    bentoStat1Lbl: 'إنهاء تضارب المواعيد',
+    bentoStat2Val: '24/7',
+    bentoStat2Lbl: 'حضور رقمي أونلاين',
+    bentoStat3Val: '58',
+    bentoStat3Lbl: 'ولاية مدعومة بالكامل',
+
     whyTitle: 'لماذا تختار salati عن بقية المنصات؟',
     whySubtitle: 'حلول ذكية مصممة خصيصاً لخصوصية وسوق صالات الأفراح في الجزائر، وليست مجرد نظام إدارة تقليدي.',
     why1Title: 'موقع مصغر خاص ببراند صالتك',
@@ -115,10 +170,8 @@ const content = {
     step3Title: 'انشر الرابط واستقبل الحجوزات',
     step3Desc: 'شارك رابط موقعك الخاص مع الزبائن واستقبل طلبات المعاينة والحجز مباشرة في لوحة التحكم.',
 
-    pricingTag: 'اشتراكات واسعة وشفافة',
     pricingTitle: 'خطط اشتراك واضحة ومحددة السعر',
     pricingSubtitle: 'اختر المدى الزمني المناسب لصالتك: دفع شهري، 6 أشهر، أو دفع سنوي إجمالي.',
-    trialBadge: '🎁 تجربة مجانية لمدة 14 يومًا • بدون بطاقة إئتمان',
     
     cycleMonthly: 'شهري',
     cycleSemiAnnual: '6 أشهر',
@@ -132,7 +185,6 @@ const content = {
     noHiddenFees: 'بدون أية مصاريف خفية أو اقتطاعات على الحجوزات',
 
     plan1Name: 'الباقة الأساسية',
-    plan1Tag: 'للبداية المنظمة',
     plan1Desc: 'مثالية للصالات التي تبحث عن إنهاء فوضى المواعيد وتنظيم الحجوزات من الهاتف.',
     plan1PriceMonthly: '3,500 دج',
     plan1PriceSemiAnnual: '21,000 دج',
@@ -146,7 +198,6 @@ const content = {
     ],
 
     plan2Name: 'الباقة الاحترافية (Pro)',
-    plan2Tag: 'للمضاعفة السريعة للحجوزات',
     plan2Desc: 'الباقة الأكثر مبيعاً للصالات الراغبة في تصدّر الخريطة ومضاعفة ثقة العائلات.',
     plan2PriceMonthly: '6,500 دج',
     plan2PriceSemiAnnual: '39,000 دج',
@@ -160,7 +211,6 @@ const content = {
     ],
 
     plan3Name: 'باقة المجمعات والمؤسسات',
-    plan3Tag: 'للإدارة المتقدمة والمتعددة',
     plan3Desc: 'حل مخصص لأصحاب الصالات المتعددة والمجمعات الكبرى في الجزائر.',
     plan3PriceMonthly: '12,000 دج',
     plan3PriceSemiAnnual: '72,000 دج',
@@ -220,8 +270,27 @@ const content = {
     subtitle: 'Un système cloud complet pour suivre les réservations, gérer les visites et offrir un site dédié à votre salle affichant les photos et les dates disponibles.',
     primaryCta: 'Commencer maintenant',
     secondaryCta: 'Comment ça marche',
-    floatingTag: 'Réservation disponible en ligne',
+
+    aboutTitlePrefix: 'Une solution cloud d\'excellence pour ',
+    aboutTitleBrand: 'votre salle des fêtes',
+    aboutSubtitle: 'Plus qu\'un simple agenda, salati offre à votre salle une présence digitale haut de gamme avec un minisite dédié pour sublimer vos prestations et supprimer les doublons de dates.',
     
+    bento1Title: 'Un minisite à votre nom de marque',
+    bento1Desc: 'Profitez d\'un lien indépendant et élégant présentant vos photos haute définition, capacités, équipements et un calendrier interactif.',
+    
+    bento2Title: 'Gestion fluide des visites et réservations',
+    bento2Desc: 'Suivez les demandes de visite sur place et confirmez les créneaux en un clic depuis votre smartphone.',
+    
+    bento3Title: 'Conçu sur mesure pour les 58 Wilayas',
+    bento3Desc: 'Parfaitement adapté au marché algérien, aux tarifs saisonniers (Été/Hiver) et aux habitudes de réservations locales.',
+
+    bentoStat1Val: '100%',
+    bentoStat1Lbl: 'Zéro doublon de date',
+    bentoStat2Val: '24/7',
+    bentoStat2Lbl: 'Présence en ligne',
+    bentoStat3Val: '58',
+    bentoStat3Lbl: 'Wilayas supportées',
+
     whyTitle: 'Pourquoi choisir salati par rapport aux autres ?',
     whySubtitle: 'Des solutions conçues sur mesure pour le marché et les spécificités des salles des fêtes en Algérie.',
     why1Title: 'Un minisite dédié à votre marque',
@@ -242,10 +311,8 @@ const content = {
     step3Title: 'Partagez et recevez des demandes',
     step3Desc: 'Diffusez votre lien unique et gérez les demandes de réservation sur votre tableau de bord.',
 
-    pricingTag: 'Abonnements Transparents',
     pricingTitle: 'Des forfaits clairs avec montants globaux',
     pricingSubtitle: 'Choisissez votre période : mensuelle, 6 mois ou règlement annuel global.',
-    trialBadge: '🎁 14 jours d’essai gratuit • Sans carte bancaire',
     
     cycleMonthly: 'Mensuel',
     cycleSemiAnnual: '6 Mois',
@@ -259,7 +326,6 @@ const content = {
     noHiddenFees: 'Sans aucun frais caché ni commission sur vos réservations',
 
     plan1Name: 'Formule Essentielle',
-    plan1Tag: 'Pour démarrer sereinement',
     plan1Desc: 'Parfait pour les salles souhaitant digitaliser leurs agendas et supprimer les doublons.',
     plan1PriceMonthly: '3 500 DA',
     plan1PriceSemiAnnual: '21 000 DA',
@@ -273,7 +339,6 @@ const content = {
     ],
 
     plan2Name: 'Formule Professionnelle (Pro)',
-    plan2Tag: 'Pour maximiser vos réservations',
     plan2Desc: 'La formule la plus appréciée pour dominer votre région et booster vos avis Google.',
     plan2PriceMonthly: '6 500 DA',
     plan2PriceSemiAnnual: '39 000 DA',
@@ -287,7 +352,6 @@ const content = {
     ],
 
     plan3Name: 'Formule Multi-Salles (VIP)',
-    plan3Tag: 'Pour grands complexes & réseaux',
     plan3Desc: 'Solution complète pour les propriétaires de plusieurs salles en Algérie.',
     plan3PriceMonthly: '12 000 DA',
     plan3PriceSemiAnnual: '72 000 DA',
@@ -349,6 +413,7 @@ export default function Home() {
   const [billingCycle, setBillingCycle] = useState('monthly');
   const [tilt, setTilt] = useState({ x: 0, y: 0, active: false });
   const [openFaq, setOpenFaq] = useState(null);
+  const [isImgLoaded, setIsImgLoaded] = useState(false);
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -359,6 +424,30 @@ export default function Home() {
       attributes: true,
       attributeFilter: ['lang']
     });
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px 0px -50px 0px',
+      threshold: 0.12
+    };
+
+    const handleIntersect = (entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add(styles.animateIn);
+          observer.unobserve(entry.target);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(handleIntersect, observerOptions);
+    const animatedElements = document.querySelectorAll(`.${styles.revealOnScroll}`);
+    
+    animatedElements.forEach(el => observer.observe(el));
 
     return () => observer.disconnect();
   }, []);
@@ -382,6 +471,12 @@ export default function Home() {
 
   const toggleFaq = (index) => {
     setOpenFaq(openFaq === index ? null : index);
+  };
+
+  const navigateTo = (e, targetPath) => {
+    e.preventDefault();
+    window.history.pushState({}, '', targetPath);
+    window.dispatchEvent(new Event('popstate'));
   };
 
   const t = content[lang] || content.ar;
@@ -410,18 +505,18 @@ export default function Home() {
         </div>
 
         <div className={styles.heroContainer}>
-          <div className={styles.heroText}>
+          <div className={`${styles.heroText} ${styles.revealOnScroll} ${styles.fadeUp}`}>
             <h1 className={styles.title}>
               {t.titlePrefix}<span className={styles.brandName}>salati</span>
             </h1>
             <p className={styles.subtitle}>{t.subtitle}</p>
             <div className={styles.ctaGroup}>
-              <a href="/register" className={styles.primaryCta}>{t.primaryCta}</a>
+              <a href="/register" onClick={(e) => navigateTo(e, '/register')} className={styles.primaryCta}>{t.primaryCta}</a>
               <a href="#pricing" className={styles.secondaryCta}>{t.secondaryCta}</a>
             </div>
           </div>
 
-          <div className={styles.heroVisual}>
+          <div className={`${styles.heroVisual} ${styles.revealOnScroll} ${styles.zoomIn}`}>
             <div 
               className={styles.imageFrame}
               onMouseMove={handleMouseMove}
@@ -433,31 +528,88 @@ export default function Home() {
                 transition: tilt.active ? 'transform 0.1s ease-out' : 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)'
               }}
             >
-              <img src={homePc} alt="salati wedding hall showcase" className={styles.heroImg} />
-              <div 
-                className={styles.floatingTag}
-                style={{
-                  transform: tilt.active ? 'translateZ(40px)' : 'translateZ(0px)',
-                  transition: tilt.active ? 'transform 0.1s ease-out' : 'transform 0.6s ease'
-                }}
-              >
-                <span className={styles.tagDot}></span>
-                {t.floatingTag}
+              {/* Shimmer Skeleton عند تحميل الصورة */}
+              {!isImgLoaded && (
+                <div className={`${styles.skeletonBase} ${styles.heroImageSkeleton}`}></div>
+              )}
+
+              <img 
+                src={homePc} 
+                alt="salati wedding hall showcase" 
+                className={`${styles.heroImg} ${isImgLoaded ? styles.imgLoaded : styles.imgHidden}`} 
+                onLoad={() => setIsImgLoaded(true)}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. قسم التعريف بـ salati (Bento Grid) */}
+      <section className={styles.aboutSection}>
+        <div className={`${styles.aboutHeader} ${styles.revealOnScroll} ${styles.fadeUp}`}>
+          <h2 className={styles.aboutMainTitle}>
+            {t.aboutTitlePrefix}<span>{t.aboutTitleBrand}</span>
+          </h2>
+          <p className={styles.aboutMainSubtitle}>{t.aboutSubtitle}</p>
+        </div>
+
+        <div className={styles.bentoGrid}>
+          {/* بطاقة Bento 1 */}
+          <div className={`${styles.bentoCard} ${styles.bentoSpan2} ${styles.revealOnScroll} ${styles.fadeUp}`} style={{ transitionDelay: '0.1s' }}>
+            <div className={styles.bentoHeader}>
+              <div className={styles.bentoIcon}><IconMonitor /></div>
+              <h3 className={styles.bentoTitle}>{t.bento1Title}</h3>
+              <p className={styles.bentoDesc}>{t.bento1Desc}</p>
+            </div>
+            
+            <div className={styles.bentoVisualArea}>
+              <div className={styles.statPill}>
+                <span className={`${styles.statVal} ${styles.statValPrimary}`}>{t.bentoStat1Val}</span>
+                <span className={styles.statLbl}>{t.bentoStat1Lbl}</span>
+              </div>
+              <div className={styles.statPill}>
+                <span className={styles.statVal}>{t.bentoStat2Val}</span>
+                <span className={styles.statLbl}>{t.bentoStat2Lbl}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* بطاقة Bento 2 */}
+          <div className={`${styles.bentoCard} ${styles.revealOnScroll} ${styles.fadeUp}`} style={{ transitionDelay: '0.2s' }}>
+            <div className={styles.bentoHeader}>
+              <div className={styles.bentoIcon}><IconCalendarCheck /></div>
+              <h3 className={styles.bentoTitle}>{t.bento2Title}</h3>
+              <p className={styles.bentoDesc}>{t.bento2Desc}</p>
+            </div>
+          </div>
+
+          {/* بطاقة Bento 3 */}
+          <div className={`${styles.bentoCard} ${styles.bentoSpan2} ${styles.revealOnScroll} ${styles.fadeUp}`} style={{ transitionDelay: '0.3s' }}>
+            <div className={styles.bentoHeader}>
+              <div className={styles.bentoIcon}><IconBuilding /></div>
+              <h3 className={styles.bentoTitle}>{t.bento3Title}</h3>
+              <p className={styles.bentoDesc}>{t.bento3Desc}</p>
+            </div>
+            
+            <div className={styles.bentoVisualArea}>
+              <div className={styles.statPill}>
+                <span className={`${styles.statVal} ${styles.statValPrimary}`}>{t.bentoStat3Val}</span>
+                <span className={styles.statLbl}>{t.bentoStat3Lbl}</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2. لماذا تختار salati */}
+      {/* 3. لماذا تختار salati */}
       <section id="why-us" className={styles.whyUsSection}>
-        <div className={styles.whyUsHeader}>
+        <div className={`${styles.whyUsHeader} ${styles.revealOnScroll} ${styles.fadeUp}`}>
           <h2 className={styles.whyUsTitle}>{t.whyTitle}</h2>
           <p className={styles.whyUsSubtitle}>{t.whySubtitle}</p>
         </div>
 
         <div className={styles.whyUsGrid}>
-          <div className={styles.whyCard}>
+          <div className={`${styles.whyCard} ${styles.revealOnScroll} ${styles.fadeUp}`} style={{ transitionDelay: '0.1s' }}>
             <div className={styles.cardTopRow}>
               <div className={styles.iconBox}><IconGlobe /></div>
               <span className={styles.stepBadge}>01</span>
@@ -466,7 +618,7 @@ export default function Home() {
             <p>{t.why1Desc}</p>
           </div>
 
-          <div className={styles.whyCard}>
+          <div className={`${styles.whyCard} ${styles.revealOnScroll} ${styles.fadeUp}`} style={{ transitionDelay: '0.2s' }}>
             <div className={styles.cardTopRow}>
               <div className={styles.iconBox}><IconMapPin /></div>
               <span className={styles.stepBadge}>02</span>
@@ -475,7 +627,7 @@ export default function Home() {
             <p>{t.why2Desc}</p>
           </div>
 
-          <div className={styles.whyCard}>
+          <div className={`${styles.whyCard} ${styles.revealOnScroll} ${styles.fadeUp}`} style={{ transitionDelay: '0.3s' }}>
             <div className={styles.cardTopRow}>
               <div className={styles.iconBox}><IconStarQr /></div>
               <span className={styles.stepBadge}>03</span>
@@ -484,7 +636,7 @@ export default function Home() {
             <p>{t.why3Desc}</p>
           </div>
 
-          <div className={styles.whyCard}>
+          <div className={`${styles.whyCard} ${styles.revealOnScroll} ${styles.fadeUp}`} style={{ transitionDelay: '0.4s' }}>
             <div className={styles.cardTopRow}>
               <div className={styles.iconBox}><IconZap /></div>
               <span className={styles.stepBadge}>04</span>
@@ -495,9 +647,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 3. كيفية الاستخدام */}
+      {/* 4. كيفية الاستخدام */}
       <section id="how-it-works" className={styles.howSection}>
-        <div className={styles.howHeader}>
+        <div className={`${styles.howHeader} ${styles.revealOnScroll} ${styles.fadeUp}`}>
           <h2 className={styles.howTitle}>{t.howTitle}</h2>
           <p className={styles.howSubtitle}>{t.howSubtitle}</p>
         </div>
@@ -506,7 +658,7 @@ export default function Home() {
           <div className={styles.progressLine}></div>
 
           <div className={styles.howGrid}>
-            <div className={styles.howCard}>
+            <div className={`${styles.howCard} ${styles.revealOnScroll} ${styles.fadeUp}`} style={{ transitionDelay: '0.1s' }}>
               <div className={styles.nodeHeader}>
                 <div className={styles.iconBoxSaas}><IconUserPlus /></div>
                 <span className={styles.nodeNumber}>01</span>
@@ -515,7 +667,7 @@ export default function Home() {
               <p>{t.step1Desc}</p>
             </div>
 
-            <div className={styles.howCard}>
+            <div className={`${styles.howCard} ${styles.revealOnScroll} ${styles.fadeUp}`} style={{ transitionDelay: '0.25s' }}>
               <div className={styles.nodeHeader}>
                 <div className={styles.iconBoxSaas}><IconLayout /></div>
                 <span className={styles.nodeNumber}>02</span>
@@ -524,7 +676,7 @@ export default function Home() {
               <p>{t.step2Desc}</p>
             </div>
 
-            <div className={styles.howCard}>
+            <div className={`${styles.howCard} ${styles.revealOnScroll} ${styles.fadeUp}`} style={{ transitionDelay: '0.4s' }}>
               <div className={styles.nodeHeader}>
                 <div className={styles.iconBoxSaas}><IconShare /></div>
                 <span className={styles.nodeNumber}>03</span>
@@ -536,16 +688,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 4. قسم خطط الأسعار والاشتراكات */}
+      {/* 5. قسم خطط الأسعار والاشتراكات */}
       <section id="pricing" className={styles.pricingSection}>
-        <div className={styles.pricingHeader}>
-          <span className={styles.pricingTagHeader}>{t.pricingTag}</span>
+        <div className={`${styles.pricingHeader} ${styles.revealOnScroll} ${styles.fadeUp}`}>
           <h2 className={styles.pricingTitle}>{t.pricingTitle}</h2>
           <p className={styles.pricingSubtitle}>{t.pricingSubtitle}</p>
-
-          <div className={styles.trialPill}>
-            {t.trialBadge}
-          </div>
 
           <div className={styles.cycleSegmentedControl}>
             <button
@@ -575,9 +722,8 @@ export default function Home() {
           {(() => {
             const plan1 = getPriceAndPeriod(t.plan1PriceMonthly, t.plan1PriceSemiAnnual, t.plan1PriceAnnual);
             return (
-              <div className={styles.priceCard}>
+              <div className={`${styles.priceCard} ${styles.revealOnScroll} ${styles.fadeUp}`} style={{ transitionDelay: '0.1s' }}>
                 <div className={styles.cardHead}>
-                  <span className={styles.planMicroTag}>{t.plan1Tag}</span>
                   <h3>{t.plan1Name}</h3>
                   <p>{t.plan1Desc}</p>
                   <div className={styles.priceValue}>
@@ -590,7 +736,7 @@ export default function Home() {
                     <li key={index}><IconCheck /> <span>{feat}</span></li>
                   ))}
                 </ul>
-                <a href="/register" className={styles.priceCta}>{t.selectPlan}</a>
+                <a href="/register" onClick={(e) => navigateTo(e, '/register')} className={styles.priceCta}>{t.selectPlan}</a>
                 <span className={styles.noRiskSub}>{t.noHiddenFees}</span>
               </div>
             );
@@ -600,10 +746,9 @@ export default function Home() {
           {(() => {
             const plan2 = getPriceAndPeriod(t.plan2PriceMonthly, t.plan2PriceSemiAnnual, t.plan2PriceAnnual);
             return (
-              <div className={`${styles.priceCard} ${styles.popularCard}`}>
+              <div className={`${styles.priceCard} ${styles.popularCard} ${styles.revealOnScroll} ${styles.fadeUp}`} style={{ transitionDelay: '0.25s' }}>
                 <div className={styles.popularBadge}>{t.popularBadge}</div>
                 <div className={styles.cardHead}>
-                  <span className={`${styles.planMicroTag} ${styles.proMicroTag}`}>{t.plan2Tag}</span>
                   <h3>{t.plan2Name}</h3>
                   <p>{t.plan2Desc}</p>
                   <div className={styles.priceValue}>
@@ -616,7 +761,7 @@ export default function Home() {
                     <li key={index}><IconCheck /> <span>{feat}</span></li>
                   ))}
                 </ul>
-                <a href="/register" className={`${styles.priceCta} ${styles.popularCta}`}>{t.selectPlan}</a>
+                <a href="/register" onClick={(e) => navigateTo(e, '/register')} className={`${styles.priceCta} ${styles.popularCta}`}>{t.selectPlan}</a>
                 <span className={styles.noRiskSub}>{t.noHiddenFees}</span>
               </div>
             );
@@ -626,9 +771,8 @@ export default function Home() {
           {(() => {
             const plan3 = getPriceAndPeriod(t.plan3PriceMonthly, t.plan3PriceSemiAnnual, t.plan3PriceAnnual);
             return (
-              <div className={styles.priceCard}>
+              <div className={`${styles.priceCard} ${styles.revealOnScroll} ${styles.fadeUp}`} style={{ transitionDelay: '0.4s' }}>
                 <div className={styles.cardHead}>
-                  <span className={styles.planMicroTag}>{t.plan3Tag}</span>
                   <h3>{t.plan3Name}</h3>
                   <p>{t.plan3Desc}</p>
                   <div className={styles.priceValue}>
@@ -641,7 +785,7 @@ export default function Home() {
                     <li key={index}><IconCheck /> <span>{feat}</span></li>
                   ))}
                 </ul>
-                <a href="/register" className={styles.priceCta}>{t.selectPlan}</a>
+                <a href="/register" onClick={(e) => navigateTo(e, '/register')} className={styles.priceCta}>{t.selectPlan}</a>
                 <span className={styles.noRiskSub}>{t.noHiddenFees}</span>
               </div>
             );
@@ -649,7 +793,7 @@ export default function Home() {
 
         </div>
 
-        <div className={styles.trustBar}>
+        <div className={`${styles.trustBar} ${styles.revealOnScroll} ${styles.fadeUp}`}>
           <div className={styles.trustItem}>
             <IconShield /> <span>{t.guarantee1}</span>
           </div>
@@ -664,9 +808,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 5. قسم الأسئلة الشائعة (FAQ) */}
+      {/* 6. قسم الأسئلة الشائعة (FAQ) */}
       <section id="faq" className={styles.faqSection}>
-        <div className={styles.faqHeader}>
+        <div className={`${styles.faqHeader} ${styles.revealOnScroll} ${styles.fadeUp}`}>
           <h2 className={styles.faqTitle}>{t.faqTitle}</h2>
           <p className={styles.faqSubtitle}>{t.faqSubtitle}</p>
         </div>
@@ -677,7 +821,8 @@ export default function Home() {
             return (
               <div 
                 key={index} 
-                className={`${styles.faqItem} ${isOpen ? styles.faqItemOpen : ''}`}
+                className={`${styles.faqItem} ${isOpen ? styles.faqItemOpen : ''} ${styles.revealOnScroll} ${styles.fadeUp}`}
+                style={{ transitionDelay: `${index * 0.08}s` }}
               >
                 <button 
                   className={styles.faqQuestion}
@@ -700,9 +845,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 6. قسم الفوتر (Footer) */}
+      {/* 7. قسم الفوتر (Footer) */}
       <footer className={styles.footer}>
-        <div className={styles.footerContainer}>
+        <div className={`${styles.footerContainer} ${styles.revealOnScroll} ${styles.fadeUp}`}>
           <div className={styles.footerBrand}>
             <div className={styles.footerLogo}>salati<span>.work</span></div>
             <p className={styles.footerDesc}>{t.footerDesc}</p>
@@ -722,8 +867,16 @@ export default function Home() {
           <div className={styles.footerCol}>
             <h4>{t.footerCol2}</h4>
             <ul className={styles.footerList}>
-              <li><a href="#">{t.linkTerms}</a></li>
-              <li><a href="#">{t.linkPrivacy}</a></li>
+              <li>
+                <a href="/terms" onClick={(e) => navigateTo(e, '/terms')}>
+                  {t.linkTerms}
+                </a>
+              </li>
+              <li>
+                <a href="/privacy" onClick={(e) => navigateTo(e, '/privacy')}>
+                  {t.linkPrivacy}
+                </a>
+              </li>
             </ul>
           </div>
 

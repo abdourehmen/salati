@@ -67,3 +67,7 @@ button {
   border: none;
   outline: none;
 }
+/* في ملف index.css أو App.css */
+html {
+  scroll-behavior: smooth;
+}

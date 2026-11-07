@@ -3,12 +3,15 @@
   overflow-x: hidden;
 }
 
+/* =========================================
+   1. Hero Section
+   ========================================= */
 .hero {
   background-color: var(--bg-white);
   min-height: calc(100vh - 70px);
   display: flex;
   align-items: center;
-  padding: 3rem 1.5rem;
+  padding: 4rem 1.5rem;
   border-bottom: 1px solid var(--border-color);
   position: relative;
   overflow: hidden;
@@ -88,16 +91,8 @@
   text-align: right;
 }
 
-.badge {
-  display: inline-block;
-  background-color: rgba(0, 82, 204, 0.08);
-  color: var(--primary-blue);
-  font-size: clamp(0.75rem, 1.2vw, 0.85rem);
-  font-weight: 700;
-  padding: 0.4rem 1rem;
-  border-radius: 50px;
-  margin-bottom: 1.25rem;
-  border: 1px solid rgba(0, 82, 204, 0.15);
+:global(html[dir="ltr"]) .heroText {
+  text-align: left;
 }
 
 .title {
@@ -135,13 +130,14 @@
   font-weight: 700;
   font-size: 0.95rem;
   box-shadow: 0 4px 14px rgba(0, 82, 204, 0.25);
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   text-align: center;
 }
 
 .primaryCta:hover {
   background-color: var(--primary-blue-hover);
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 82, 204, 0.35);
 }
 
 .secondaryCta {
@@ -152,54 +148,13 @@
   font-weight: 600;
   font-size: 0.95rem;
   border: 1px solid var(--border-color);
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   text-align: center;
 }
 
 .secondaryCta:hover {
   border-color: var(--primary-blue);
   color: var(--primary-blue);
-}
-
-.trustBadges {
-  display: flex;
-  gap: 0.6rem;
-  align-items: center;
-  font-size: 0.825rem;
-  color: var(--text-muted);
-  margin-bottom: 2rem;
-  font-weight: 500;
-  flex-wrap: wrap;
-}
-
-.heroStats {
-  display: flex;
-  align-items: center;
-  gap: clamp(1rem, 2vw, 1.8rem);
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border-color);
-}
-
-.statItem {
-  display: flex;
-  flex-direction: column;
-}
-
-.statItem strong {
-  font-size: 1.35rem;
-  color: var(--primary-blue);
-  font-weight: 800;
-}
-
-.statItem span {
-  font-size: 0.825rem;
-  color: var(--text-muted);
-}
-
-.statDivider {
-  width: 1px;
-  height: 30px;
-  background-color: var(--border-color);
 }
 
 .heroVisual {
@@ -238,204 +193,150 @@
   pointer-events: none;
 }
 
-.glassWidget {
-  position: absolute;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  border-radius: 14px;
-  padding: 0.6rem 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  z-index: 10;
-  pointer-events: none;
-  transform: translateZ(30px);
+/* =========================================
+   2. قسم التعريف Bento Grid الاحترافي
+   ========================================= */
+.aboutSection {
+  padding: 7rem 1.5rem;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border-bottom: 1px solid #e2e8f0;
+  position: relative;
+  overflow: hidden;
 }
 
-.widgetTopLeft {
-  top: 15px;
-  left: -15px;
-}
-
-.widgetTopLeft strong {
-  display: block;
-  font-size: 0.825rem;
-  color: var(--text-dark);
-}
-
-.widgetTopLeft small {
-  display: block;
-  font-size: 0.7rem;
-  color: var(--text-muted);
-}
-
-.widgetIcon {
-  font-size: 1.2rem;
-}
-
-.widgetTopRight {
-  top: 15px;
-  right: -10px;
-  padding: 0.45rem 0.9rem;
-  border-radius: 50px;
-}
-
-.starIcon {
-  color: #f59e0b;
-  font-size: 1rem;
-}
-
-.floatingTag {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  background-color: rgba(255, 255, 255, 0.92);
-  padding: 0.6rem 1.1rem;
-  border-radius: 50px;
-  font-size: 0.825rem;
-  font-weight: 700;
-  color: var(--text-dark);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  pointer-events: none;
-  transform: translateZ(40px);
-}
-
-.tagDot {
-  width: 8px;
-  height: 8px;
-  background-color: #10b981;
-  border-radius: 50%;
-  box-shadow: 0 0 8px #10b981;
-}
-
-@media (max-width: 968px) {
-  .hero {
-    padding: 2.5rem 1.25rem;
-  }
-
-  .heroContainer {
-    grid-template-columns: 1fr;
-    gap: 2.5rem;
-  }
-
-  .heroText {
-    text-align: center;
-  }
-
-  .ctaGroup, .trustBadges, .heroStats {
-    justify-content: center;
-  }
-
-  .heroVisual {
-    perspective: none;
-  }
-
-  .imageFrame {
-    transform: none !important;
-    box-shadow: var(--shadow-card);
-  }
-
-  .widgetTopLeft {
-    left: 10px;
-  }
-
-  .widgetTopRight {
-    right: 10px;
-  }
-
-  .floatingTag {
-    transform: none !important;
-  }
-}
-
-@media (max-width: 640px) {
-  .ctaGroup {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .primaryCta, .secondaryCta {
-    width: 100%;
-  }
-
-  .glassWidget {
-    padding: 0.45rem 0.75rem;
-  }
-
-  .widgetTopLeft strong {
-    font-size: 0.75rem;
-  }
-
-  .heroStats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
-    text-align: center;
-  }
-
-  .statDivider {
-    display: none;
-  }
-}
-
-.features {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 4rem 1.5rem;
+.aboutHeader {
   text-align: center;
+  max-width: 800px;
+  margin: 0 auto 4.5rem auto;
 }
 
-.sectionTitle {
-  font-size: clamp(1.5rem, 2.5vw + 0.5rem, 2rem);
-  margin-bottom: 2.5rem;
-  color: var(--text-dark);
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-}
-
-.card {
-  background-color: var(--bg-white);
-  padding: 2rem 1.5rem;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-card);
-  text-align: right;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(0, 82, 204, 0.12);
-}
-
-.icon {
-  font-size: 2.2rem;
+.aboutMainTitle {
+  font-size: clamp(1.8rem, 3vw + 0.5rem, 2.5rem);
+  color: #0f172a;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.8px;
   margin-bottom: 1rem;
 }
 
-.card h3 {
-  font-size: 1.2rem;
-  margin-bottom: 0.6rem;
-  color: var(--text-dark);
+.aboutMainTitle span {
+  background: linear-gradient(135deg, #0052cc 0%, #2563eb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.card p {
-  color: var(--text-muted);
-  line-height: 1.6;
-  font-size: 0.925rem;
+.aboutMainSubtitle {
+  font-size: clamp(0.95rem, 1.2vw + 0.4rem, 1.1rem);
+  color: #475569;
+  line-height: 1.7;
 }
 
+.bentoGrid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.75rem;
+}
+
+.bentoCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 2.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.3s ease;
+}
+
+.bentoCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 36px rgba(0, 82, 204, 0.08);
+  border-color: rgba(0, 82, 204, 0.3);
+}
+
+.bentoSpan2 {
+  grid-column: span 2;
+}
+
+.bentoHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  z-index: 2;
+}
+
+.bentoIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(0, 82, 204, 0.08);
+  color: var(--primary-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bentoTitle {
+  font-size: 1.35rem;
+  color: #0f172a;
+  font-weight: 800;
+  margin: 0;
+}
+
+.bentoDesc {
+  font-size: 0.95rem;
+  color: #64748b;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.bentoVisualArea {
+  margin-top: 1.75rem;
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 1.25rem;
+  border: 1px dashed #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.statPill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.statVal {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #0f172a;
+  font-family: var(--font-en);
+}
+
+.statValPrimary {
+  color: var(--primary-blue);
+}
+
+.statLbl {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* =========================================
+   3. لماذا تختار salati
+   ========================================= */
 .whyUsSection {
   padding: 6rem 1.5rem;
   background-color: #f8fafc;
@@ -450,22 +351,8 @@
   margin: 0 auto 4rem auto;
 }
 
-.sectionBadge {
-  display: inline-block;
-  background-color: rgba(0, 82, 204, 0.08);
-  color: var(--primary-blue);
-  font-size: 0.8rem;
-  font-weight: 800;
-  padding: 0.35rem 1rem;
-  border-radius: 50px;
-  letter-spacing: 0.5px;
-  margin-bottom: 1rem;
-  text-transform: uppercase;
-  border: 1px solid rgba(0, 82, 204, 0.15);
-}
-
 .whyUsTitle {
-  font-size: 2.25rem;
+  font-size: clamp(1.7rem, 2.8vw + 0.5rem, 2.25rem);
   color: #0f172a;
   font-weight: 800;
   margin-bottom: 1rem;
@@ -571,20 +458,9 @@
   margin: 0;
 }
 
-@media (max-width: 768px) {
-  .whyUsSection {
-    padding: 4rem 1rem;
-  }
-
-  .whyUsTitle {
-    font-size: 1.7rem;
-  }
-
-  .whyUsGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
+/* =========================================
+   4. كيفية الاستخدام
+   ========================================= */
 .howSection {
   padding: 6.5rem 1.5rem;
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
@@ -600,7 +476,7 @@
 }
 
 .howTitle {
-  font-size: 2.3rem;
+  font-size: clamp(1.7rem, 2.8vw + 0.5rem, 2.3rem);
   color: #0f172a;
   font-weight: 800;
   margin-bottom: 0.85rem;
@@ -715,27 +591,8 @@
   margin: 0;
 }
 
-@media (max-width: 900px) {
-  .howSection {
-    padding: 4rem 1rem;
-  }
-
-  .progressLine {
-    display: none;
-  }
-
-  .howGrid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-
-  .howTitle {
-    font-size: 1.75rem;
-  }
-}
-
 /* =========================================
-   قسم خطط الأسعار والاشتراكات
+   5. قسم خطط الأسعار والاشتراكات
    ========================================= */
 .pricingSection {
   padding: 6.5rem 1.5rem;
@@ -750,21 +607,8 @@
   margin: 0 auto 4rem auto;
 }
 
-.pricingTagHeader {
-  display: inline-block;
-  background-color: rgba(0, 82, 204, 0.08);
-  color: var(--primary-blue);
-  font-size: 0.8rem;
-  font-weight: 800;
-  padding: 0.35rem 1rem;
-  border-radius: 50px;
-  margin-bottom: 0.85rem;
-  letter-spacing: 0.5px;
-  border: 1px solid rgba(0, 82, 204, 0.15);
-}
-
 .pricingTitle {
-  font-size: 2.35rem;
+  font-size: clamp(1.8rem, 3vw + 0.5rem, 2.35rem);
   color: #0f172a;
   font-weight: 800;
   margin-bottom: 0.85rem;
@@ -776,21 +620,7 @@
   color: #475569;
   font-size: 1.05rem;
   line-height: 1.65;
-  margin-bottom: 1.5rem;
-}
-
-.trialPill {
-  display: inline-flex;
-  align-items: center;
-  background-color: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
-  padding: 0.45rem 1.25rem;
-  border-radius: 50px;
-  font-size: 0.875rem;
-  font-weight: 800;
   margin-bottom: 2rem;
-  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.1);
 }
 
 .cycleSegmentedControl {
@@ -802,6 +632,7 @@
   border: 1px solid #e2e8f0;
   gap: 0.25rem;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+  max-width: 100%;
 }
 
 .segmentBtn {
@@ -831,7 +662,7 @@
   max-width: 1200px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 2rem;
   align-items: stretch;
 }
@@ -884,22 +715,6 @@
   white-space: nowrap;
 }
 
-.planMicroTag {
-  display: inline-block;
-  font-size: 0.75rem;
-  font-weight: 800;
-  color: #64748b;
-  background-color: #f1f5f9;
-  padding: 0.2rem 0.6rem;
-  border-radius: 6px;
-  margin-bottom: 0.85rem;
-}
-
-.proMicroTag {
-  background-color: rgba(0, 82, 204, 0.1);
-  color: var(--primary-blue);
-}
-
 .cardHead {
   border-bottom: 1px solid #f1f5f9;
   padding-bottom: 1.5rem;
@@ -925,7 +740,7 @@
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
-  direction: ltr; /* يضمن قراءة الأرقام والعملة بجهة LTR لتفادي انعكاس DA باللغة الفرنسية */
+  direction: ltr;
 }
 
 :global(html[dir="rtl"]) .priceValue {
@@ -1043,41 +858,8 @@
   color: #cbd5e1;
 }
 
-@media (max-width: 768px) {
-  .pricingSection {
-    padding: 4rem 1rem;
-  }
-
-  .pricingTitle {
-    font-size: 1.8rem;
-  }
-
-  .pricingGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .cycleSegmentedControl {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .segmentBtn {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
-  }
-
-  .trustBar {
-    border-radius: 16px;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .trustDivider {
-    display: none;
-  }
-}
 /* =========================================
-   قسم الأسئلة الشائعة (FAQ)
+   6. قسم الأسئلة الشائعة (FAQ)
    ========================================= */
 .faqSection {
   padding: 6rem 1.5rem;
@@ -1092,7 +874,7 @@
 }
 
 .faqTitle {
-  font-size: 2.25rem;
+  font-size: clamp(1.7rem, 2.8vw + 0.5rem, 2.25rem);
   color: #0f172a;
   font-weight: 800;
   margin-bottom: 0.75rem;
@@ -1170,27 +952,8 @@
   line-height: 1.7;
 }
 
-@media (max-width: 768px) {
-  .faqSection {
-    padding: 4rem 1rem;
-  }
-  
-  .faqTitle {
-    font-size: 1.75rem;
-  }
-  
-  .faqQuestion {
-    font-size: 1rem;
-    padding: 1.1rem 1.25rem;
-  }
-  
-  .faqAnswer {
-    padding: 0 1.25rem 1.1rem 1.25rem;
-    font-size: 0.925rem;
-  }
-}
 /* =========================================
-   قسم الفوتر (Footer)
+   7. قسم الفوتر (Footer)
    ========================================= */
 .footer {
   background-color: #0f172a;
@@ -1297,49 +1060,250 @@
   gap: 1rem;
 }
 
-.socialLinks {
-  display: flex;
-  gap: 1rem;
+/* =========================================
+   8. أنميشن الظهور عند السكرول (Scroll Reveal)
+   ========================================= */
+.revealOnScroll {
+  opacity: 0;
+  will-change: transform, opacity;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.socialIcon {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background-color: #1e293b;
-  color: #cbd5e1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
+.fadeUp {
+  transform: translateY(40px);
 }
 
-.socialIcon:hover {
-  background-color: #3b82f6;
-  color: #ffffff;
-  transform: translateY(-2px);
+.zoomIn {
+  transform: scale(0.92) translateY(20px);
 }
 
+.animateIn {
+  opacity: 1 !important;
+  transform: translateY(0) scale(1) !important;
+}
+
+/* =========================================
+   9. الاستجابة للشاشات والأجهزة (Media Queries)
+   ========================================= */
+
+/* شاشات الأجهزة اللوحية واللابتوب الصغير (Tablet & Small Laptop <= 968px) */
 @media (max-width: 968px) {
+  .hero {
+    padding: 3.5rem 1.25rem;
+    min-height: auto;
+  }
+
+  .heroContainer {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .heroText {
+    text-align: center;
+  }
+
+  :global(html[dir="ltr"]) .heroText {
+    text-align: center;
+  }
+
+  .ctaGroup {
+    justify-content: center;
+  }
+
+  .heroVisual {
+    perspective: none;
+  }
+
+  .imageFrame {
+    transform: none !important;
+  }
+
+  .aboutSection {
+    padding: 5rem 1.25rem;
+  }
+
+  .aboutHeader {
+    margin-bottom: 3rem;
+  }
+
+  .bentoGrid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .bentoSpan2 {
+    grid-column: span 1;
+  }
+
+  .bentoCard {
+    padding: 1.75rem;
+  }
+
+  .howGrid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .progressLine {
+    display: none;
+  }
+
   .footerContainer {
     grid-template-columns: 1fr 1fr;
     gap: 2.5rem;
   }
 }
 
+/* شاشات الهواتف المحمولة المتوسطة والكبيرة (Mobile <= 768px) */
+@media (max-width: 768px) {
+  .whyUsSection,
+  .howSection,
+  .pricingSection,
+  .faqSection {
+    padding: 4rem 1.25rem;
+  }
+
+  .whyUsHeader,
+  .howHeader,
+  .pricingHeader,
+  .faqHeader {
+    margin-bottom: 2.5rem;
+  }
+
+  .pricingGrid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .priceCard {
+    padding: 2rem 1.5rem;
+  }
+
+  .cardHead p {
+    min-height: auto;
+  }
+
+  .trustBar {
+    border-radius: 16px;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .trustDivider {
+    display: none;
+  }
+
+  .faqQuestion {
+    font-size: 1rem;
+    padding: 1.1rem 1.25rem;
+  }
+
+  .faqAnswer {
+    padding: 0 1.25rem 1.1rem 1.25rem;
+    font-size: 0.925rem;
+  }
+}
 @media (max-width: 640px) {
   .footer {
     padding: 3.5rem 1rem 1.5rem 1rem;
+    text-align: center; /* توسيط جميع النصوص في الفوتر */
   }
 
   .footerContainer {
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: 2.25rem;
+  }
+
+  .footerBrand {
+    align-items: center; /* توسيط اللوجو */
+  }
+
+  .footerDesc {
+    max-width: 100%;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .footerList {
+    align-items: center; /* توسيط القائمة وقوائم الروابط */
+  }
+
+  .contactInfo {
+    align-items: center; /* توسيط بيانات الاتصال (الهاتف والبريد) */
+  }
+
+  .contactItem {
+    justify-content: center;
   }
 
   .footerBottom {
     flex-direction: column;
     text-align: center;
+    justify-content: center;
     gap: 1.25rem;
   }
+}
+/* =========================================
+   تنسيقات Shimmer Skeleton
+   ========================================= */
+
+.skeletonBase {
+  background-color: #e2e8f0;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+}
+
+.skeletonBase::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmerSweep 1.6s infinite ease-in-out;
+}
+
+@keyframes shimmerSweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Skeleton خاص بصورة الـ Hero */
+.heroImageSkeleton {
+  width: 100%;
+  height: 380px;
+  max-height: 480px;
+  border-radius: var(--radius-lg);
+}
+
+@media (max-width: 768px) {
+  .heroImageSkeleton {
+    height: 240px;
+  }
+}
+
+/* حالة إخفاء الصورة قبل اكتمال التحميل */
+.imgHidden {
+  opacity: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.imgLoaded {
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
 }
