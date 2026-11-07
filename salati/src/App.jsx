@@ -13,6 +13,9 @@ import HallsCatalog from './pages/platform/HallsCatalog';
 import Terms from './pages/platform/Terms';
 import Privacy from './pages/platform/Privacy';
 
+// استدعاء مكون الواتساب العائم
+import WhatsAppWidget from './components/WhatsAppWidget';
+
 export default function App() {
   const [path, setPath] = useState(window.location.pathname);
 
@@ -25,7 +28,7 @@ export default function App() {
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
 
-  // إظهار Navbar المنصة في الصفحة الرئيسية، البحث، التسجيل، الدخول والصفحات القانونية
+  // إظهار Navbar والواتساب العائم في صفحات المنصة العامة
   const isPlatformPage = 
     path === '/' || 
     path === '/login' || 
@@ -56,6 +59,9 @@ export default function App() {
       <main>
         {renderPage()}
       </main>
+      
+      {/* ظهور زر الواتساب العائم في الصفحات العامة للمنصة */}
+      {isPlatformPage && <WhatsAppWidget />}
     </div>
   );
 }

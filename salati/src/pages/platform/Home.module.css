@@ -1307,3 +1307,278 @@
   opacity: 1;
   transition: opacity 0.5s ease-in-out;
 }
+/* =========================================
+   قسم التواصل العالمي الاحترافي (Global SaaS Contact)
+   ========================================= */
+.contactSection {
+  padding: 7rem 1.5rem;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border-top: 1px solid #e2e8f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.contactContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+/* الشارة الحية */
+.liveStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  background-color: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #065f46;
+  padding: 0.45rem 1rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+.statusPulse {
+  width: 9px;
+  height: 9px;
+  background-color: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: statusPulseAnim 2s infinite;
+}
+
+@keyframes statusPulseAnim {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.contactMainTitle {
+  font-size: clamp(2rem, 3vw + 0.5rem, 2.6rem);
+  color: #0f172a;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.8px;
+  margin-bottom: 1.25rem;
+}
+
+.contactMainTitle span {
+  color: var(--primary-blue, #0052cc);
+}
+
+.contactMainDesc {
+  font-size: 1.05rem;
+  color: #475569;
+  line-height: 1.7;
+  margin-bottom: 2.5rem;
+}
+
+/* شبكة Bento للتواصل */
+.bentoContactGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.bentoContactCard {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  text-decoration: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.bentoContactCard:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0, 82, 204, 0.3);
+  box-shadow: 0 12px 30px rgba(0, 82, 204, 0.1);
+}
+
+.waCard:hover {
+  border-color: rgba(37, 211, 102, 0.4);
+  box-shadow: 0 12px 30px rgba(37, 211, 102, 0.12);
+}
+
+.bentoIconWrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(0, 82, 204, 0.08);
+  color: var(--primary-blue, #0052cc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.waCard .bentoIconWrapper {
+  background: rgba(37, 211, 102, 0.1);
+  color: #25d366;
+}
+
+.bentoCardDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.bentoCardDetails strong {
+  font-size: 1rem;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.bentoCardDetails span {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.arrowIcon {
+  font-size: 1.2rem;
+  color: #94a3b8;
+  transition: transform 0.25s ease, color 0.25s ease;
+}
+
+.bentoContactCard:hover .arrowIcon {
+  color: var(--primary-blue, #0052cc);
+  transform: translateX(-4px);
+}
+
+:global(html[dir="ltr"]) .bentoContactCard:hover .arrowIcon {
+  transform: translateX(4px);
+}
+
+/* بطاقة الاستمارة الجانبية */
+.contactFormWrapper {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 28px;
+  padding: 2.5rem 2.25rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
+  position: relative;
+}
+
+.formCardHeader {
+  margin-bottom: 2rem;
+}
+
+.formCardHeader h3 {
+  font-size: 1.4rem;
+  color: #0f172a;
+  font-weight: 800;
+  margin-bottom: 0.4rem;
+}
+
+.formCardHeader p {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.saasContactForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.inputRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.inputFieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.inputFieldGroup label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.inputFieldGroup input,
+.inputFieldGroup textarea {
+  width: 100%;
+  padding: 0.85rem 1.1rem;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background-color: #f8fafc;
+  font-family: inherit;
+  font-size: 0.925rem;
+  color: #0f172a;
+  transition: all 0.2s ease;
+}
+
+.inputFieldGroup input:focus,
+.inputFieldGroup textarea:focus {
+  outline: none;
+  border-color: var(--primary-blue, #0052cc);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(0, 82, 204, 0.1);
+}
+
+.submitSaasBtn {
+  background-color: var(--primary-blue, #0052cc);
+  color: #ffffff;
+  border: none;
+  padding: 0.95rem 1.5rem;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  box-shadow: 0 6px 20px rgba(0, 82, 204, 0.25);
+  transition: all 0.25s ease;
+  margin-top: 0.5rem;
+}
+
+.submitSaasBtn:hover {
+  background-color: var(--primary-blue-hover, #0043a8);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 82, 204, 0.35);
+}
+
+/* الاستجابة للهواتف */
+@media (max-width: 968px) {
+  .contactSection {
+    padding: 4.5rem 1.25rem;
+  }
+
+  .contactContainer {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+
+  .contactFormWrapper {
+    padding: 1.75rem 1.5rem;
+    border-radius: 20px;
+  }
+
+  .inputRow {
+    grid-template-columns: 1fr;
+  }
+}
