@@ -126,7 +126,7 @@
   background-color: var(--primary-blue);
   color: var(--bg-white);
   padding: 0.85rem 1.8rem;
-  border-radius: var(--radius-md);
+  border-radius: 50px;
   font-weight: 700;
   font-size: 0.95rem;
   box-shadow: 0 4px 14px rgba(0, 82, 204, 0.25);
@@ -144,7 +144,7 @@
   background-color: var(--bg-light);
   color: var(--text-dark);
   padding: 0.85rem 1.8rem;
-  border-radius: var(--radius-md);
+  border-radius: 50px;
   font-weight: 600;
   font-size: 0.95rem;
   border: 1px solid var(--border-color);
@@ -792,7 +792,7 @@
   background-color: #f1f5f9;
   color: #0f172a;
   padding: 0.9rem;
-  border-radius: 12px;
+  border-radius: 50px;
   font-weight: 800;
   font-size: 0.95rem;
   transition: all 0.25s ease;
@@ -1543,7 +1543,7 @@
   color: #ffffff;
   border: none;
   padding: 0.95rem 1.5rem;
-  border-radius: 14px;
+  border-radius: 50px;
   font-size: 1rem;
   font-weight: 800;
   cursor: pointer;
@@ -1581,4 +1581,44 @@
   .inputRow {
     grid-template-columns: 1fr;
   }
+}
+/* =========================================
+   أنيميشن انسيابي للأسئلة الشائعة (Smooth Accordion Grid)
+   ========================================= */
+.faqAnswerWrapper {
+  display: grid;
+  grid-template-rows: 0fr; /* حالة الإغلاق (ارتفاع صفر) */
+  transition: grid-template-rows 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.faqAnswerOpen {
+  grid-template-rows: 1fr; /* حالة الفتح الانسيابي */
+}
+
+.faqAnswerInner {
+  overflow: hidden; /* لمنع ظهور النص خارج الحاوية أثناء الفتح */
+}
+
+.faqAnswerInner p {
+  padding-top: 1rem;
+  padding-bottom: 0.5rem;
+  color: #475569;
+  line-height: 1.7;
+  font-size: 0.975rem;
+  border-top: 1px dashed #e2e8f0;
+  margin-top: 0.75rem;
+}
+
+/* دوران السهم بسلاسة */
+.faqChevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #64748b;
+}
+
+.faqChevronOpen {
+  transform: rotate(180deg);
+  color: var(--primary-blue, #0052cc);
 }

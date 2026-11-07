@@ -5,16 +5,22 @@
   right: 0;
   width: 100%;
   height: 70px;
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
+  /* تصميم زجاجي شفاف ومضبب لسطح المكتب */
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
   z-index: 1000;
   display: flex;
   align-items: center;
 }
 
+/* تحديث الحاوية الرئيسية لتكون متناسقة مع باقي أقسام الموقع بـ 1200px */
 .navContainer {
   width: 100%;
-  max-width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
   padding: 0 1.5rem;
   display: flex;
   align-items: center;
@@ -38,7 +44,7 @@
 .navLinks {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1.1rem;
   margin: 0 auto;
 }
 
@@ -52,7 +58,7 @@
 
 .navLink {
   color: #475569;
-  font-size: 0.95rem;
+  font-size: 0.925rem;
   font-weight: 700;
   text-decoration: none;
   transition: color 0.2s ease;
@@ -81,20 +87,23 @@
   display: none;
 }
 
+/* =========================================
+   أزرار بحواف دائرية كبسولية (Pill Buttons)
+   ========================================= */
 .loginBtn {
   color: #0f172a;
   font-size: 0.95rem;
   font-weight: 700;
   text-decoration: none;
-  padding: 0.6rem 1.1rem;
-  border-radius: 10px;
+  padding: 0.6rem 1.25rem;
+  border-radius: 50px;
   transition: all 0.2s ease;
   white-space: nowrap;
   text-align: center;
 }
 
 .loginBtn:hover {
-  background-color: #f1f5f9;
+  background-color: rgba(241, 245, 249, 0.8);
 }
 
 .registerBtn {
@@ -103,8 +112,8 @@
   font-size: 0.95rem;
   font-weight: 700;
   text-decoration: none;
-  padding: 0.65rem 1.25rem;
-  border-radius: 10px;
+  padding: 0.65rem 1.35rem;
+  border-radius: 50px;
   box-shadow: 0 4px 14px rgba(0, 82, 204, 0.22);
   transition: all 0.2s ease;
   white-space: nowrap;
@@ -116,22 +125,111 @@
   transform: translateY(-1px);
 }
 
+/* زر وقائمة تغيير اللغة المنسدلة */
+.langWrapper {
+  position: relative;
+  display: inline-block;
+}
+
 .langBtn {
-  background: rgba(0, 82, 204, 0.08);
-  color: var(--primary-blue, #0052cc);
-  border: 1px solid rgba(0, 82, 204, 0.2);
-  padding: 0.45rem 0.85rem;
-  border-radius: 8px;
-  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+  padding: 0.4rem 0.85rem;
+  border-radius: 50px;
+  font-weight: 700;
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
-.langBtn:hover {
-  background-color: var(--primary-blue, #0052cc);
-  color: #ffffff;
+.langBtn:hover,
+.langBtnActive {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: var(--primary-blue, #0052cc);
+}
+
+.langBtn svg {
+  flex-shrink: 0;
+}
+
+.langChevron {
+  display: flex;
+  align-items: center;
+  transition: transform 0.25s ease;
+}
+
+.langChevronOpen {
+  transform: rotate(180deg);
+}
+
+.langDropdownMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  min-width: 155px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 0.4rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  z-index: 1010;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  animation: dropdownFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:global(html[dir="rtl"]) .langDropdownMenu {
+  right: 0;
+  left: auto;
+}
+
+:global(html[dir="ltr"]) .langDropdownMenu {
+  left: 0;
+  right: auto;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.langOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border: none;
+  background: transparent;
+  color: #334155;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.langOption:hover {
+  background-color: #f1f5f9;
+  color: var(--primary-blue, #0052cc);
+}
+
+.langOptionSelected {
+  background-color: rgba(0, 82, 204, 0.08);
+  color: var(--primary-blue, #0052cc);
 }
 
 .hamburgerBtn {
@@ -141,15 +239,15 @@
   color: #0f172a;
   cursor: pointer;
   padding: 0.35rem;
-  border-radius: 8px;
+  border-radius: 50px;
   align-items: center;
   justify-content: center;
 }
 
 /* =========================================
-   تنسيقات الجوال الفاخرة والنقية (SaaS Mobile Menu)
+   تنسيقات الجوال القاطعة بخلفية بيضاء صلبة 100%
    ========================================= */
-@media (max-width: 968px) {
+@media (max-width: 1100px) {
   .navContainer {
     padding: 0 1rem;
   }
@@ -169,7 +267,10 @@
     right: 0;
     bottom: 0;
     height: calc(100vh - 70px);
-    background: #ffffff !important; /* خلفية بيضاء ناصعة وجذابة */
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-bottom: 1px solid #e2e8f0;
     flex-direction: column;
     align-items: stretch;
     padding: 1.5rem 1.25rem 2.5rem 1.25rem;
@@ -209,7 +310,7 @@
     background-color: rgba(0, 82, 204, 0.08);
     width: 36px;
     height: 36px;
-    border-radius: 10px;
+    border-radius: 50px;
     flex-shrink: 0;
   }
 
@@ -221,7 +322,7 @@
     color: #0f172a;
     font-weight: 800;
     padding: 0.75rem 1rem;
-    border-radius: 14px;
+    border-radius: 50px;
     background-color: #f8fafc;
     border: 1px solid #f1f5f9;
     transition: all 0.2s ease;
@@ -249,46 +350,14 @@
     color: #0f172a;
     padding: 0.9rem;
     font-size: 1rem;
-    border-radius: 14px;
+    border-radius: 50px;
   }
 
   .mobileNavActions .registerBtn {
     width: 100%;
     padding: 0.95rem;
     font-size: 1rem;
-    border-radius: 14px;
+    border-radius: 50px;
     box-shadow: 0 6px 18px rgba(0, 82, 204, 0.25);
-  }
-}
-.navLinks {
-  display: flex;
-  align-items: center;
-  gap: 1.1rem; /* تقليل المسافة من 2rem إلى 1.1rem لتوفير مساحة */
-  margin: 0 auto;
-}
-
-.navLink {
-  color: #475569;
-  font-size: 1rem; /* تصغير الخط قليلاً من 0.95rem إلى 0.875rem */
-  font-weight: 700;
-  text-decoration: none;
-  white-space: nowrap;
-}
-@media (max-width: 1100px) {
-  .desktopNavActions {
-    display: none;
-  }
-
-  .hamburgerBtn {
-    display: flex;
-  }
-
-  .navLinks {
-    /* تفعيل قائمة الجوال عند الشاشات أقل من 1100px */
-    position: fixed;
-    top: 70px;
-    left: 0;
-    right: 0;
-    /* ... باقي تنسيقات الجوال كما هي */
   }
 }

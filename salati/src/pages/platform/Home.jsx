@@ -261,6 +261,7 @@ const content = {
     linkHow: 'كيف تعمل',
     linkPricing: 'الأسعار',
     linkFaq: 'الأسئلة الشائعة',
+    linkContact: 'تواصل معنا',
     linkTerms: 'شروط الخدمة',
     linkPrivacy: 'سياسة الخصوصية',
     copyright: 'جميع الحقوق محفوظة منصة salati © 2026'
@@ -402,6 +403,7 @@ const content = {
     linkHow: 'Comment ça marche',
     linkPricing: 'Tarifs',
     linkFaq: 'FAQ',
+    linkContact: 'Contact',
     linkTerms: 'Conditions d\'utilisation',
     linkPrivacy: 'Politique de confidentialité',
     copyright: 'Tous droits réservés salati © 2026'
@@ -475,6 +477,15 @@ export default function Home() {
 
   const navigateTo = (e, targetPath) => {
     e.preventDefault();
+    if (targetPath.startsWith('#')) {
+      const element = document.querySelector(targetPath);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        window.location.href = '/' + targetPath;
+      }
+      return;
+    }
     window.history.pushState({}, '', targetPath);
     window.dispatchEvent(new Event('popstate'));
   };
@@ -807,151 +818,153 @@ export default function Home() {
           </div>
         </div>
       </section>
-{/* قسم التواصل الاحترافي العالمي */}
-<section id="contact" className={styles.contactSection}>
-  <div className={`${styles.contactContainer} ${styles.revealOnScroll} ${styles.fadeUp}`}>
-    
-    {/* الجانب الأيمن: معلومات المساعدة المباشرة */}
-    <div className={styles.contactInfoSide}>
-      <div className={styles.liveStatusBadge}>
-        <span className={styles.statusPulse}></span>
-        <span>{lang === 'ar' ? 'فريق الدعم متصل الآن (58 ولاية)' : 'Support en ligne (58 Wilayas)'}</span>
-      </div>
 
-      <h2 className={styles.contactMainTitle}>
-        {lang === 'ar' ? (
-          <>نحن هنا لمساعدتك في <span>انطلاقة صالتك</span> الرقمية</>
-        ) : (
-          <>Nous sommes là pour propulser <span>votre salle</span></>
-        )}
-      </h2>
+      {/* قسم التواصل الاحترافي العالمي */}
+      <section id="contact" className={styles.contactSection}>
+        <div className={`${styles.contactContainer} ${styles.revealOnScroll} ${styles.fadeUp}`}>
+          
+          {/* الجانب الأيمن: معلومات المساعدة المباشرة */}
+          <div className={styles.contactInfoSide}>
+            <div className={styles.liveStatusBadge}>
+              <span className={styles.statusPulse}></span>
+              <span>{lang === 'ar' ? 'فريق الدعم متصل الآن (58 ولاية)' : 'Support en ligne (58 Wilayas)'}</span>
+            </div>
 
-      <p className={styles.contactMainDesc}>
-        {lang === 'ar'
-          ? 'سواء كان لديك استفسار حول ضبط تقويم الحجوزات، أو ترغب في استشارة حول تفعيل كود QR لتقييمات Google Maps، فريقنا جاهز لمساعدتك.'
-          : 'Que vous ayez des questions sur l\'agenda ou le QR Code Google Maps, notre équipe est à votre entière disposition.'}
-      </p>
+            <h2 className={styles.contactMainTitle}>
+              {lang === 'ar' ? (
+                <>نحن هنا لمساعدتك في <span>انطلاقة صالتك</span> الرقمية</>
+              ) : (
+                <>Nous sommes là pour propulser <span>votre salle</span></>
+              )}
+            </h2>
 
-      <div className={styles.bentoContactGrid}>
-        {/* بطاقة واتساب المباشرة */}
-        <a 
-          href="https://wa.me/213550000000" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className={`${styles.bentoContactCard} ${styles.waCard}`}
-        >
-          <div className={styles.bentoIconWrapper}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-            </svg>
-          </div>
-          <div className={styles.bentoCardDetails}>
-            <strong>{lang === 'ar' ? 'محادثة WhatsApp فوريّة' : 'Chat WhatsApp Direct'}</strong>
-            <span>{lang === 'ar' ? 'رد في أقل من 5 دقائق' : 'Réponse en moins de 5 min'}</span>
-          </div>
-          <div className={styles.arrowIcon}>←</div>
-        </a>
+            <p className={styles.contactMainDesc}>
+              {lang === 'ar'
+                ? 'سواء كان لديك استفسار حول ضبط تقويم الحجوزات، أو ترغب في استشارة حول تفعيل كود QR لتقييمات Google Maps، فريقنا جاهز لمساعدتك.'
+                : 'Que vous ayez des questions sur l\'agenda ou le QR Code Google Maps, notre équipe est à votre entière disposition.'}
+            </p>
 
-        {/* بطاقة الاتصال الهاتفي */}
-        <a href="tel:+213550000000" className={styles.bentoContactCard}>
-          <div className={styles.bentoIconWrapper}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-            </svg>
-          </div>
-          <div className={styles.bentoCardDetails}>
-            <strong>+213 (0) 550 00 00 00</strong>
-            <span>{lang === 'ar' ? 'من الأحد إلى الخميس (09:00 - 18:00)' : 'Dim - Jeu (09:00 - 18:00)'}</span>
-          </div>
-        </a>
-      </div>
-    </div>
-
-    {/* الجانب الأيسر: استمارة التواصل الفاخرة */}
-    <div className={styles.contactFormWrapper}>
-      <div className={styles.formCardHeader}>
-        <h3>{lang === 'ar' ? 'احجز استشارة مجانية' : 'Demander une consultation'}</h3>
-        <p>{lang === 'ar' ? 'أدخل معلوماتك وسيتصل بك مستشارنا التقني فوراً' : 'Laissez-nous vos coordonnées'}</p>
-      </div>
-
-      <form onSubmit={(e) => e.preventDefault()} className={styles.saasContactForm}>
-        <div className={styles.inputFieldGroup}>
-          <label>{lang === 'ar' ? 'اسم الصالة أو اسمك الشخصي' : 'Nom ou Nom de la salle'}</label>
-          <input 
-            type="text" 
-            placeholder={lang === 'ar' ? 'مثال: صالة الأحلام - الجزائر' : 'Ex: Salle Les Rêves'} 
-            required 
-          />
-        </div>
-
-        <div className={styles.inputRow}>
-          <div className={styles.inputFieldGroup}>
-            <label>{lang === 'ar' ? 'رقم الهاتف' : 'Téléphone'}</label>
-            <input type="tel" placeholder="05XX XX XX XX" required />
-          </div>
-
-          <div className={styles.inputFieldGroup}>
-            <label>{lang === 'ar' ? 'الولاية' : 'Wilaya'}</label>
-            <input type="text" placeholder={lang === 'ar' ? 'مثال: وهران (31)' : 'Ex: Oran (31)'} required />
-          </div>
-        </div>
-
-        <div className={styles.inputFieldGroup}>
-          <label>{lang === 'ar' ? 'كيف يمكننا مساعدتك؟' : 'Message'}</label>
-          <textarea 
-            rows="3" 
-            placeholder={lang === 'ar' ? 'اكتب استفسارك هنا...' : 'Votre message...'}
-          ></textarea>
-        </div>
-
-        <button type="submit" className={styles.submitSaasBtn}>
-          <span>{lang === 'ar' ? 'إرسال الطلب الآن' : 'Envoyer la demande'}</span>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-          </svg>
-        </button>
-      </form>
-    </div>
-
-  </div>
-</section>
-      {/* 6. قسم الأسئلة الشائعة (FAQ) */}
-      <section id="faq" className={styles.faqSection}>
-        <div className={`${styles.faqHeader} ${styles.revealOnScroll} ${styles.fadeUp}`}>
-          <h2 className={styles.faqTitle}>{t.faqTitle}</h2>
-          <p className={styles.faqSubtitle}>{t.faqSubtitle}</p>
-        </div>
-
-        <div className={styles.faqContainer}>
-          {t.faqs.map((faq, index) => {
-            const isOpen = openFaq === index;
-            return (
-              <div 
-                key={index} 
-                className={`${styles.faqItem} ${isOpen ? styles.faqItemOpen : ''} ${styles.revealOnScroll} ${styles.fadeUp}`}
-                style={{ transitionDelay: `${index * 0.08}s` }}
+            <div className={styles.bentoContactGrid}>
+              {/* بطاقة واتساب المباشرة */}
+              <a 
+                href="https://wa.me/213550000000" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className={`${styles.bentoContactCard} ${styles.waCard}`}
               >
-                <button 
-                  className={styles.faqQuestion}
-                  onClick={() => toggleFaq(index)}
-                  aria-expanded={isOpen}
-                >
-                  <span>{faq.q}</span>
-                  <span className={`${styles.faqChevron} ${isOpen ? styles.faqChevronOpen : ''}`}>
-                    <IconChevronDown />
-                  </span>
-                </button>
-                {isOpen && (
-                  <div className={styles.faqAnswer}>
-                    <p>{faq.a}</p>
-                  </div>
-                )}
+                <div className={styles.bentoIconWrapper}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                  </svg>
+                </div>
+                <div className={styles.bentoCardDetails}>
+                  <strong>{lang === 'ar' ? 'محادثة WhatsApp فوريّة' : 'Chat WhatsApp Direct'}</strong>
+                  <span>{lang === 'ar' ? 'رد في أقل من 5 دقائق' : 'Réponse en moins de 5 min'}</span>
+                </div>
+                <div className={styles.arrowIcon}>←</div>
+              </a>
+
+              {/* بطاقة الاتصال الهاتفي */}
+              <a href="tel:+213550000000" className={styles.bentoContactCard}>
+                <div className={styles.bentoIconWrapper}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                  </svg>
+                </div>
+                <div className={styles.bentoCardDetails}>
+                  <strong>+213 (0) 550 00 00 00</strong>
+                  <span>{lang === 'ar' ? 'من الأحد إلى الخميس (09:00 - 18:00)' : 'Dim - Jeu (09:00 - 18:00)'}</span>
+                </div>
+              </a>
+            </div>
+          </div>
+
+          {/* الجانب الأيسر: استمارة التواصل الفاخرة */}
+          <div className={styles.contactFormWrapper}>
+            <div className={styles.formCardHeader}>
+              <h3>{lang === 'ar' ? 'احجز استشارة مجانية' : 'Demander une consultation'}</h3>
+              <p>{lang === 'ar' ? 'أدخل معلوماتك وسيتصل بك مستشارنا التقني فوراً' : 'Laissez-nous vos coordonnées'}</p>
+            </div>
+
+            <form onSubmit={(e) => e.preventDefault()} className={styles.saasContactForm}>
+              <div className={styles.inputFieldGroup}>
+                <label>{lang === 'ar' ? 'اسم الصالة أو اسمك الشخصي' : 'Nom ou Nom de la salle'}</label>
+                <input 
+                  type="text" 
+                  placeholder={lang === 'ar' ? 'مثال: صالة الأحلام - الجزائر' : 'Ex: Salle Les Rêves'} 
+                  required 
+                />
               </div>
-            );
-          })}
+
+              <div className={styles.inputRow}>
+                <div className={styles.inputFieldGroup}>
+                  <label>{lang === 'ar' ? 'رقم الهاتف' : 'Téléphone'}</label>
+                  <input type="tel" placeholder="05XX XX XX XX" required />
+                </div>
+
+                <div className={styles.inputFieldGroup}>
+                  <label>{lang === 'ar' ? 'الولاية' : 'Wilaya'}</label>
+                  <input type="text" placeholder={lang === 'ar' ? 'مثال: وهران (31)' : 'Ex: Oran (31)'} required />
+                </div>
+              </div>
+
+              <div className={styles.inputFieldGroup}>
+                <label>{lang === 'ar' ? 'كيف يمكننا مساعدتك؟' : 'Message'}</label>
+                <textarea 
+                  rows="3" 
+                  placeholder={lang === 'ar' ? 'اكتب استفسارك هنا...' : 'Votre message...'}
+                ></textarea>
+              </div>
+
+              <button type="submit" className={styles.submitSaasBtn}>
+                <span>{lang === 'ar' ? 'إرسال الطلب الآن' : 'Envoyer la demande'}</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </button>
+            </form>
+          </div>
+
         </div>
       </section>
+{/* 6. قسم الأسئلة الشائعة (FAQ) */}
+<section id="faq" className={styles.faqSection}>
+  <div className={`${styles.faqHeader} ${styles.revealOnScroll} ${styles.fadeUp}`}>
+    <h2 className={styles.faqTitle}>{t.faqTitle}</h2>
+    <p className={styles.faqSubtitle}>{t.faqSubtitle}</p>
+  </div>
+
+  <div className={`${styles.faqContainer} ${styles.revealOnScroll} ${styles.fadeUp}`}>
+    {t.faqs.map((faq, index) => {
+      const isOpen = openFaq === index;
+      return (
+        <div 
+          key={index} 
+          className={`${styles.faqItem} ${isOpen ? styles.faqItemOpen : ''}`}
+        >
+          <button 
+            className={styles.faqQuestion}
+            onClick={() => toggleFaq(index)}
+            aria-expanded={isOpen}
+          >
+            <span>{faq.q}</span>
+            <span className={`${styles.faqChevron} ${isOpen ? styles.faqChevronOpen : ''}`}>
+              <IconChevronDown />
+            </span>
+          </button>
+          
+          {/* الحاوية الانسيابية للأنيميشن */}
+          <div className={`${styles.faqAnswerWrapper} ${isOpen ? styles.faqAnswerOpen : ''}`}>
+            <div className={styles.faqAnswerInner}>
+              <p>{faq.a}</p>
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</section>
 
       {/* 7. قسم الفوتر (Footer) */}
       <footer className={styles.footer}>
@@ -964,11 +977,12 @@ export default function Home() {
           <div className={styles.footerCol}>
             <h4>{t.footerCol1}</h4>
             <ul className={styles.footerList}>
-              <li><a href="#">{t.linkHome}</a></li>
-              <li><a href="#why-us">{t.linkWhy}</a></li>
-              <li><a href="#how-it-works">{t.linkHow}</a></li>
-              <li><a href="#pricing">{t.linkPricing}</a></li>
-              <li><a href="#faq">{t.linkFaq}</a></li>
+              <li><a href="#" onClick={(e) => navigateTo(e, '/')}>{t.linkHome}</a></li>
+              <li><a href="#why-us" onClick={(e) => navigateTo(e, '#why-us')}>{t.linkWhy}</a></li>
+              <li><a href="#how-it-works" onClick={(e) => navigateTo(e, '#how-it-works')}>{t.linkHow}</a></li>
+              <li><a href="#pricing" onClick={(e) => navigateTo(e, '#pricing')}>{t.linkPricing}</a></li>
+              <li><a href="#faq" onClick={(e) => navigateTo(e, '#faq')}>{t.linkFaq}</a></li>
+              <li><a href="#contact" onClick={(e) => navigateTo(e, '#contact')}>{t.linkContact}</a></li>
             </ul>
           </div>
 

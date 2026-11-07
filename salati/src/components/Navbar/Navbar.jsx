@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styles from './Navbar.module.css';
 
-/* أيقونات قائمة الجوال الاحترافية */
+/* أيقونات الملاحة والقائمة */
 const IconHome = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -60,9 +60,32 @@ const IconClose = () => (
   </svg>
 );
 
+/* أيقونات قائمة تغيير اللغة المنسدلة */
+const IconGlobeLang = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"></circle>
+    <line x1="2" y1="12" x2="22" y2="12"></line>
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z"></path>
+  </svg>
+);
+
+const IconChevronLang = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 12 15 18 9"></polyline>
+  </svg>
+);
+
+const IconCheckLang = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"></polyline>
+  </svg>
+);
+
 export default function Navbar() {
   const [lang, setLang] = useState(document.documentElement.lang || 'ar');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+  const langDropdownRef = useRef(null);
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -77,6 +100,17 @@ export default function Navbar() {
     return () => observer.disconnect();
   }, []);
 
+  /* إغلاق قائمة اللغات المنسدلة عند الضغط خارجها */
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (langDropdownRef.current && !langDropdownRef.current.contains(event.target)) {
+        setLangDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -85,11 +119,11 @@ export default function Navbar() {
     }
   }, [mobileMenuOpen]);
 
-  const toggleLanguage = () => {
-    const newLang = lang === 'ar' ? 'fr' : 'ar';
+  const changeLanguage = (newLang) => {
     document.documentElement.lang = newLang;
     document.documentElement.dir = newLang === 'ar' ? 'rtl' : 'ltr';
     setLang(newLang);
+    setLangDropdownOpen(false);
   };
 
   const navigateTo = (e, targetPath) => {
@@ -174,15 +208,43 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* أزرار الإجراءات بزر اللغة والهامبرغر */}
+        {/* أزرار الإجراءات وزر اللغة المنسدل والهامبرغر */}
         <div className={styles.navActions}>
-          <button 
-            onClick={toggleLanguage} 
-            className={styles.langBtn} 
-            title={isAr ? 'Changer la langue' : 'تغيير اللغة'}
-          >
-            {isAr ? 'FR' : 'عربي'}
-          </button>
+          
+          {/* مكون زر تغيير اللغة مع القائمة المنسدلة */}
+          <div className={styles.langWrapper} ref={langDropdownRef}>
+            <button 
+              onClick={() => setLangDropdownOpen(!langDropdownOpen)} 
+              className={`${styles.langBtn} ${langDropdownOpen ? styles.langBtnActive : ''}`}
+              title={isAr ? 'اختر اللغة' : 'Choisir la langue'}
+              aria-expanded={langDropdownOpen}
+            >
+              <IconGlobeLang />
+              <span>{isAr ? 'AR' : 'FR'}</span>
+              <span className={`${styles.langChevron} ${langDropdownOpen ? styles.langChevronOpen : ''}`}>
+                <IconChevronLang />
+              </span>
+            </button>
+
+            {langDropdownOpen && (
+              <div className={styles.langDropdownMenu}>
+                <button 
+                  className={`${styles.langOption} ${lang === 'ar' ? styles.langOptionSelected : ''}`}
+                  onClick={() => changeLanguage('ar')}
+                >
+                  <span>العربية (AR)</span>
+                  {lang === 'ar' && <IconCheckLang />}
+                </button>
+                <button 
+                  className={`${styles.langOption} ${lang === 'fr' ? styles.langOptionSelected : ''}`}
+                  onClick={() => changeLanguage('fr')}
+                >
+                  <span>Français (FR)</span>
+                  {lang === 'fr' && <IconCheckLang />}
+                </button>
+              </div>
+            )}
+          </div>
 
           <div className={styles.desktopNavActions}>
             <a href="/login" onClick={(e) => navigateTo(e, '/login')} className={styles.loginBtn}>
