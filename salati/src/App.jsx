@@ -12,6 +12,7 @@ import AdminDashboard from './admin/AdminDashboard';
 import HallsCatalog from './pages/platform/HallsCatalog';
 import Terms from './pages/platform/Terms';
 import Privacy from './pages/platform/Privacy';
+import HallShowcase from './pages/public/HallShowcase';
 
 // استدعاء مكون الواتساب العائم
 import WhatsAppWidget from './components/WhatsAppWidget';
@@ -38,6 +39,11 @@ export default function App() {
     path === '/privacy';
 
   const renderPage = () => {
+    // معالجة أي رابط ديناميكي للصالة يبتدئ بـ /v/
+    if (path.startsWith('/v/')) {
+      return <HallShowcase />;
+    }
+
     switch (path) {
       case '/register': return <Register />;
       case '/login': return <Login />;

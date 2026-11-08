@@ -1,5 +1,12 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 import styles from './Login.module.css';
+
+// دالة تنقل محلية للتوجيه السلس
+const navigate = (to) => {
+  window.history.pushState({}, '', to);
+  window.dispatchEvent(new Event('popstate'));
+};
 
 const translations = {
   ar: {
@@ -12,6 +19,7 @@ const translations = {
     rememberMe: 'تذكرني على هذا الجهاز',
     forgotPassword: 'نسيت كلمة المرور؟',
     submitBtn: 'دخول لوحة التحكم',
+    submittingBtn: 'جاري التحقق والتحويل...',
     noAccount: 'ليس لديك حساب بعد؟',
     registerLink: 'سجّل صالتك الآن'
   },
@@ -25,6 +33,7 @@ const translations = {
     rememberMe: 'Se souvenir de moi',
     forgotPassword: 'Mot de passe oublié ?',
     submitBtn: 'Accéder au tableau de bord',
+    submittingBtn: 'Connexion en cours...',
     noAccount: 'Vous n’avez pas encore de compte ?',
     registerLink: 'Inscrivez votre salle'
   }
@@ -37,6 +46,8 @@ export default function Login() {
     password: '',
     rememberMe: false
   });
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -54,10 +65,33 @@ export default function Login() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('بيانات الدخول:', formData);
-    // سيتم التوجيه إلى لوحة التحكم /dashboard بعد الربط بـ Supabase
+    setLoading(true);
+    setErrorMessage('');
+
+    try {
+      // 1. تسجيل الدخول عبر Supabase Auth
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (error) throw error;
+
+      if (data?.user) {
+        // 2. التوجيه المباشر إلى لوحة التحكم عند نجاح الدخول
+        navigate('/admin');
+      }
+    } catch (error) {
+      setErrorMessage(
+        lang === 'ar' 
+          ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.' 
+          : 'E-mail ou mot de passe incorrect.'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const t = translations[lang] || translations.ar;
@@ -73,6 +107,23 @@ export default function Login() {
           </h1>
           <p className={styles.subtitle}>{t.subtitle}</p>
         </div>
+
+        {/* تنبيه الخطأ عند كتابة معلومات خاطئة */}
+        {errorMessage && (
+          <div style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.08)',
+            border: '1px solid rgba(239, 68, 68, 0.2)',
+            color: '#dc2626',
+            padding: '0.75rem 1rem',
+            borderRadius: '50px',
+            fontSize: '0.875rem',
+            fontWeight: '700',
+            marginBottom: '1.5rem',
+            textAlign: 'center'
+          }}>
+            {errorMessage}
+          </div>
+        )}
 
         {/* نموذج الدخول */}
         <form onSubmit={handleSubmit} className={styles.form}>
@@ -95,7 +146,16 @@ export default function Login() {
           <div className={styles.inputGroup}>
             <div className={styles.passwordHeader}>
               <label htmlFor="password">{t.passwordLabel}</label>
-              <a href="/reset-password" className={styles.forgotLink}>{t.forgotPassword}</a>
+              <a 
+                href="/reset-password" 
+                className={styles.forgotLink}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate('/reset-password');
+                }}
+              >
+                {t.forgotPassword}
+              </a>
             </div>
             <input
               type="password"
@@ -121,8 +181,8 @@ export default function Login() {
           </div>
 
           {/* زر الدخول */}
-          <button type="submit" className={styles.submitBtn}>
-            {t.submitBtn}
+          <button type="submit" className={styles.submitBtn} disabled={loading}>
+            {loading ? t.submittingBtn : t.submitBtn}
           </button>
 
         </form>
@@ -130,7 +190,14 @@ export default function Login() {
         {/* رابط التسجيل */}
         <div className={styles.footer}>
           <span>{t.noAccount} </span>
-          <a href="/register" className={styles.link}>{t.registerLink}</a>
+          <button 
+            type="button" 
+            className={styles.link}
+            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+            onClick={() => navigate('/register')}
+          >
+            {t.registerLink}
+          </button>
         </div>
 
       </div>

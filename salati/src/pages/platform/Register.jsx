@@ -1,217 +1,200 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 import styles from './Register.module.css';
 
-// قائمة الـ 58 ولاية الجزائرية
-const ALGERIAN_WILAYAS = [
-  "01 - أدرار", "02 - الشلف", "03 - الأغواط", "04 - أم البواقي", "05 - باتنة", "06 - بجاية",
-  "07 - بسكرة", "08 - بشار", "09 - البليدة", "10 - البويرة", "11 - تمنراست", "12 - تبسة",
-  "13 - تلمسان", "14 - تيارت", "15 - تيزي وزو", "16 - الجزائر", "17 - الجلفة", "18 - جيجل",
-  "19 - سطيف", "20 - سعيدة", "21 - سكيكدة", "22 - سيدي بلعباس", "23 - عنابة", "24 - قالمة",
-  "25 - قسنطينة", "26 - المدية", "27 - مستغانم", "28 - المسيلة", "29 - معسكر", "30 - ورقلة",
-  "31 - وهران", "32 - البيض", "33 - إليزي", "34 - برج بوعريريج", "35 - بومرداس", "36 - الطارف",
-  "37 - تندوف", "38 - تسمسيلت", "39 - الوادي", "40 - خنشلة", "41 - سوق أهراس", "42 - تيبازة",
-  "43 - ميلة", "44 - عين الدفلى", "45 - النعامة", "46 - عين تموشنت", "47 - غرداية", "48 - غليزان",
-  "49 - المغير", "50 - المنيعة", "51 - أولاد جلال", "52 - برج باجي مختار", "53 - بني عباس",
-  "54 - تيميمون", "55 - تقرت", "56 - جانت", "57 - إن صالح", "58 - إن قزام"
-];
-
-const translations = {
-  ar: {
-    title: 'أنشئ حساب صالتك على',
-    subtitle: 'انضم إلى منصة salati وابدأ في استلام طلبات المعاينة والحجوزات أونلاين.',
-    hallNameLabel: 'اسم الصالة',
-    hallNamePlaceholder: 'مثال: قاعة الملكة للأفراح',
-    ownerNameLabel: 'الاسم واللقب',
-    ownerNamePlaceholder: 'محمد بن علي',
-    phoneLabel: 'رقم الهاتف',
-    phonePlaceholder: '0661XX2233',
-    wilayaLabel: 'الولاية',
-    selectWilaya: 'اختر الولاية...',
-    emailLabel: 'البريد الإلكتروني',
-    emailPlaceholder: 'owner@salati.dz',
-    passwordLabel: 'كلمة المرور',
-    passwordPlaceholder: '••••••••',
-    submitBtn: 'إنشاء الحساب وتفعيل الصالة',
-    hasAccount: 'لديك حساب بالفعل؟',
-    loginLink: 'تسجيل الدخول'
-  },
-  fr: {
-    title: 'Inscrivez votre salle sur',
-    subtitle: 'Rejoignez salati et commencez à recevoir vos demandes de visite et réservations en ligne.',
-    hallNameLabel: 'Nom de la salle',
-    hallNamePlaceholder: 'Ex: Salle El Malika',
-    ownerNameLabel: 'Nom & Prénom',
-    ownerNamePlaceholder: 'Mohamed Benali',
-    phoneLabel: 'Téléphone',
-    phonePlaceholder: '0661XX2233',
-    wilayaLabel: 'Wilaya',
-    selectWilaya: 'Sélectionnez la wilaya...',
-    emailLabel: 'Adresse E-mail',
-    emailPlaceholder: 'owner@salati.dz',
-    passwordLabel: 'Mot de passe',
-    passwordPlaceholder: '••••••••',
-    submitBtn: 'Créer le compte et activer la salle',
-    hasAccount: 'Vous avez déjà un compte ?',
-    loginLink: 'Se connecter'
-  }
+// دالة تنقل محلية لتفادي التداخل
+const navigate = (to) => {
+  window.history.pushState({}, '', to);
+  window.dispatchEvent(new Event('popstate'));
 };
 
 export default function Register() {
-  const [lang, setLang] = useState(document.documentElement.lang || 'ar');
   const [formData, setFormData] = useState({
     hallName: '',
-    ownerName: '',
+    fullName: '',
     phone: '',
-    wilaya: '',
+    wilaya: '16 - الجزائر',
     email: '',
     password: ''
   });
 
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setLang(document.documentElement.lang || 'ar');
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
-    return () => observer.disconnect();
-  }, []);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const generateSlug = (name) => {
+    if (!name) return `hall-${Date.now()}`;
+    
+    const cleaned = name
+      .trim()
+      .toLowerCase()
+      .replace(/[^\w\u0600-\u06FF\s-]/g, '')
+      .replace(/[\s_]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    return cleaned || `hall-${Date.now()}`;
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('بيانات التسجيل:', formData);
-    // سيتم ربطه بـ Supabase Auth & DB
-  };
+    setLoading(true);
+    setErrorMessage('');
 
-  const t = translations[lang] || translations.ar;
+    try {
+      // 1. إنشاء الحساب في Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+            phone: formData.phone
+          }
+        }
+      });
+
+      if (authError) throw authError;
+
+      const user = authData.user;
+
+      if (user) {
+        // 2. إنشاء سجل القاعة في جدول halls
+        const generatedSlug = generateSlug(formData.hallName);
+
+        const { error: hallError } = await supabase
+          .from('halls')
+          .insert([
+            {
+              name: formData.hallName,
+              slug: generatedSlug,
+              wilaya: formData.wilaya,
+              capacity: 500
+            }
+          ]);
+
+        if (hallError) {
+          console.error('تنبيه: تم إنشاء الحساب ولكن فشل حفظ القاعة:', hallError.message);
+        }
+
+        // 3. التوجيه الفوري إلى لوحة التحكم
+        navigate('/admin');
+      }
+    } catch (error) {
+      setErrorMessage(error.message || 'حدث خطأ أثناء إنشاء الحساب، يرجى المحاولة لاحقاً.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className={styles.pageWrapper}>
       <div className={styles.cardContainer}>
-        
-        {/* العنونة والترويسة */}
         <div className={styles.header}>
-          <h1 className={styles.title}>
-            {t.title} <span className={styles.brandName}>salati<span className={styles.dot}>.</span></span>
-          </h1>
-          <p className={styles.subtitle}>{t.subtitle}</p>
+          <h2 className={styles.title}>
+            أنشئ حساب صالتك على <span className={styles.brandName}>salati<span className={styles.dot}>.</span></span>
+          </h2>
+          <p className={styles.subtitle}>
+            انضم إلى منصة salati وابدأ في استلام طلبات المعاينة والحجوزات أونلاين.
+          </p>
         </div>
 
-        {/* نموذج التسجيل */}
+        {errorMessage && (
+          <div className={styles.errorBanner}>
+            {errorMessage}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.gridRow}>
-            
-            {/* اسم الصالة */}
             <div className={styles.inputGroup}>
-              <label htmlFor="hallName">{t.hallNameLabel}</label>
+              <label>اسم الصالة</label>
               <input
                 type="text"
-                id="hallName"
                 name="hallName"
                 required
-                placeholder={t.hallNamePlaceholder}
                 value={formData.hallName}
                 onChange={handleChange}
+                placeholder="الأفراح"
               />
             </div>
-
-            {/* اسم صاحب الصالة */}
             <div className={styles.inputGroup}>
-              <label htmlFor="ownerName">{t.ownerNameLabel}</label>
+              <label>الاسم واللقب</label>
               <input
                 type="text"
-                id="ownerName"
-                name="ownerName"
+                name="fullName"
                 required
-                placeholder={t.ownerNamePlaceholder}
-                value={formData.ownerName}
+                value={formData.fullName}
                 onChange={handleChange}
+                placeholder="عبدالرحمن"
               />
             </div>
-
           </div>
 
           <div className={styles.gridRow}>
-            
-            {/* رقم الهاتف */}
             <div className={styles.inputGroup}>
-              <label htmlFor="phone">{t.phoneLabel}</label>
+              <label>رقم الهاتف</label>
               <input
                 type="tel"
-                id="phone"
                 name="phone"
                 required
-                placeholder={t.phonePlaceholder}
                 value={formData.phone}
                 onChange={handleChange}
+                placeholder="0562881397"
               />
             </div>
-
-            {/* الولاية (58 ولاية) */}
             <div className={styles.inputGroup}>
-              <label htmlFor="wilaya">{t.wilayaLabel}</label>
-              <select
-                id="wilaya"
-                name="wilaya"
-                required
-                value={formData.wilaya}
-                onChange={handleChange}
-              >
-                <option value="">{t.selectWilaya}</option>
-                {ALGERIAN_WILAYAS.map((w, index) => (
-                  <option key={index} value={w}>{w}</option>
-                ))}
+              <label>الولاية</label>
+              <select name="wilaya" value={formData.wilaya} onChange={handleChange}>
+                <option value="16 - الجزائر">16 - الجزائر</option>
+                <option value="35 - بومرداس">35 - بومرداس</option>
+                <option value="09 - البليدة">09 - البليدة</option>
+                <option value="15 - تيزي وزو">15 - تيزي وزو</option>
+                <option value="31 - وهران">31 - وهران</option>
+                <option value="25 - قسنطينة">25 - قسنطينة</option>
               </select>
             </div>
-
           </div>
 
           <div className={styles.gridRow}>
-            
-            {/* البريد الإلكتروني */}
             <div className={styles.inputGroup}>
-              <label htmlFor="email">{t.emailLabel}</label>
+              <label>البريد الإلكتروني</label>
               <input
                 type="email"
-                id="email"
                 name="email"
                 required
-                placeholder={t.emailPlaceholder}
                 value={formData.email}
                 onChange={handleChange}
+                placeholder="abdourehmen4@gmail.com"
               />
             </div>
-
-            {/* كلمة المرور */}
             <div className={styles.inputGroup}>
-              <label htmlFor="password">{t.passwordLabel}</label>
+              <label>كلمة المرور</label>
               <input
                 type="password"
-                id="password"
                 name="password"
                 required
-                placeholder={t.passwordPlaceholder}
+                minLength={6}
                 value={formData.password}
                 onChange={handleChange}
+                placeholder="••••••••"
               />
             </div>
-
           </div>
 
-          {/* زر التقديم */}
-          <button type="submit" className={styles.submitBtn}>
-            {t.submitBtn}
+          <button type="submit" className={styles.submitBtn} disabled={loading}>
+            {loading ? 'جاري إنشاء الحساب وتفعيل الصالة...' : 'إنشاء الحساب وتفعيل الصالة'}
           </button>
         </form>
 
-        {/* رابط الدخول */}
         <div className={styles.footer}>
-          <span>{t.hasAccount} </span>
-          <a href="/login" className={styles.link}>{t.loginLink}</a>
+          <span>لديك حساب بالفعل؟ </span>
+          <button type="button" className={styles.link} onClick={() => navigate('/login')}>
+            تسجيل الدخول
+          </button>
         </div>
-
       </div>
     </div>
   );
