@@ -56,6 +56,18 @@ const IconWhatsApp = () => (
   </svg>
 );
 
+// دالة مساعدة لفك تشفير حقول JSON أو المصفوفات بأمان
+const parseJsonField = (field) => {
+  if (!field) return [];
+  if (Array.isArray(field)) return field;
+  try {
+    const parsed = typeof field === 'string' ? JSON.parse(field) : field;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
 export default function HallShowcase() {
   const [lang, setLang] = useState(document.documentElement.lang || 'ar');
   const [hall, setHall] = useState(null);
@@ -77,27 +89,47 @@ export default function HallShowcase() {
   });
 
   const currentPath = window.location.pathname;
-  const hallSlug = currentPath.split('/v/')[1] || 'salle-el-bahdja';
+  const rawSlug = currentPath.split('/v/')[1];
+  const hallSlug = rawSlug ? rawSlug.split('?')[0].split('#')[0] : null;
 
-  // تاريخ اليوم لتحديد الحد أدنى للاختيار (منع اختيار الماضي)
   const todayDate = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     fetchHallData();
   }, [hallSlug]);
 
-  const fetchHallData = async () => {
+ const fetchHallData = async () => {
     setLoading(true);
     try {
-      const { data: hallData } = await supabase
-        .from('halls')
-        .select('*')
-        .eq('slug', hallSlug)
-        .single();
+      let hallData = null;
+
+      // 1. البحث بالـ slug المحصل عليه من الرابط فقط
+      if (hallSlug) {
+        const { data } = await supabase
+          .from('halls')
+          .select('*')
+          .eq('slug', hallSlug)
+          .maybeSingle();
+        hallData = data;
+      }
+
+      // 2. إذا لم يجد السجل، يجلب السجل التابع للمستخدم الحالي
+      if (!hallData) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: userHall } = await supabase
+            .from('halls')
+            .select('*')
+            .eq('owner_id', user.id)
+            .maybeSingle();
+          hallData = userHall;
+        }
+      }
+
+      // تم حذف الخيار الثالث لمنع جلب بيانات قاعات قديمة غريبة
 
       if (hallData) {
         setHall(hallData);
-        // جلب التواريخ المحجوزة والمؤكدة للقاعة
         fetchBookedDates(hallData.id);
       }
     } catch (err) {
@@ -106,14 +138,13 @@ export default function HallShowcase() {
       setLoading(false);
     }
   };
-
   const fetchBookedDates = async (hallId) => {
     try {
       const { data: bookings } = await supabase
         .from('bookings')
         .select('event_date, time_slot')
         .eq('hall_id', hallId)
-        .neq('status', 'cancelled'); // جلب كل الحجوزات غير الملقاة
+        .neq('status', 'cancelled');
 
       if (bookings) {
         setBookedDates(bookings);
@@ -132,66 +163,42 @@ export default function HallShowcase() {
     setLang(nextLang);
   };
 
-  const hallImages = hall?.gallery_images?.length 
-    ? hall.gallery_images.map(url => typeof url === 'string' ? { url } : url)
-    : [
-        { url: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=80' },
-        { url: 'https://images.unsplash.com/photo-1545232979-fbfd433bd14b?auto=format&fit=crop&w=1200&q=80' },
-        { url: 'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=1200&q=80' },
-        { url: 'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1200&q=80' }
-      ];
+  // معالجة مصفوفة الصور بأمان وتأمين الروابط المكسورة أو المحلية
+  const rawImages = parseJsonField(hall?.gallery_images);
+  const fallbackImage = 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=80';
 
-  const defaultAmenitiesAr = [
-    { title: 'فصل قاعة الرجال عن النساء (مدخل مستقل)', icon: '🚪' },
-    { title: 'موقف سيارات محروس (Parking)', icon: '🚗' },
-    { title: 'طباخ ومطبخ مجهز مدمج بالكامل', icon: '🍳' },
-    { title: 'تكييف وتدفئة مركزية طوال السنة', icon: '❄️' },
-    { title: 'مولد كهربائي احتياطي (Groupe Électrogène)', icon: '⚡' },
-    { title: 'غرفة العروس الخاصة المكيفة (VIP Bride Room)', icon: '👑' },
-    { title: 'نظام DJ وإضاءة كوشة مجهزة', icon: '🎶' }
-  ];
+  const hallImages = rawImages
+    .map(item => {
+      let src = '';
+      if (typeof item === 'string') src = item;
+      else if (item && typeof item === 'object' && item.url) src = item.url;
+      else if (item) src = String(item);
 
-  const defaultAmenitiesFr = [
-    { title: 'Séparation salle hommes et femmes (Entrée indépendante)', icon: '🚪' },
-    { title: 'Parking surveillé et sécurisé', icon: '🚗' },
-    { title: 'Cuisine équipée et cuisinier inclus', icon: '🍳' },
-    { title: 'Climatisation et chauffage central', icon: '❄️' },
-    { title: 'Groupe électrogène de secours', icon: '⚡' },
-    { title: 'Chambre VIP privée pour la mariée', icon: '👑' },
-    { title: 'Système DJ et éclairage scène équipés', icon: '🎶' }
-  ];
+      if (!src || src.startsWith('blob:') || src.includes('localhost')) {
+        return { url: fallbackImage };
+      }
+      return { url: src };
+    })
+    .filter(img => Boolean(img.url));
 
-  const defaultPricingAr = [
-    { title: 'كراء القاعة مساءا (من 2 إلى 7 مساءا)', price: '200.000' },
-    { title: 'العشاء والليل (من 5 مساءً حتى منتصف الليل) للقاعتين', price: '400.000' },
-    { title: 'الكراء في الليل (9 مساءً - 3 صباحًا)', price: '270.000' },
-    { title: 'الكراء للغذاء (للقاعتين)', price: '350.000' },
-    { title: 'العشاء للشخص الواحد (من 6 مساءا إلى 10 ليلا)', price: '3.500' },
-    { title: 'العشاء في القاعتين', price: '350.000' }
-  ];
+  // معالجة مصفوفة المميزات بأمان
+  const rawAmenities = parseJsonField(hall?.amenities);
+  const amenitiesList = rawAmenities.map(item => {
+    if (typeof item === 'string') return { title: item, icon: '✨' };
+    if (item && item.title) return { title: item.title, icon: item.icon || '✨' };
+    return { title: String(item), icon: '✨' };
+  });
 
-  const defaultPricingFr = [
-    { title: 'Location salle après-midi (14h00 à 19h00)', price: '200.000' },
-    { title: 'Dîner & Soirée (17h00 à Minuit) pour les deux salles', price: '400.000' },
-    { title: 'Location nuitée (21h00 à 03h00)', price: '270.000' },
-    { title: 'Location déjeuner (pour les deux salles)', price: '350.000' },
-    { title: 'Dîner par personne (18h00 à 22h00)', price: '3.500' },
-    { title: 'Dîner complet dans les deux salles', price: '350.000' }
-  ];
-
-  const amenitiesList = hall?.amenities?.length
-    ? hall.amenities.map(item => typeof item === 'string' ? { title: item, icon: '✨' } : item)
-    : (isAr ? defaultAmenitiesAr : defaultAmenitiesFr);
-
-  const pricingPackages = hall?.pricing_packages?.length
-    ? hall.pricing_packages
-    : (isAr ? defaultPricingAr : defaultPricingFr);
+  // معالجة مصفوفة الأسعار بأمان
+  const pricingPackages = parseJsonField(hall?.pricing_packages);
 
   const nextImage = () => {
+    if (!hallImages.length) return;
     setCurrentImgIndex((prev) => (prev + 1) % hallImages.length);
   };
 
   const prevImage = () => {
+    if (!hallImages.length) return;
     setCurrentImgIndex((prev) => (prev - 1 + hallImages.length) % hallImages.length);
   };
 
@@ -200,11 +207,10 @@ export default function HallShowcase() {
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // التحقق من توفر التاريخ والفترة المحددة
   const handleDateChange = (selectedDate, selectedSlot) => {
-    const slotToCheck = selectedSlot || bookingForm.timeSlot || pricingPackages[0]?.title;
+    const defaultSlot = pricingPackages[0]?.title || '';
+    const slotToCheck = selectedSlot || bookingForm.timeSlot || defaultSlot;
     
-    // فحص ما إذا كان التاريخ مع الفترة الزمنية محجوزاً مسبقاً
     const isTaken = bookedDates.some(
       b => b.event_date === selectedDate && b.time_slot === slotToCheck
     );
@@ -225,6 +231,7 @@ export default function HallShowcase() {
     setBookingStatus('submitting');
     try {
       const fullClientName = `${bookingForm.firstName} ${bookingForm.lastName}`.trim();
+      const defaultSlot = pricingPackages[0]?.title || '';
 
       if (hall?.id) {
         await supabase.from('bookings').insert([
@@ -233,7 +240,7 @@ export default function HallShowcase() {
             client_name: fullClientName,
             client_phone: bookingForm.phone,
             event_date: bookingForm.eventDate,
-            time_slot: bookingForm.timeSlot || pricingPackages[0]?.title,
+            time_slot: bookingForm.timeSlot || defaultSlot,
             event_type: bookingForm.eventType,
             status: 'provisional'
           }
@@ -254,20 +261,25 @@ export default function HallShowcase() {
     return <div className={styles.loadingWrapper}>{isAr ? 'جاري تحميل موقع الصالة...' : 'Chargement de la salle...'}</div>;
   }
 
-  const hallName = hall?.name || (isAr ? 'قاعة البهجة للمناسبات والأفراح' : 'Salle El Bahdja pour Événements');
-  const hallAddress = hall?.address || (isAr ? 'الجزائر العاصمة - برج الكيفان' : 'Alger - Bordj El Kiffan');
-  const phone = hall?.phone || '0555 12 34 56';
-  const mapUrl = hall?.map_url || 'https://maps.google.com';
-  const videoUrl = hall?.video_url || 'https://www.youtube.com/embed/dQw4w9WgXcQ';
-  const mapEmbedUrl = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d102372.43579040332!2d3.0039864!3d36.753768!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x128fb2634e56eb27%3A0xe2fa74d47d69287a!2sAlgiers!5e0!3m2!1sen!2sdz!4v1690000000000!5m2!1sen!2sdz";
+  const hallName = hall?.name || (isAr ? 'قاعتي' : 'Ma Salle');
+  const hallAddress = hall?.address || (hall?.visiting_hours ? `${isAr ? 'أوقات المعاينة' : 'Visites'}: ${hall.visiting_hours}` : '');
+  const phone = hall?.phone || '';
+  const mapUrl = hall?.map_url || '';
+  const videoUrl = hall?.video_url || '';
 
-  const showWhatsApp = hall?.show_whatsapp ?? true;
-  const rawWhatsAppPhone = hall?.whatsapp_number || phone || '0555123456';
+  const mapEmbedUrl = hall?.map_url && hall.map_url.includes('embed') 
+    ? hall.map_url 
+    : (hall?.map_url || '');
+
+  const showWhatsApp = hall?.show_whatsapp && (hall?.whatsapp_number || phone);
+  const rawWhatsAppPhone = hall?.whatsapp_number || phone || '';
   const cleanedPhone = rawWhatsAppPhone.replace(/\D/g, '');
   const formattedPhone = cleanedPhone.startsWith('0') ? `213${cleanedPhone.substring(1)}` : cleanedPhone;
   const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(isAr ? `مرحباً، أريد الاستفسار عن حجز ${hallName}` : `Bonjour, je souhaite me renseigner sur la salle ${hallName}`)}`;
 
   const currencyUnit = isAr ? 'دج' : 'DA';
+
+  const hasNoContent = hallImages.length === 0 && amenitiesList.length === 0 && !mapUrl && pricingPackages.length === 0;
 
   return (
     <div className={styles.showcaseLayout}>
@@ -281,9 +293,15 @@ export default function HallShowcase() {
           </div>
 
           <nav className={styles.navLinks}>
-            <button onClick={() => scrollToSection('features')}>{isAr ? 'مميزات القاعة' : 'Commodités'}</button>
-            <button onClick={() => scrollToSection('location')}>{isAr ? 'مكان القاعة' : 'Localisation'}</button>
-            <button onClick={() => scrollToSection('pricing')}>{isAr ? 'جدول الأسعار' : 'Tarifs'}</button>
+            {amenitiesList.length > 0 && (
+              <button onClick={() => scrollToSection('features')}>{isAr ? 'مميزات القاعة' : 'Commodités'}</button>
+            )}
+            {mapUrl && (
+              <button onClick={() => scrollToSection('location')}>{isAr ? 'مكان القاعة' : 'Localisation'}</button>
+            )}
+            {pricingPackages.length > 0 && (
+              <button onClick={() => scrollToSection('pricing')}>{isAr ? 'جدول الأسعار' : 'Tarifs'}</button>
+            )}
           </nav>
 
           <div className={styles.headerRightGroup}>
@@ -301,120 +319,151 @@ export default function HallShowcase() {
 
       <main className={styles.mainContainer}>
         
-        {/* عارض الصور */}
-        <section className={styles.heroCarouselSection}>
-          <div className={styles.carouselCard}>
-            <button className={styles.videoOverlayBtn} onClick={() => setIsVideoModalOpen(true)}>
-              <IconVideo />
-              <span>{isAr ? 'مشاهدة فيديو الصالة' : 'Voir la vidéo'}</span>
-            </button>
-
-            <div className={styles.sliderWrapper}>
-              {hallImages.map((img, idx) => (
-                <div
-                  key={idx}
-                  className={`${styles.slide} ${idx === currentImgIndex ? styles.slideActive : ''}`}
-                  style={{ backgroundImage: `url(${img.url})` }}
-                />
-              ))}
-            </div>
-
-            <button className={`${styles.navBtn} ${styles.prevBtn}`} onClick={prevImage} aria-label={isAr ? "السابقة" : "Précédent"}>
-              <IconChevronRight />
-            </button>
-            <button className={`${styles.navBtn} ${styles.nextBtn}`} onClick={nextImage} aria-label={isAr ? "التالية" : "Suivant"}>
-              <IconChevronLeft />
-            </button>
-
-            <div className={styles.dotsContainer}>
-              {hallImages.map((_, idx) => (
-                <span
-                  key={idx}
-                  className={`${styles.dot} ${idx === currentImgIndex ? styles.dotActive : ''}`}
-                  onClick={() => setCurrentImgIndex(idx)}
-                />
-              ))}
-            </div>
+        {/* في حالة عدم تحميل أي محتوى */}
+        {hasNoContent && (
+          <div style={{ padding: '4rem 2rem', textAlign: 'center', color: '#64748b' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏰</div>
+            <h2 style={{ color: '#1e293b', marginBottom: '0.5rem' }}>{isAr ? 'مرحباً بك في صفحة القاعة' : 'Bienvenue sur la page de la salle'}</h2>
+            <p>{isAr ? 'لم يقم المالك بإضافة الصور والأسعار بعد. يمكنك إضافتها الآن من لوحة التحكم.' : 'Le propriétaire n\'a pas encore ajouté de détails.'}</p>
           </div>
-        </section>
+        )}
 
-        {/* قسم الخصائص والموقع */}
-        <section className={styles.middleTwoColumnsSection}>
-          <div id="features" className={styles.columnFeatures}>
-            <div className={styles.cardHeader}>
-              <h2 className={styles.columnTitle}>{isAr ? 'ما الذي تشتمل عليه القاعة؟' : 'Commodités & Équipements'}</h2>
-              <span className={styles.countBadge}>{amenitiesList.length} {isAr ? 'مرافق متوفرة' : 'disponibles'}</span>
-            </div>
-
-            <div className={styles.amenitiesGridList}>
-              {amenitiesList.map((item, index) => (
-                <div key={index} className={styles.amenityRowCard}>
-                  <div className={styles.checkIconWrapper}>
-                    <IconCheckSquare />
-                  </div>
-                  <div className={styles.amenityRightMeta}>
-                    <span className={styles.featureText}>{item.title}</span>
-                  </div>
-                  <span className={styles.featureIconBox}>{item.icon || '✨'}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div id="location" className={styles.columnLocation}>
-            <div className={styles.cardHeader}>
-              <h2 className={styles.columnTitle}>{isAr ? 'مكان القاعة وموقعها' : 'Localisation de la salle'}</h2>
-              <div className={styles.addressMeta}>
-                <IconMapPin />
-                <span>{hallAddress}</span>
-              </div>
-            </div>
-
-            <div className={styles.mapFrameWrapper}>
-              <iframe
-                title="Google Maps Location"
-                src={mapEmbedUrl}
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                allowFullScreen=""
-                loading="lazy"
-              ></iframe>
-            </div>
-
-            <a href={mapUrl} target="_blank" rel="noreferrer" className={styles.openMapsBtn}>
-              <IconNavigation />
-              <span>{isAr ? 'فتح اتجاهات الوصول في Google Maps' : 'Itinéraire sur Google Maps'}</span>
-            </a>
-          </div>
-        </section>
-
-        {/* جدول أسعار الفترات والخدمات المخصص مع أزرار الحجز */}
-        <section id="pricing" className={styles.pricingSection}>
-          <div className={styles.pricingCardContainer}>
-            {pricingPackages.map((pkg, idx) => (
-              <div key={idx} className={styles.pricingRow}>
-                <div className={styles.pricingMeta}>
-                  <span className={styles.packageTitle}>{pkg.title}</span>
-                  <span className={styles.priceTag}>{pkg.price} {currencyUnit}</span>
-                </div>
-                <button 
-                  className={styles.rowBookBtn} 
-                  onClick={() => {
-                    handleDateChange(bookingForm.eventDate, pkg.title);
-                    setIsBookingModalOpen(true);
-                  }}
-                >
-                  {isAr ? 'حجز' : 'Réserver'}
+        {/* 1. معرض الصور */}
+        {hallImages.length > 0 && (
+          <section className={styles.heroCarouselSection}>
+            <div className={styles.carouselCard}>
+              {videoUrl && (
+                <button className={styles.videoOverlayBtn} onClick={() => setIsVideoModalOpen(true)}>
+                  <IconVideo />
+                  <span>{isAr ? 'مشاهدة فيديو الصالة' : 'Voir la vidéo'}</span>
                 </button>
+              )}
+
+              <div className={styles.sliderWrapper}>
+                {hallImages.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className={`${styles.slide} ${idx === currentImgIndex ? styles.slideActive : ''}`}
+                    style={{ backgroundImage: `url(${img.url})` }}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
-        </section>
+
+              {hallImages.length > 1 && (
+                <>
+                  <button className={`${styles.navBtn} ${styles.prevBtn}`} onClick={prevImage} aria-label={isAr ? "السابقة" : "Précédent"}>
+                    <IconChevronRight />
+                  </button>
+                  <button className={`${styles.navBtn} ${styles.nextBtn}`} onClick={nextImage} aria-label={isAr ? "التالية" : "Suivant"}>
+                    <IconChevronLeft />
+                  </button>
+
+                  <div className={styles.dotsContainer}>
+                    {hallImages.map((_, idx) => (
+                      <span
+                        key={idx}
+                        className={`${styles.dot} ${idx === currentImgIndex ? styles.dotActive : ''}`}
+                        onClick={() => setCurrentImgIndex(idx)}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* 2. قسم الخصائص والموقع */}
+        {(amenitiesList.length > 0 || mapUrl) && (
+          <section className={styles.middleTwoColumnsSection}>
+            
+            {amenitiesList.length > 0 && (
+              <div id="features" className={styles.columnFeatures} style={{ flex: !mapUrl ? '1 1 100%' : undefined }}>
+                <div className={styles.cardHeader}>
+                  <h2 className={styles.columnTitle}>{isAr ? 'ما الذي تشتمل عليه القاعة؟' : 'Commodités & Équipements'}</h2>
+                  <span className={styles.countBadge}>{amenitiesList.length} {isAr ? 'مرافق متوفرة' : 'disponibles'}</span>
+                </div>
+
+                <div className={styles.amenitiesGridList}>
+                  {amenitiesList.map((item, index) => (
+                    <div key={index} className={styles.amenityRowCard}>
+                      <div className={styles.checkIconWrapper}>
+                        <IconCheckSquare />
+                      </div>
+                      <div className={styles.amenityRightMeta}>
+                        <span className={styles.featureText}>{item.title}</span>
+                      </div>
+                      <span className={styles.featureIconBox}>{item.icon || '✨'}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {mapUrl && (
+              <div id="location" className={styles.columnLocation} style={{ flex: !amenitiesList.length ? '1 1 100%' : undefined }}>
+                <div className={styles.cardHeader}>
+                  <h2 className={styles.columnTitle}>{isAr ? 'مكان القاعة وموقعها' : 'Localisation de la salle'}</h2>
+                  {hallAddress && (
+                    <div className={styles.addressMeta}>
+                      <IconMapPin />
+                      <span>{hallAddress}</span>
+                    </div>
+                  )}
+                </div>
+
+                {mapEmbedUrl && (
+                  <div className={styles.mapFrameWrapper}>
+                    <iframe
+                      title="Google Maps Location"
+                      src={mapEmbedUrl}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen=""
+                      loading="lazy"
+                    ></iframe>
+                  </div>
+                )}
+
+                <a href={mapUrl} target="_blank" rel="noreferrer" className={styles.openMapsBtn}>
+                  <IconNavigation />
+                  <span>{isAr ? 'فتح اتجاهات الوصول في Google Maps' : 'Itinéraire sur Google Maps'}</span>
+                </a>
+              </div>
+            )}
+
+          </section>
+        )}
+
+        {/* 3. جدول الأسعار */}
+        {pricingPackages.length > 0 && (
+          <section id="pricing" className={styles.pricingSection}>
+            <div className={styles.pricingCardContainer}>
+              {pricingPackages.map((pkg, idx) => (
+                <div key={idx} className={styles.pricingRow}>
+                  <div className={styles.pricingMeta}>
+                    <span className={styles.packageTitle}>{pkg.title}</span>
+                    <span className={styles.priceTag}>{pkg.price} {currencyUnit}</span>
+                  </div>
+                  <button 
+                    className={styles.rowBookBtn} 
+                    onClick={() => {
+                      handleDateChange(bookingForm.eventDate, pkg.title);
+                      setIsBookingModalOpen(true);
+                    }}
+                  >
+                    {isAr ? 'حجز' : 'Réserver'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
       </main>
 
-      {/* دائرة الواتساب العائمة */}
+      {/* دائرة الواتساب */}
       {showWhatsApp && (
         <a
           href={whatsappUrl}
@@ -429,7 +478,7 @@ export default function HallShowcase() {
       )}
 
       {/* النافذة المنبثقة للفيديو */}
-      {isVideoModalOpen && (
+      {isVideoModalOpen && videoUrl && (
         <div className={styles.modalBackdrop} onClick={() => setIsVideoModalOpen(false)}>
           <div className={styles.videoModalBox} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
@@ -443,7 +492,7 @@ export default function HallShowcase() {
         </div>
       )}
 
-      {/* نافذة طلب الحجز المنبثقة المحدثة بالكامل مع اختبار التواريخ المتاحة */}
+      {/* نافذة طلب الحجز المنبثقة */}
       {isBookingModalOpen && (
         <div className={styles.modalBackdrop}>
           <div className={styles.modalBox}>
@@ -460,7 +509,6 @@ export default function HallShowcase() {
             ) : (
               <form onSubmit={handleBookingSubmit} className={styles.modalForm}>
                 
-                {/* الاسم واللقب */}
                 <div className={styles.formRow}>
                   <div className={styles.inputGroup}>
                     <label>{isAr ? 'الاسم' : 'Prénom'}</label>
@@ -484,7 +532,6 @@ export default function HallShowcase() {
                   </div>
                 </div>
 
-                {/* رقم الهاتف والرزنامة باختيار التواريخ المتاحة فقط */}
                 <div className={styles.formRow}>
                   <div className={styles.inputGroup}>
                     <label>{isAr ? 'رقم الهاتف' : 'Téléphone'}</label>
@@ -497,7 +544,7 @@ export default function HallShowcase() {
                     />
                   </div>
                   <div className={styles.inputGroup}>
-                    <label>{isAr ? 'تاريخ المناسبة (اختر التواريخ المتاحة)' : 'Date disponible'}</label>
+                    <label>{isAr ? 'تاريخ المناسبة' : 'Date de l\'événement'}</label>
                     <input
                       type="date"
                       required
@@ -508,14 +555,12 @@ export default function HallShowcase() {
                   </div>
                 </div>
 
-                {/* تنبيه الخطأ في حال اختيار تاريخ محجوز */}
                 {dateError && (
                   <div className={styles.dateErrorBox}>
                     <span>⚠️ {dateError}</span>
                   </div>
                 )}
 
-                {/* نوع المناسبة */}
                 <div className={styles.inputGroup}>
                   <label>{isAr ? 'نوع المناسبة' : 'Type d\'événement'}</label>
                   <select
@@ -532,21 +577,22 @@ export default function HallShowcase() {
                   </select>
                 </div>
 
-                {/* الأوقات والفترات المتاحة المحددة من صاحب الصالة */}
-                <div className={styles.inputGroup}>
-                  <label>{isAr ? 'الفترة الزمنية المتاحة' : 'Créneau horaire disponible'}</label>
-                  <select
-                    className={styles.selectInput}
-                    value={bookingForm.timeSlot || pricingPackages[0]?.title}
-                    onChange={(e) => handleDateChange(bookingForm.eventDate, e.target.value)}
-                  >
-                    {pricingPackages.map((pkg, idx) => (
-                      <option key={idx} value={pkg.title}>
-                        {pkg.title} ({pkg.price} {currencyUnit})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {pricingPackages.length > 0 && (
+                  <div className={styles.inputGroup}>
+                    <label>{isAr ? 'الفترة الزمنية المتاحة' : 'Créneau horaire disponible'}</label>
+                    <select
+                      className={styles.selectInput}
+                      value={bookingForm.timeSlot || pricingPackages[0]?.title}
+                      onChange={(e) => handleDateChange(bookingForm.eventDate, e.target.value)}
+                    >
+                      {pricingPackages.map((pkg, idx) => (
+                        <option key={idx} value={pkg.title}>
+                          {pkg.title} ({pkg.price} {currencyUnit})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <button type="submit" disabled={!!dateError} className={styles.submitBookingBtn}>
                   {isAr ? 'إرسال طلب الحجز' : 'Envoyer la demande'}

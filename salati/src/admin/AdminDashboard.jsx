@@ -35,7 +35,7 @@ const IconUsers = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
     <circle cx="9" cy="7" r="4"></circle>
-    <path d="M23 21v-2a4 4 0 0 3-3.87"></path>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
   </svg>
 );
@@ -146,44 +146,46 @@ export default function AdminDashboard() {
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [isInspectionModalOpen, setIsInspectionModalOpen] = useState(false);
   const [selectedBookingForContract, setSelectedBookingForContract] = useState(null);
+  
+  // حالة التحكم بنوافذ التنبيه في المنتصف
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // بيانات المستخدم والقاعة من Supabase
+  const [user, setUser] = useState(null);
+  const [hallData, setHallData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+
+  // حالة نموذج المعلومات الأساسية للموقع مع إضافة Slug
+  const [siteForm, setSiteForm] = useState({
+    slug: '',
+    name: '',
+    capacity: '',
+    phone: '',
+    visiting_hours: '',
+    map_url: ''
+  });
 
   // إعدادات زر الواتساب العائم
   const [showWhatsapp, setShowWhatsapp] = useState(true);
-  const [whatsappNumber, setWhatsappNumber] = useState('0555 12 34 56');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
 
-  // وسائط القاعة (معرض الصور حتى 20 صورة وفيديو واحد)
-  const [galleryImages, setGalleryImages] = useState([
-    'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1545232979-fbfd433bd14b?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1200&q=80'
-  ]);
+  // وسائط القاعة
+  const [galleryImages, setGalleryImages] = useState([]);
   const [videoUrl, setVideoUrl] = useState('');
   const [newImageUrl, setNewImageUrl] = useState('');
 
-  // الخصائص والمرافق المكتوبة القابلة للتعديل والإضافة
-  const [amenities, setAmenities] = useState([
-    'فصل قاعة الرجال عن النساء (مدخل مستقل)',
-    'موقف سيارات محروس (Parking)',
-    'طباخ ومطبخ مجهز مدمج',
-    'تكييف وتدفئة مركزية',
-    'مولد كهربائي احتياطي (Groupe Électrogène)',
-    'غرفة العروس الخاصة (VIP Bride Room)',
-    'نظام DJ وإضاءة كوشة مجهزة',
-    'طاقم أمن ونادلات محترفات'
-  ]);
+  // الخصائص والمرافق المكتوبة
+  const [amenities, setAmenities] = useState([]);
 
-  // جدول أسعار الفترات والخدمات المخصص المطابق للصورة المرفقة
-  const [pricingPackages, setPricingPackages] = useState([
-    { title: 'كراء القاعة مساءا (من 2 إلى 7 مساءا)', price: '200.000' },
-    { title: 'العشاء والليل (من 5 مساءً حتى منتصف الليل) للقاعتين', price: '400.000' },
-    { title: 'الكراء في الليل (9 مساءً - 3 صباحًا)', price: '270.000' },
-    { title: 'الكراء للغذاء (للقاعتين)', price: '350.000' },
-    { title: 'العشاء للشخص الواحد (من 6 مساءا إلى 10 ليلا)', price: '3.500' },
-    { title: 'العشاء في القاعتين', price: '350.000' }
-  ]);
+  // جدول أسعار الفترات والخدمات المخصص
+  const [pricingPackages, setPricingPackages] = useState([]);
 
-  // 1. الفضاءات المتاحة بالقاعة (Multi-Space)
+  // الحجوزات الحقيقية
+  const [bookings, setBookings] = useState([]);
+
+  // 1. الفضاءات المتاحة بالقاعة
   const [spaces] = useState([
     { id: 'sp-1', name: 'القاعة الكبرى (النساء)', capacity: 400 },
     { id: 'sp-2', name: 'قاعة الرجال الفرعية', capacity: 200 },
@@ -211,76 +213,13 @@ export default function AdminDashboard() {
 
   // 3. فريق العمل
   const [staffList] = useState([
-    { id: 1, name: 'مالك القاعة (أنت)', role: 'owner', phone: '0555 12 34 56', email: 'owner@salati.work' },
-    { id: 2, name: 'سليم بن أحمد', role: 'manager', phone: '0770 98 76 54', email: 'salim@gmail.com' }
+    { id: 1, name: 'مالك القاعة (أنت)', role: 'owner', phone: '', email: '' }
   ]);
 
-  // 4. الحجوزات
-  const [bookings, setBookings] = useState([
-    {
-      id: 'BK-101',
-      client: 'كمال بن علي',
-      phone: '0551234567',
-      date: '2026-11-15',
-      timeSlot: 'evening',
-      spaceName: 'القاعة الكبرى (النساء)',
-      type: 'عرس',
-      status: 'confirmed',
-      amount: '140,000 دج',
-      deposit: '50,000 دج',
-      contractSigned: true,
-      holdExpiresAt: null
-    },
-    {
-      id: 'BK-102',
-      client: 'ياسين بلخير',
-      phone: '0669876543',
-      date: '2026-11-20',
-      timeSlot: 'afternoon',
-      spaceName: 'قاعة الرجال الفرعية',
-      type: 'خطوبة',
-      status: 'provisional',
-      amount: '80,000 دج',
-      deposit: '0 دج',
-      contractSigned: false,
-      holdExpiresAt: 'ينتهي خلال 48 ساعة'
-    },
-    {
-      id: 'BK-103',
-      client: 'حمزة سعيد',
-      phone: '0771122334',
-      date: '2026-11-28',
-      timeSlot: 'full_day',
-      spaceName: 'القاعة الكبرى + الحديقة',
-      type: 'عرس',
-      status: 'confirmed',
-      amount: '210,000 دج',
-      deposit: '80,000 دج',
-      contractSigned: true,
-      holdExpiresAt: null
-    },
-    {
-      id: 'BK-104',
-      client: 'أمين شريف',
-      phone: '0559988776',
-      date: '2026-12-05',
-      timeSlot: 'evening',
-      spaceName: 'القاعة الكبرى (النساء)',
-      type: 'حفلة تكريم',
-      status: 'cancelled',
-      amount: '60,000 دج',
-      deposit: '0 دج',
-      contractSigned: false,
-      holdExpiresAt: null
-    }
-  ]);
+  // 4. قائمة الانتظار
+  const [waitlist] = useState([]);
 
-  // 5. قائمة الانتظار
-  const [waitlist] = useState([
-    { id: 'WL-01', client: 'فاروق تواتي', phone: '0661002233', desiredDate: '2026-11-15', timeSlot: 'evening', note: 'يرغب بالقاعة الكبرى في حال إلغاء حجز كمال بن علي' }
-  ]);
-
-  // 6. بيانات التراخيص
+  // 5. بيانات التراخيص
   const [licenseInfo] = useState({
     insuranceDate: '2026-12-01',
     permitDate: '2027-05-15',
@@ -288,12 +227,136 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
+    fetchDashboardData();
+
     const observer = new MutationObserver(() => {
       setLang(document.documentElement.lang || 'ar');
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
     return () => observer.disconnect();
   }, []);
+
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    try {
+      // 1. جلب بيانات الحساب المفتوح
+      const { data: authUser } = await supabase.auth.getUser();
+      const currentUser = authUser?.user;
+      setUser(currentUser);
+
+      let hall = null;
+
+      // أ) البحث بأول قاعة مملوكة للمستخدم الحالي إن وجد
+      if (currentUser?.id) {
+        const { data: userHall } = await supabase
+          .from('halls')
+          .select('*')
+          .eq('owner_id', currentUser.id)
+          .maybeSingle();
+        hall = userHall;
+      }
+
+      // ب) إذا لم يجد قاعة للمستخدم، يجلب أحدث قاعة مسجلة في النظام
+      if (!hall) {
+        const { data: latestHalls } = await supabase
+          .from('halls')
+          .select('*')
+          .order('updated_at', { ascending: false })
+          .limit(1);
+        if (latestHalls && latestHalls.length > 0) {
+          hall = latestHalls[0];
+        }
+      }
+
+      // ج) إذا لم توجد أي قاعة إطلاقاً في الجدول، يتم إنشاء قاعة افتراضية
+      if (!hall) {
+        const defaultSlug = 'salle-el-bahdja';
+        const { data: newHall } = await supabase
+          .from('halls')
+          .insert([
+            {
+              owner_id: currentUser?.id || null,
+              slug: defaultSlug,
+              name: 'قاعتي الجديدة',
+              capacity: 0,
+              phone: '',
+              visiting_hours: '',
+              map_url: '',
+              show_whatsapp: true,
+              whatsapp_number: '',
+              video_url: '',
+              gallery_images: [],
+              amenities: [],
+              pricing_packages: []
+            }
+          ])
+          .select()
+          .maybeSingle();
+        hall = newHall;
+      }
+
+      if (hall) {
+        setHallData(hall);
+        setSiteForm({
+          slug: hall.slug || '',
+          name: hall.name || '',
+          capacity: hall.capacity || '',
+          phone: hall.phone || '',
+          visiting_hours: hall.visiting_hours || '',
+          map_url: hall.map_url || ''
+        });
+        setShowWhatsapp(hall.show_whatsapp ?? true);
+        setWhatsappNumber(hall.whatsapp_number || hall.phone || '');
+        setVideoUrl(hall.video_url || '');
+
+        setGalleryImages(
+          hall.gallery_images?.length 
+            ? hall.gallery_images.map(img => typeof img === 'string' ? img : img.url)
+            : []
+        );
+
+        setAmenities(
+          hall.amenities?.length 
+            ? hall.amenities.map(a => typeof a === 'string' ? a : a.title)
+            : []
+        );
+
+        setPricingPackages(hall.pricing_packages || []);
+
+        // جلب الحجوزات الخاصة بهذه القاعة حصراً
+        const { data: bookingsData } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('hall_id', hall.id)
+          .order('event_date', { ascending: true });
+
+        if (bookingsData) {
+          setBookings(
+            bookingsData.map(b => ({
+              id: b.id,
+              client: b.client_name,
+              phone: b.client_phone,
+              date: b.event_date,
+              timeSlot: b.time_slot || 'evening',
+              spaceName: 'القاعة الكبرى',
+              type: b.event_type || 'عرس',
+              status: b.status || 'provisional',
+              amount: b.amount ? `${b.amount} دج` : '0 دج',
+              deposit: b.deposit ? `${b.deposit} دج` : '0 دج',
+              contractSigned: b.status === 'confirmed',
+              holdExpiresAt: b.status === 'provisional' ? 'ينتهي خلال 48 ساعة' : null
+            }))
+          );
+        } else {
+          setBookings([]);
+        }
+      }
+    } catch (err) {
+      console.error('خطأ جلب البيانات:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const isAr = lang === 'ar';
 
@@ -317,7 +380,7 @@ export default function AdminDashboard() {
   const handleAddImage = (urlToAdd) => {
     if (!urlToAdd) return;
     if (galleryImages.length >= 20) {
-      alert(isAr ? 'الحد الأقصى للصور هو 20 صورة فقط' : 'Le limite est de 20 photos');
+      showSuccessModal(isAr ? 'الحد الأقصى للصور هو 20 صورة فقط' : 'Le limite est de 20 photos');
       return;
     }
     setGalleryImages([...galleryImages, urlToAdd]);
@@ -328,22 +391,56 @@ export default function AdminDashboard() {
     setGalleryImages(galleryImages.filter((_, idx) => idx !== indexToRemove));
   };
 
-  const handleFileUpload = (e) => {
+  // دالة رفع الصور إلى Supabase Storage بدلاً من الروابط المحلية المؤقتة
+  const uploadImageToSupabase = async (file) => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+      const filePath = `halls/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('hall-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('hall-images')
+        .getPublicUrl(filePath);
+
+      return publicUrlData.publicUrl;
+    } catch (err) {
+      console.error('خطأ في رفع الصورة:', err);
+      return null;
+    }
+  };
+
+const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
 
     const remainingSlots = 20 - galleryImages.length;
-    if (remainingSlots <= 0) {
-      alert(isAr ? 'وصلت للحد الأقصى (20 صورة)' : 'Limite de 20 photos atteinte');
-      return;
-    }
+    if (remainingSlots <= 0) return;
 
+    setUploading(true);
     const selectedFiles = files.slice(0, remainingSlots);
-    const newUploadedUrls = selectedFiles.map(file => URL.createObjectURL(file));
-    setGalleryImages([...galleryImages, ...newUploadedUrls]);
+    
+    // رفع الصور مباشرة وحفظ روابطها الدائمة
+    const uploadPromises = selectedFiles.map(file => uploadImageToSupabase(file));
+    const uploadedUrls = await Promise.all(uploadPromises);
+    const validUploadedUrls = uploadedUrls.filter(url => Boolean(url));
+
+    setUploading(false);
+
+    // إضافة الصور مباشرة إلى المعرض دون إظهار التنبيه المنبثق
+    if (validUploadedUrls.length > 0) {
+      setGalleryImages(prevImages => [...prevImages, ...validUploadedUrls]);
+    }
   };
 
-  // دوال التحكم بالخصائص والمرافق المكتوبة
   const handleAmenityChange = (index, value) => {
     const updated = [...amenities];
     updated[index] = value;
@@ -358,7 +455,6 @@ export default function AdminDashboard() {
     setAmenities(amenities.filter((_, idx) => idx !== indexToRemove));
   };
 
-  // دوال التحكم بباقات وخيارات الأسعار المكتوبة
   const handlePricingChange = (index, field, value) => {
     const updated = [...pricingPackages];
     updated[index][field] = value;
@@ -373,27 +469,61 @@ export default function AdminDashboard() {
     setPricingPackages(pricingPackages.filter((_, idx) => idx !== indexToRemove));
   };
 
-  const handleAddBookingSubmit = (e) => {
+  const showSuccessModal = (msg) => {
+    setSuccessMessage(msg);
+    setIsSuccessModalOpen(true);
+    setTimeout(() => {
+      setIsSuccessModalOpen(false);
+    }, 3000);
+  };
+
+  // 1. إضافة حجز جديد في قاعدة البيانات Supabase
+  const handleAddBookingSubmit = async (e) => {
     e.preventDefault();
     if (!newBooking.client || !newBooking.date) return;
     
     const selectedSpace = spaces.find(s => s.id === newBooking.spaceId);
-    const created = {
-      id: `BK-10${bookings.length + 1}`,
-      client: newBooking.client,
-      phone: newBooking.phone,
-      date: newBooking.date,
-      timeSlot: newBooking.timeSlot,
-      spaceName: selectedSpace ? selectedSpace.name : 'القاعة الرئيسية',
-      type: newBooking.type,
-      status: 'provisional',
-      amount: `${Number(newBooking.amount).toLocaleString()} دج`,
-      deposit: newBooking.deposit ? `${Number(newBooking.deposit).toLocaleString()} دج` : '0 دج',
-      contractSigned: false,
-      holdExpiresAt: `ينتهي خلال ${newBooking.holdHours} ساعة`
-    };
 
-    setBookings([created, ...bookings]);
+    try {
+      if (hallData?.id) {
+        const { data, error } = await supabase.from('bookings').insert([
+          {
+            hall_id: hallData.id,
+            client_name: newBooking.client,
+            client_phone: newBooking.phone,
+            event_date: newBooking.date,
+            time_slot: newBooking.timeSlot,
+            event_type: newBooking.type,
+            amount: newBooking.amount,
+            deposit: newBooking.deposit || '0',
+            status: 'provisional'
+          }
+        ]).select();
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const created = {
+            id: data[0].id,
+            client: newBooking.client,
+            phone: newBooking.phone,
+            date: newBooking.date,
+            timeSlot: newBooking.timeSlot,
+            spaceName: selectedSpace ? selectedSpace.name : 'القاعة الرئيسية',
+            type: newBooking.type,
+            status: 'provisional',
+            amount: `${Number(newBooking.amount).toLocaleString()} دج`,
+            deposit: newBooking.deposit ? `${Number(newBooking.deposit).toLocaleString()} دج` : '0 دج',
+            contractSigned: false,
+            holdExpiresAt: `ينتهي خلال ${newBooking.holdHours} ساعة`
+          };
+          setBookings([created, ...bookings]);
+        }
+      }
+    } catch (err) {
+      console.error('فشل إضافة الحجز:', err);
+    }
+
     setIsAddBookingOpen(false);
     setNewBooking({
       client: '',
@@ -409,27 +539,64 @@ export default function AdminDashboard() {
     });
   };
 
+ // حفظ أو إنشاء معلومات القاعة تلقائياً باستخدام upsert
   const handleSaveSiteSettings = async (e) => {
     e.preventDefault();
+
     try {
-      // حفظ البيانات وإعدادات الواتساب والوسائط والخصائص وجدول الأسعار إلى Supabase
-      const { error } = await supabase
+      const { data: authUser } = await supabase.auth.getUser();
+      const currentUser = authUser?.user;
+
+      const targetSlug = siteForm.slug 
+        ? siteForm.slug.trim().toLowerCase().replace(/\s+/g, '-') 
+        : (hallData?.slug || 'salle-el-bahdja');
+
+      const formattedImages = galleryImages.filter(img => Boolean(img));
+      const formattedAmenities = amenities.filter(item => Boolean(item));
+      const formattedPricing = pricingPackages.filter(pkg => pkg && pkg.title && pkg.price);
+
+      // كائن البيانات الكامل للإدراج أو التحديث
+      const hallPayload = {
+        ...(hallData?.id ? { id: hallData.id } : {}),
+        owner_id: currentUser?.id || null,
+        slug: targetSlug,
+        name: siteForm.name || 'قاعتي الجديدة',
+        capacity: parseInt(siteForm.capacity) || 0,
+        phone: siteForm.phone || '',
+        visiting_hours: siteForm.visiting_hours || '',
+        map_url: siteForm.map_url || '',
+        show_whatsapp: showWhatsapp,
+        whatsapp_number: whatsappNumber || siteForm.phone || '',
+        video_url: videoUrl || '',
+        gallery_images: formattedImages,
+        amenities: formattedAmenities,
+        pricing_packages: formattedPricing
+      };
+
+      const { data, error } = await supabase
         .from('halls')
-        .update({
-          show_whatsapp: showWhatsapp,
-          whatsapp_number: whatsappNumber,
-          video_url: videoUrl,
-          gallery_images: galleryImages,
-          amenities: amenities,
-          pricing_packages: pricingPackages
-        })
-        .eq('slug', 'salle-el-bahdja');
+        .upsert(hallPayload, { onConflict: 'slug' })
+        .select()
+        .single();
 
       if (error) throw error;
-      alert(isAr ? 'تم حفظ التعديلات بنجاح ونشرها للموقع!' : 'Modifications enregistrées!');
+
+      if (data) {
+        setHallData(data);
+        setSiteForm({
+          slug: data.slug,
+          name: data.name,
+          capacity: data.capacity,
+          phone: data.phone,
+          visiting_hours: data.visiting_hours,
+          map_url: data.map_url
+        });
+      }
+
+      showSuccessModal(isAr ? `تم حفظ القاعة ونشرها في Supabase بنجاح!` : 'Salle enregistrée avec succès!');
     } catch (err) {
       console.error('خطأ في حفظ الإعدادات:', err);
-      alert(isAr ? 'تم حفظ التعديلات محلياً!' : 'Enregistré localement!');
+      showSuccessModal(isAr ? 'حدث خطأ في الحفظ: ' + err.message : 'Erreur عند الحفظ!');
     }
   };
 
@@ -438,9 +605,21 @@ export default function AdminDashboard() {
     setIsContractModalOpen(true);
   };
 
-  const handleSignContract = () => {
+  // 3. تأكيد التوقيع الإلكتروني وتحديث الحالة في Supabase
+  const handleSignContract = async () => {
     if (!selectedBookingForContract) return;
-    setBookings(bookings.map(b => b.id === selectedBookingForContract.id ? { ...b, contractSigned: true, status: 'confirmed' } : b));
+
+    try {
+      await supabase
+        .from('bookings')
+        .update({ status: 'confirmed' })
+        .eq('id', selectedBookingForContract.id);
+
+      setBookings(bookings.map(b => b.id === selectedBookingForContract.id ? { ...b, contractSigned: true, status: 'confirmed' } : b));
+    } catch (err) {
+      console.error('خطأ في تحديث الحالة:', err);
+    }
+
     setIsContractModalOpen(false);
   };
 
@@ -481,6 +660,10 @@ export default function AdminDashboard() {
     addWorker: isAr ? 'إضافة مساعد / عامل' : 'Ajouter un assistant',
   };
 
+  if (loading) {
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', fontWeight: 'bold', color: '#0052cc' }}>{isAr ? 'جاري تحميل لوحة تحكم الصالة...' : 'Chargement du tableau de bord...'}</div>;
+  }
+
   return (
     <div className={styles.adminLayout}>
       {/* 1. الشريط الجانبي */}
@@ -495,8 +678,8 @@ export default function AdminDashboard() {
         <div className={styles.hallSelectorCard}>
           <div className={styles.hallAvatar}>🏰</div>
           <div className={styles.hallMeta}>
-            <strong>{isAr ? 'قاعة البهجة' : 'Salle El Bahdja'}</strong>
-            <span>{isAr ? 'الجزائر العاصمة' : 'Alger'}</span>
+            <strong>{hallData?.name || (isAr ? 'قاعتي الجديدة' : 'Ma Salle')}</strong>
+            <span>{hallData?.address || (isAr ? 'الجزائر العاصمة' : 'Alger')}</span>
           </div>
         </div>
 
@@ -559,7 +742,7 @@ export default function AdminDashboard() {
         </nav>
 
         <div className={styles.sidebarFooter}>
-          <a href="/v/salle-el-bahdja" target="_blank" rel="noreferrer" className={styles.viewLiveSiteBtn}>
+          <a href={`/v/${hallData?.slug}`} target="_blank" rel="noreferrer" className={styles.viewLiveSiteBtn}>
             <IconHallSite />
             <span>{t.viewSiteBtn}</span>
           </a>
@@ -634,7 +817,7 @@ export default function AdminDashboard() {
                   <div className={styles.kpiIcon}>🎉</div>
                   <div className={styles.kpiData}>
                     <span>{t.kpi3}</span>
-                    <strong>15 {isAr ? 'نوفمبر (مساءً)' : 'Novembre (Soir)'}</strong>
+                    <strong>-</strong>
                   </div>
                 </div>
                 <div className={styles.kpiCard}>
@@ -658,56 +841,62 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className={styles.tableContainer}>
-                  <table className={styles.bookingsTable}>
-                    <thead>
-                      <tr>
-                        <th>{t.bookingId}</th>
-                        <th>{t.client}</th>
-                        <th>{t.date}</th>
-                        <th>{t.space}</th>
-                        <th>{t.amount}</th>
-                        <th>{t.status}</th>
-                        <th>{t.action}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {bookings.map((item) => (
-                        <tr key={item.id}>
-                          <td className={styles.bookingId}>{item.id}</td>
-                          <td className={styles.clientName}>
-                            <div>{item.client}</div>
-                            <small className={styles.subText}>{item.phone}</small>
-                          </td>
-                          <td>
-                            <div>{item.date}</div>
-                            <span className={styles.timeSlotBadge}>{getTimeSlotLabel(item.timeSlot)}</span>
-                          </td>
-                          <td>{item.spaceName}</td>
-                          <td className={styles.amountText}>
-                            <div>{item.amount}</div>
-                            <small className={styles.subText}>{isAr ? `العربون: ${item.deposit}` : `Acompte: ${item.deposit}`}</small>
-                          </td>
-                          <td>
-                            <span className={`${styles.statusBadge} ${styles[item.status]}`}>
-                              {t[item.status] || item.status}
-                            </span>
-                            {item.status === 'provisional' && (
-                              <div className={styles.expiryTimer}>
-                                <IconClock /> <span>{item.holdExpiresAt}</span>
-                              </div>
-                            )}
-                          </td>
-                          <td>
-                            <div className={styles.tableActions}>
-                              <button className={styles.actionBtn} onClick={() => handleOpenContract(item)}>
-                                <IconFileText /> <span>{t.contractBtn}</span>
-                              </button>
-                            </div>
-                          </td>
+                  {bookings.length === 0 ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+                      {isAr ? 'لا توجد حجوزات مسجلة بعد في هذه القاعة' : 'Aucune réservation enregistrée.'}
+                    </div>
+                  ) : (
+                    <table className={styles.bookingsTable}>
+                      <thead>
+                        <tr>
+                          <th>{t.bookingId}</th>
+                          <th>{t.client}</th>
+                          <th>{t.date}</th>
+                          <th>{t.space}</th>
+                          <th>{t.amount}</th>
+                          <th>{t.status}</th>
+                          <th>{t.action}</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {bookings.map((item) => (
+                          <tr key={item.id}>
+                            <td className={styles.bookingId}>{item.id}</td>
+                            <td className={styles.clientName}>
+                              <div>{item.client}</div>
+                              <small className={styles.subText}>{item.phone}</small>
+                            </td>
+                            <td>
+                              <div>{item.date}</div>
+                              <span className={styles.timeSlotBadge}>{getTimeSlotLabel(item.timeSlot)}</span>
+                            </td>
+                            <td>{item.spaceName}</td>
+                            <td className={styles.amountText}>
+                              <div>{item.amount}</div>
+                              <small className={styles.subText}>{isAr ? `العربون: ${item.deposit}` : `Acompte: ${item.deposit}`}</small>
+                            </td>
+                            <td>
+                              <span className={`${styles.statusBadge} ${styles[item.status]}`}>
+                                {t[item.status] || item.status}
+                              </span>
+                              {item.status === 'provisional' && (
+                                <div className={styles.expiryTimer}>
+                                  <IconClock /> <span>{item.holdExpiresAt}</span>
+                                </div>
+                              )}
+                            </td>
+                            <td>
+                              <div className={styles.tableActions}>
+                                <button className={styles.actionBtn} onClick={() => handleOpenContract(item)}>
+                                  <IconFileText /> <span>{t.contractBtn}</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </section>
 
@@ -716,18 +905,22 @@ export default function AdminDashboard() {
                   <h2>{isAr ? 'قائمة الانتظار لموسم الذروة' : 'Liste d\'attente Haute Saison'}</h2>
                   <span className={styles.waitCountBadge}>{waitlist.length} {isAr ? 'طلبات متراكمة' : 'demandes'}</span>
                 </div>
-                <div className={styles.staffGrid}>
-                  {waitlist.map((wl) => (
-                    <div key={wl.id} className={styles.staffCard}>
-                      <div className={styles.staffAvatar}>⏳</div>
-                      <div className={styles.staffInfo}>
-                        <strong>{wl.client} ({wl.phone})</strong>
-                        <span>{isAr ? `التاريخ المطلوب: ${wl.desiredDate} (${getTimeSlotLabel(wl.timeSlot)})` : wl.desiredDate}</span>
-                        <small>{wl.note}</small>
+                {waitlist.length === 0 ? (
+                  <p style={{ color: '#64748b', fontSize: '0.9rem', margin: '0.5rem 0 0 0' }}>{isAr ? 'لا توجد طلبات انتظار حالياً' : 'Aucune demande en attente'}</p>
+                ) : (
+                  <div className={styles.staffGrid}>
+                    {waitlist.map((wl) => (
+                      <div key={wl.id} className={styles.staffCard}>
+                        <div className={styles.staffAvatar}>⏳</div>
+                        <div className={styles.staffInfo}>
+                          <strong>{wl.client} ({wl.phone})</strong>
+                          <span>{isAr ? `التاريخ المطلوب: ${wl.desiredDate} (${getTimeSlotLabel(wl.timeSlot)})` : wl.desiredDate}</span>
+                          <small>{wl.note}</small>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </section>
             </div>
           )}
@@ -752,21 +945,18 @@ export default function AdminDashboard() {
                   ))}
                   {Array.from({ length: 28 }).map((_, i) => {
                     const dayNum = i + 1;
-                    const isAfternoonBooked = [5, 12, 20].includes(dayNum);
-                    const isEveningBooked = [15, 20, 28].includes(dayNum);
-
                     return (
                       <div key={i} className={styles.calSlotCell}>
                         <div className={styles.calNumRow}>
                           <span className={styles.calNum}>{dayNum}</span>
                         </div>
-                        <div className={`${styles.slotItem} ${isAfternoonBooked ? styles.slotBooked : styles.slotFree}`}>
+                        <div className={`${styles.slotItem} ${styles.slotFree}`}>
                           <span>{isAr ? 'الظهيرة' : 'Midi'}</span>
-                          <small>{isAfternoonBooked ? (isAr ? 'محجوز' : 'Occupé') : (isAr ? 'شاغر' : 'Libre')}</small>
+                          <small>{isAr ? 'شاغر' : 'Libre'}</small>
                         </div>
-                        <div className={`${styles.slotItem} ${isEveningBooked ? styles.slotBooked : styles.slotFree}`}>
+                        <div className={`${styles.slotItem} ${styles.slotFree}`}>
                           <span>{isAr ? 'المساء' : 'Soir'}</span>
-                          <small>{isEveningBooked ? (isAr ? 'محجوز' : 'Occupé') : (isAr ? 'شاغر' : 'Libre')}</small>
+                          <small>{isAr ? 'شاغر' : 'Libre'}</small>
                         </div>
                       </div>
                     );
@@ -776,15 +966,13 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* =========================================
-             تبويب 3: موقع القاعة الخاص والخصائص
-             ========================================= */}
+          {/* تبويب 3: موقع القاعة الخاص والخصائص */}
           {activeTab === 'site' && (
             <div className={styles.tabPaneAnim}>
               <div className={styles.panelCard}>
                 <h2>{isAr ? 'إدارة محتوى وخصائص القاعة' : 'Gérer Caractéristiques de la Salle'}</h2>
                 <p className={styles.sectionDesc}>
-                  {isAr ? 'تُعرض هذه البيانات مباشرة للزبائن في صفحة صالتك الخاصة (salati.work/v/salle-el-bahdja)' : 'Visible par vos clients sur votre page'}
+                  {isAr ? `تُعرض هذه البيانات مباشرة للزبائن في صفحة صالتك الخاصة (/v/${hallData?.slug})` : 'Visible par vos clients sur votre page'}
                 </p>
 
                 <form className={styles.siteCustomizerForm} onSubmit={handleSaveSiteSettings}>
@@ -792,31 +980,67 @@ export default function AdminDashboard() {
                   {/* 1. المعلومات الأساسية والتواصل والموقع */}
                   <div className={styles.sectionBlock}>
                     <h3>{isAr ? '1. المعلومات الأساسية والتواصل والموقع' : '1. Informations Générales & Localisation'}</h3>
+                    
+                    <div className={styles.inputGroup} style={{ marginBottom: '1rem' }}>
+                      <label>{isAr ? 'رابط موقع القاعة المباشر (Slug)' : 'Lien Web (Slug)'}</label>
+                      <input 
+                        type="text" 
+                        value={siteForm.slug} 
+                        onChange={(e) => setSiteForm({ ...siteForm, slug: e.target.value })} 
+                        placeholder="salle-el-bahdja"
+                      />
+                    </div>
+
                     <div className={styles.formRow}>
                       <div className={styles.inputGroup}>
                         <label>{isAr ? 'اسم القاعة التجاري' : 'Nom commercial'}</label>
-                        <input type="text" defaultValue="قاعة البهجة للمناسبات" />
+                        <input 
+                          type="text" 
+                          value={siteForm.name} 
+                          onChange={(e) => setSiteForm({ ...siteForm, name: e.target.value })} 
+                          placeholder={isAr ? "مثال: قاعة النخيل للمناسبات" : "Ex: Salle An-Nakhil"}
+                        />
                       </div>
                       <div className={styles.inputGroup}>
                         <label>{isAr ? 'السعة الإجمالية للضيوف' : 'Capacité totale'}</label>
-                        <input type="number" defaultValue="600" />
+                        <input 
+                          type="number" 
+                          value={siteForm.capacity} 
+                          onChange={(e) => setSiteForm({ ...siteForm, capacity: e.target.value })} 
+                          placeholder="500"
+                        />
                       </div>
                     </div>
 
                     <div className={styles.formRow}>
                       <div className={styles.inputGroup}>
                         <label>{isAr ? 'رقم الهاتف المباشر للاتصال' : 'Téléphone direct'}</label>
-                        <input type="tel" defaultValue="0555 12 34 56" />
+                        <input 
+                          type="tel" 
+                          value={siteForm.phone} 
+                          onChange={(e) => setSiteForm({ ...siteForm, phone: e.target.value })} 
+                          placeholder="0550000000"
+                        />
                       </div>
                       <div className={styles.inputGroup}>
                         <label>{isAr ? 'أوقات المعاينة الميدانية' : 'Horaires des visites'}</label>
-                        <input type="text" defaultValue="يومياً من 10:00 صباحاً إلى 18:00 مساءً" />
+                        <input 
+                          type="text" 
+                          value={siteForm.visiting_hours} 
+                          onChange={(e) => setSiteForm({ ...siteForm, visiting_hours: e.target.value })} 
+                          placeholder={isAr ? "يومياً من 10 صباحاً لـ 5 مساءً" : "Visites 10h-17h"}
+                        />
                       </div>
                     </div>
 
                     <div className={styles.inputGroup}>
                       <label>{isAr ? 'رابط الموقع الجغرافي على Google Maps' : 'Lien Google Maps'}</label>
-                      <input type="url" defaultValue="https://maps.google.com/?q=Salle+El+Bahdja" placeholder="https://maps.app.goo.gl/..." />
+                      <input 
+                        type="url" 
+                        value={siteForm.map_url} 
+                        onChange={(e) => setSiteForm({ ...siteForm, map_url: e.target.value })} 
+                        placeholder="https://maps.app.goo.gl/..." 
+                      />
                     </div>
                   </div>
 
@@ -851,7 +1075,7 @@ export default function AdminDashboard() {
                     )}
                   </div>
 
-                  {/* 2. الخصائص والمرافق المكتوبة (كتابة وإضافة بدلاً من التحديد) */}
+                  {/* 2. الخصائص والمرافق المكتوبة */}
                   <div className={styles.sectionBlock}>
                     <div className={styles.sectionTitleRow} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                       <h3 style={{ margin: 0 }}>{isAr ? '2. الخصائص والمرافق المتاحة (Amenities)' : '2. Équipements & Commodités'}</h3>
@@ -895,7 +1119,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  {/* 3. أسعار الفترات والخدمات المخصص المطابق للصورة */}
+                  {/* 3. أسعار الفترات والخدمات المخصص */}
                   <div className={styles.sectionBlock}>
                     <div className={styles.sectionTitleRow} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                       <h3 style={{ margin: 0 }}>{isAr ? '3. جدول أسعار الفترات والخدمات' : '3. Tarifs et Prestations'}</h3>
@@ -959,7 +1183,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  {/* 4. وسائط القاعة (معرض 20 صورة + فيديو واحد) */}
+                  {/* 4. وسائط القاعة */}
                   <div className={styles.sectionBlock}>
                     <div className={styles.sectionTitleRow} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                       <h3>{isAr ? '4. وسائط القاعة (الصور والفيديو)' : '4. Médias (Photos & Vidéo)'}</h3>
@@ -968,7 +1192,6 @@ export default function AdminDashboard() {
                       </span>
                     </div>
 
-                    {/* فيديو الصالة الرئيسي (فيديو واحد فقط) */}
                     <div className={styles.subSectionBox} style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
                       <h4 style={{ margin: '0 0 0.5rem 0' }}>🎬 {isAr ? 'فيديو الصالة الرئيسي (فيديو واحد)' : 'Vidéo principale (1 vidéo)'}</h4>
                       <div className={styles.inputGroup}>
@@ -977,37 +1200,41 @@ export default function AdminDashboard() {
                           type="url"
                           value={videoUrl}
                           onChange={(e) => setVideoUrl(e.target.value)}
-                          placeholder="https://www.youtube.com/embed/... أو https://instagram.com/reel/..."
+                          placeholder="https://www.youtube.com/embed/..."
                         />
                       </div>
                     </div>
 
-                    {/* معرض صور القاعة (حتى 20 صورة) */}
-                    <div className={styles.subSectionBox} style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                      <h4 style={{ margin: '0 0 1rem 0' }}>📸 {isAr ? 'معرض صور الصالة (حتى 20 صورة)' : 'Galerie photos (max 20)'}</h4>
+                    <div className={styles.subSectionBox} style={{ background: '#ffffff', padding: '1.25rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                      <h4 style={{ margin: '0 0 0.5rem 0' }}>📸 {isAr ? 'رفع وإضافة الصور' : 'Ajouter des photos'}</h4>
+                      <p style={{ margin: '0 0 1rem 0', color: '#64748b', fontSize: '0.85rem' }}>
+                        {isAr ? 'يمكنك الرفع المباشر من جهازك أو إضافة رابط صورة أونلاين، وستظهر كافة الصور المضافة بشكل منظم في الأسفل.' : 'Uploadez ou ajoutez des liens d\'images.'}
+                      </p>
 
                       {galleryImages.length < 20 && (
-                        <div className={styles.addImageBar} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                        <div className={styles.addImageBar} style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
                           <input
                             type="url"
                             value={newImageUrl}
                             onChange={(e) => setNewImageUrl(e.target.value)}
-                            placeholder={isAr ? 'رابط صورة أونلاين...' : 'URL de la photo...'}
-                            style={{ flex: 1, minWidth: '200px', padding: '0.5rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                            placeholder={isAr ? 'رابط صورة أونلاين (https://...)' : 'URL de la photo...'}
+                            style={{ flex: 1, minWidth: '220px', padding: '0.6rem 0.8rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
                           />
                           <button
                             type="button"
                             className={styles.secondaryBtn}
                             onClick={() => handleAddImage(newImageUrl)}
+                            style={{ padding: '0.6rem 1.25rem' }}
                           >
-                            {isAr ? 'إضافة بالرابط' : 'Ajouter par URL'}
+                            {isAr ? 'إضافة بالرابط' : 'Ajouter URL'}
                           </button>
-                          <label className={styles.addBookingBtn} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', margin: 0 }}>
-                            📁 {isAr ? 'رفع من الجهاز' : 'Uploader'}
+                          <label className={styles.addBookingBtn} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', margin: 0, padding: '0.6rem 1.25rem' }}>
+                            📁 {uploading ? (isAr ? 'جاري الرفع...' : 'Téléversement...') : (isAr ? 'رفع من الجهاز' : 'Uploader')}
                             <input
                               type="file"
                               accept="image/*"
                               multiple
+                              disabled={uploading}
                               onChange={handleFileUpload}
                               style={{ display: 'none' }}
                             />
@@ -1015,37 +1242,78 @@ export default function AdminDashboard() {
                         </div>
                       )}
 
-                      <div className={styles.imageUploadGrid} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '1rem' }}>
-                        {galleryImages.map((imgUrl, index) => (
-                          <div key={index} className={styles.imgPreviewCard} style={{ position: 'relative', height: '110px', overflow: 'hidden', padding: 0, border: '1px solid #cbd5e1', borderRadius: '10px' }}>
-                            <img src={imgUrl} alt={`صورة ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            <span style={{ position: 'absolute', bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: '0.75rem', padding: '2px 6px', borderRadius: '10px' }}>
-                              {index + 1}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveImage(index)}
-                              title={isAr ? 'حذف الصورة' : 'Supprimer'}
-                              style={{ position: 'absolute', top: '4px', left: '4px', background: 'rgba(239, 68, 68, 0.9)', color: '#fff', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))}
+                      {/* عرض الصور المحددة في الأسفل بشكل منظم وواضح */}
+                      <div style={{ marginTop: '1rem', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
+                        <h5 style={{ margin: '0 0 1rem 0', color: '#334155', fontSize: '0.95rem' }}>
+                          🖼️ {isAr ? 'الصور المحددة حالياً' : 'Photos sélectionnées'} ({galleryImages.length})
+                        </h5>
 
-                        {galleryImages.length < 20 && (
-                          <label className={styles.uploadPlaceholderBtn} style={{ height: '110px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '2px dashed #cbd5e1', borderRadius: '10px', background: '#fff' }}>
-                            <span style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>+</span>
-                            <span style={{ fontSize: '0.85rem' }}>{isAr ? 'إضافة صورة' : 'Ajouter'}</span>
-                            <small style={{ fontSize: '0.7rem', color: '#64748b' }}>({20 - galleryImages.length} {isAr ? 'متبقية' : 'restantes'})</small>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              multiple
-                              onChange={handleFileUpload}
-                              style={{ display: 'none' }}
-                            />
-                          </label>
+                        {galleryImages.length === 0 ? (
+                          <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+                            {isAr ? 'لم تقم بإضافة أي صورة بعد. اختر صوراً من الجهاز أو أضف روابط لتظهر هنا بشكل منظم.' : 'Aucune photo ajoutée.'}
+                          </div>
+                        ) : (
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
+                            {galleryImages.map((imgUrl, index) => (
+                              <div 
+                                key={index} 
+                                style={{ 
+                                  position: 'relative', 
+                                  height: '120px', 
+                                  borderRadius: '10px', 
+                                  overflow: 'hidden', 
+                                  border: '1px solid #e2e8f0', 
+                                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)', 
+                                  background: '#f8fafc' 
+                                }}
+                              >
+                                <img 
+                                  src={imgUrl} 
+                                  alt={`صورة ${index + 1}`} 
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                />
+                                <span 
+                                  style={{ 
+                                    position: 'absolute', 
+                                    bottom: '6px', 
+                                    right: '6px', 
+                                    background: 'rgba(15, 23, 42, 0.75)', 
+                                    color: '#fff', 
+                                    fontSize: '0.75rem', 
+                                    padding: '2px 8px', 
+                                    borderRadius: '12px', 
+                                    fontWeight: 'bold' 
+                                  }}
+                                >
+                                  #{index + 1}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveImage(index)}
+                                  title={isAr ? 'حذف الصورة' : 'Supprimer'}
+                                  style={{ 
+                                    position: 'absolute', 
+                                    top: '6px', 
+                                    left: '6px', 
+                                    background: 'rgba(239, 68, 68, 0.9)', 
+                                    color: '#fff', 
+                                    border: 'none', 
+                                    borderRadius: '50%', 
+                                    width: '26px', 
+                                    height: '26px', 
+                                    cursor: 'pointer', 
+                                    fontWeight: 'bold', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                  }}
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1074,15 +1342,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className={styles.staffGrid}>
-                  <div className={styles.staffCard}>
-                    <div className={styles.staffAvatar}>📋</div>
-                    <div className={styles.staffInfo}>
-                      <strong>معاينة حفل كمال بن علي (BK-101)</strong>
-                      <span>{isAr ? 'حالة الاستلام قبل الحفل: ممتازة (40 طاولة + 400 كرسي سليمة)' : 'Avant événement: Parfait'}</span>
-                      <small>{isAr ? 'تاريخ التوثيق: 15 نوفمبر 2026' : '15 Nov 2026'}</small>
-                    </div>
-                    <button className={styles.secondaryBtn}>{isAr ? 'عرض الصور والتوقيع' : 'Voir photos'}</button>
-                  </div>
+                  <p style={{ color: '#64748b' }}>{isAr ? 'لا توجد تقارير معاينة حالياً' : 'Aucune inspection enregistrée'}</p>
                 </div>
               </div>
             </div>
@@ -1109,11 +1369,8 @@ export default function AdminDashboard() {
                       <div className={styles.staffInfo}>
                         <strong>{member.name}</strong>
                         <span>{member.role === 'owner' ? (isAr ? 'المالك الرئيسي' : 'Propriétaire') : (isAr ? 'مساعد استقبال' : 'Assistant')}</span>
-                        <small>{member.phone}</small>
+                        <small>{member.phone || '-'}</small>
                       </div>
-                      {member.role !== 'owner' && (
-                        <button className={styles.removeWorkerBtn}>{isAr ? 'حذف' : 'Supprimer'}</button>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -1191,6 +1448,26 @@ export default function AdminDashboard() {
       </div>
 
       {/* النوافذ المنبثقة */}
+      {isSuccessModalOpen && (
+        <div className={styles.modalBackdrop}>
+          <div className={styles.modalBox} style={{ maxWidth: '420px', textAlign: 'center', padding: '2rem 1.5rem' }}>
+            <div style={{ width: '60px', height: '60px', background: '#dcfce7', color: '#16a34a', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem auto' }}>
+              <IconCheck />
+            </div>
+            <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b' }}>{isAr ? 'تمت العملية بنجاح!' : 'Succès!'}</h3>
+            <p style={{ margin: '0 0 1.5rem 0', color: '#64748b', fontSize: '0.95rem' }}>{successMessage}</p>
+            <button 
+              type="button" 
+              className={styles.addBookingBtn} 
+              style={{ width: '100%', justifyContent: 'center' }} 
+              onClick={() => setIsSuccessModalOpen(false)}
+            >
+              {isAr ? 'موافق' : 'D\'accord'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {isAddBookingOpen && (
         <div className={styles.modalBackdrop}>
           <div className={styles.modalBox}>
@@ -1302,7 +1579,7 @@ export default function AdminDashboard() {
             
             <div className={styles.contractDocumentBox}>
               <h4>{isAr ? 'عقد حجز قاعة أفراح ومناسبات' : 'Contrat de Réservation de Salle'}</h4>
-              <p><strong>{isAr ? 'طرف أول (القاعة):' : 'Partie 1:'}</strong> {isAr ? 'قاعة البهجة للمناسبات' : 'Salle El Bahdja'}</p>
+              <p><strong>{isAr ? 'طرف أول (القاعة):' : 'Partie 1:'}</strong> {hallData?.name || (isAr ? 'قاعتي' : 'Ma Salle')}</p>
               <p><strong>{isAr ? 'طرف ثاني (الزبون):' : 'Partie 2:'}</strong> {selectedBookingForContract.client} ({selectedBookingForContract.phone})</p>
               <p><strong>{isAr ? 'تاريخ الحجز والفترة:' : 'Date & Créneau:'}</strong> {selectedBookingForContract.date} ({getTimeSlotLabel(selectedBookingForContract.timeSlot)})</p>
               <p><strong>{isAr ? 'المبلغ الإجمالي:' : 'Montant:'}</strong> {selectedBookingForContract.amount} | <strong>{isAr ? 'العربون:' : 'Acompte:'}</strong> {selectedBookingForContract.deposit}</p>
