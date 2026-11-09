@@ -418,7 +418,7 @@ export default function AdminDashboard() {
     }
   };
 
-const handleFileUpload = async (e) => {
+  const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
 
@@ -539,7 +539,7 @@ const handleFileUpload = async (e) => {
     });
   };
 
- // حفظ أو إنشاء معلومات القاعة تلقائياً باستخدام upsert
+  // حفظ أو إنشاء معلومات القاعة تلقائياً باستخدام upsert
   const handleSaveSiteSettings = async (e) => {
     e.preventDefault();
 
@@ -1036,10 +1036,10 @@ const handleFileUpload = async (e) => {
                     <div className={styles.inputGroup}>
                       <label>{isAr ? 'رابط الموقع الجغرافي على Google Maps' : 'Lien Google Maps'}</label>
                       <input 
-                        type="url" 
+                        type="text" 
                         value={siteForm.map_url} 
                         onChange={(e) => setSiteForm({ ...siteForm, map_url: e.target.value })} 
-                        placeholder="https://maps.app.goo.gl/..." 
+                        placeholder="https://maps.app.goo.gl/... ou <iframe src=...>" 
                       />
                     </div>
                   </div>
@@ -1197,7 +1197,7 @@ const handleFileUpload = async (e) => {
                       <div className={styles.inputGroup}>
                         <label>{isAr ? 'رابط فيديو للجولة الافتراضية (YouTube / Reel)' : 'Lien vidéo (YouTube / Reel)'}</label>
                         <input
-                          type="url"
+                          type="text"
                           value={videoUrl}
                           onChange={(e) => setVideoUrl(e.target.value)}
                           placeholder="https://www.youtube.com/embed/..."

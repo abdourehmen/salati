@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import styles from './HallShowcase.module.css';
 
@@ -68,6 +68,51 @@ const parseJsonField = (field) => {
   }
 };
 
+// دالة تنظيف وتجهيز رابط الخريطة مع معالجة كافة الأشكال والروابط الزائدة
+const getCleanMapEmbedUrl = (rawUrl) => {
+  if (!rawUrl) return '';
+  let url = rawUrl.trim();
+
+  if (url.includes('src=')) {
+    const match = url.match(/src=["']([^"']+)["']/);
+    if (match && match[1]) url = match[1];
+  }
+
+  url = url.replace(/^["']+|["']+$/g, '');
+
+  if (url.includes('google.com/maps/embed')) {
+    return url;
+  }
+
+  const coordsMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (coordsMatch) {
+    const lat = coordsMatch[1];
+    const lng = coordsMatch[2];
+    return `https://maps.google.com/maps?q=${lat},${lng}&hl=ar&z=16&output=embed`;
+  }
+
+  return `https://maps.google.com/maps?q=${encodeURIComponent(url)}&hl=ar&z=15&output=embed`;
+};
+
+// دالة تحويل رابط الفيديو ليكون صالحاً للتضمين
+const getCleanVideoEmbedUrl = (rawUrl) => {
+  if (!rawUrl) return '';
+  let url = rawUrl.trim();
+  if (url.includes('src="')) {
+    const match = url.match(/src=["']([^"']+)["']/);
+    if (match && match[1]) url = match[1];
+  }
+  if (url.includes('youtube.com/watch?v=')) {
+    const videoId = url.split('v=')[1]?.split('&')[0];
+    return `https://www.youtube.com/embed/${videoId}`;
+  }
+  if (url.includes('youtu.be/')) {
+    const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+    return `https://www.youtube.com/embed/${videoId}`;
+  }
+  return url;
+};
+
 export default function HallShowcase() {
   const [lang, setLang] = useState(document.documentElement.lang || 'ar');
   const [hall, setHall] = useState(null);
@@ -78,6 +123,10 @@ export default function HallShowcase() {
   const [bookingStatus, setBookingStatus] = useState(null);
   const [bookedDates, setBookedDates] = useState([]);
   const [dateError, setDateError] = useState('');
+
+  // متغيرات تتبع سحب وإفلات الأصبع على اللمس
+  const touchStartX = useRef(null);
+  const touchEndX = useRef(null);
 
   const [bookingForm, setBookingForm] = useState({
     firstName: '',
@@ -98,12 +147,11 @@ export default function HallShowcase() {
     fetchHallData();
   }, [hallSlug]);
 
- const fetchHallData = async () => {
+  const fetchHallData = async () => {
     setLoading(true);
     try {
       let hallData = null;
 
-      // 1. البحث بالـ slug المحصل عليه من الرابط فقط
       if (hallSlug) {
         const { data } = await supabase
           .from('halls')
@@ -113,7 +161,6 @@ export default function HallShowcase() {
         hallData = data;
       }
 
-      // 2. إذا لم يجد السجل، يجلب السجل التابع للمستخدم الحالي
       if (!hallData) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
@@ -126,8 +173,6 @@ export default function HallShowcase() {
         }
       }
 
-      // تم حذف الخيار الثالث لمنع جلب بيانات قاعات قديمة غريبة
-
       if (hallData) {
         setHall(hallData);
         fetchBookedDates(hallData.id);
@@ -138,6 +183,7 @@ export default function HallShowcase() {
       setLoading(false);
     }
   };
+
   const fetchBookedDates = async (hallId) => {
     try {
       const { data: bookings } = await supabase
@@ -163,7 +209,6 @@ export default function HallShowcase() {
     setLang(nextLang);
   };
 
-  // معالجة مصفوفة الصور بأمان وتأمين الروابط المكسورة أو المحلية
   const rawImages = parseJsonField(hall?.gallery_images);
   const fallbackImage = 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=80';
 
@@ -181,7 +226,6 @@ export default function HallShowcase() {
     })
     .filter(img => Boolean(img.url));
 
-  // معالجة مصفوفة المميزات بأمان
   const rawAmenities = parseJsonField(hall?.amenities);
   const amenitiesList = rawAmenities.map(item => {
     if (typeof item === 'string') return { title: item, icon: '✨' };
@@ -189,7 +233,6 @@ export default function HallShowcase() {
     return { title: String(item), icon: '✨' };
   });
 
-  // معالجة مصفوفة الأسعار بأمان
   const pricingPackages = parseJsonField(hall?.pricing_packages);
 
   const nextImage = () => {
@@ -200,6 +243,47 @@ export default function HallShowcase() {
   const prevImage = () => {
     if (!hallImages.length) return;
     setCurrentImgIndex((prev) => (prev - 1 + hallImages.length) % hallImages.length);
+  };
+
+  /* -------------------------------------------------------------
+     مؤقت التبديل التلقائي للصور كل 3 ثوانٍ
+     ------------------------------------------------------------- */
+  useEffect(() => {
+    if (hallImages.length <= 1) return;
+
+    const timer = setInterval(() => {
+      nextImage();
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, [hallImages.length, currentImgIndex]);
+
+  /* -------------------------------------------------------------
+     التحكم في اللمس والسحب باليد (Touch Swipe Events)
+     ------------------------------------------------------------- */
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const distance = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 40; // أدنى مسافة بالبكسل لتمرير الصورة
+
+    if (distance > minSwipeDistance) {
+      // السحب إلى اليسار -> الصورة التالية
+      nextImage();
+    } else if (distance < -minSwipeDistance) {
+      // السحب إلى اليمين -> الصورة السابقة
+      prevImage();
+    }
+
+    touchStartX.current = null;
+    touchEndX.current = null;
   };
 
   const scrollToSection = (id) => {
@@ -267,9 +351,8 @@ export default function HallShowcase() {
   const mapUrl = hall?.map_url || '';
   const videoUrl = hall?.video_url || '';
 
-  const mapEmbedUrl = hall?.map_url && hall.map_url.includes('embed') 
-    ? hall.map_url 
-    : (hall?.map_url || '');
+  const mapEmbedUrl = getCleanMapEmbedUrl(mapUrl);
+  const videoEmbedUrl = getCleanVideoEmbedUrl(videoUrl);
 
   const showWhatsApp = hall?.show_whatsapp && (hall?.whatsapp_number || phone);
   const rawWhatsAppPhone = hall?.whatsapp_number || phone || '';
@@ -328,10 +411,15 @@ export default function HallShowcase() {
           </div>
         )}
 
-        {/* 1. معرض الصور */}
+        {/* 1. معرض الصور مع دعم التمرير باللمس والتبديل التلقائي */}
         {hallImages.length > 0 && (
           <section className={styles.heroCarouselSection}>
-            <div className={styles.carouselCard}>
+            <div 
+              className={styles.carouselCard}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
               {videoUrl && (
                 <button className={styles.videoOverlayBtn} onClick={() => setIsVideoModalOpen(true)}>
                   <IconVideo />
@@ -393,7 +481,6 @@ export default function HallShowcase() {
                       <div className={styles.amenityRightMeta}>
                         <span className={styles.featureText}>{item.title}</span>
                       </div>
-                      <span className={styles.featureIconBox}>{item.icon || '✨'}</span>
                     </div>
                   ))}
                 </div>
@@ -486,7 +573,7 @@ export default function HallShowcase() {
               <button className={styles.modalCloseBtn} onClick={() => setIsVideoModalOpen(false)}>✕</button>
             </div>
             <div className={styles.videoFrameWrapper}>
-              <iframe src={videoUrl} title="فيديو الصالة" allowFullScreen></iframe>
+              <iframe src={videoEmbedUrl} title="فيديو الصالة" allowFullScreen></iframe>
             </div>
           </div>
         </div>
@@ -605,4 +692,4 @@ export default function HallShowcase() {
 
     </div>
   );
-}
+}   

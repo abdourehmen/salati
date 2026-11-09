@@ -304,12 +304,12 @@
 }
 
 /* =========================================
-   تنسيق قسم الخصائص والموقع
+   تنسيق قسم الخصائص والموقع الاحترافي (حواف صغيرة)
    ========================================= */
 .middleTwoColumnsSection {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.75rem;
+  gap: 1.5rem;
   align-items: stretch;
   margin-bottom: 2.5rem;
 }
@@ -317,29 +317,31 @@
 .columnFeatures, .columnLocation {
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 24px;
-  padding: 1.75rem;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.03);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.25s ease;
 }
 
 .columnFeatures:hover, .columnLocation:hover {
-  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.06);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
+  border-color: #cbd5e1;
 }
 
 .cardHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.25rem;
-  padding-bottom: 0.85rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid #f1f5f9;
 }
 
 .columnTitle {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: #0f172a;
   margin: 0;
@@ -355,35 +357,28 @@
   border: 1px solid #dbeafe;
 }
 
+/* شبكة عرض المميزات بشكل متناسق ومحدد */
 .amenitiesGridList {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 0.75rem;
 }
 
 .amenityRowCard {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.75rem;
   background-color: #f8fafc;
-  border: 1px solid #f1f5f9;
-  border-radius: 14px;
-  padding: 0.85rem 1.1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem 0.95rem;
   transition: all 0.2s ease;
 }
 
 .amenityRowCard:hover {
   background-color: #ffffff;
-  border-color: #bfdbfe;
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.06);
-}
-
-:global(html[dir="rtl"]) .amenityRowCard:hover {
-  transform: translateX(-4px);
-}
-
-:global(html[dir="ltr"]) .amenityRowCard:hover {
-  transform: translateX(4px);
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
 }
 
 .checkIconWrapper {
@@ -391,74 +386,88 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  background-color: #ecfdf5;
+  border-radius: 6px;
 }
 
 .amenityRightMeta {
   flex: 1;
-  padding: 0 0.85rem;
+  min-width: 0;
 }
 
 .featureText {
   font-weight: 700;
-  font-size: 0.92rem;
-  color: #334155;
-  line-height: 1.4;
+  font-size: 0.9rem;
+  color: #1e293b;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .featureIconBox {
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.15rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-  flex-shrink: 0;
+  display: none; /* إخفاء الأيقونة الزائدة في اليسار لتبسيط العرض */
 }
 
 .addressMeta {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  font-size: 0.875rem;
+  gap: 0.4rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: #475569;
 }
 
+/* الإطار الحاوي للخريطة */
 .mapFrameWrapper {
   width: 100%;
   flex: 1;
   min-height: 270px;
-  border-radius: 16px;
+  border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
-  margin-bottom: 1.1rem;
+  border: 1px solid #cbd5e1;
+  margin-bottom: 1rem;
+  box-shadow: inset 0 0 8px rgba(15, 23, 42, 0.04);
+  position: relative;
+  background-color: #f1f5f9;
 }
 
+.mapFrameWrapper iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+/* زر اتجاهات الوصول */
 .openMapsBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.65rem;
-  background-color: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  color: #0f172a;
-  padding: 0.85rem 1.35rem;
-  border-radius: 50px;
+  gap: 0.55rem;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border: none;
+  color: #ffffff;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
   font-weight: 800;
   font-size: 0.9rem;
   text-decoration: none;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.2);
   transition: all 0.2s ease;
 }
 
 .openMapsBtn:hover {
-  background-color: #2563eb;
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
   color: #ffffff;
-  border-color: #2563eb;
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.25);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.3);
+}
+
+.openMapsBtn:active {
+  transform: translateY(0);
 }
 
 /* =========================================
@@ -551,7 +560,7 @@
 }
 
 /* =========================================
-   دائرة الواتساب العائمة والنوافذ المنبثقة المحدثة
+   دائرة الواتساب العائمة والنوافذ المنبثقة
    ========================================= */
 .whatsappFloatBtn {
   position: fixed;
@@ -732,7 +741,6 @@
   box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.12);
 }
 
-/* تنسيق القوائم المنسدلة selectInput */
 .selectInput {
   padding: 0.8rem 1.1rem;
   border-radius: 50px;
@@ -833,5 +841,8 @@
     width: 100%;
     text-align: center;
     padding: 0.7rem;
+  }
+  .amenitiesGridList {
+    grid-template-columns: 1fr;
   }
 }
