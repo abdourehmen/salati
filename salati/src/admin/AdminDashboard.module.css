@@ -108,7 +108,7 @@
 .navItem {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.75rem;
   padding: 0.75rem 1.1rem;
   border-radius: 50px;
   background: none;
@@ -120,10 +120,15 @@
   transition: all 0.25s ease;
   width: 100%;
   text-align: right;
+  position: relative;
 }
 
 :global(html[dir="ltr"]) .navItem {
   text-align: left;
+}
+
+.navLabel {
+  flex: 1;
 }
 
 .navItem:hover {
@@ -141,10 +146,37 @@
   color: var(--primary-blue, #0052cc) !important;
 }
 
+.unconfirmedBadgeCount {
+  background-color: #d97706;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.15rem 0.55rem;
+  border-radius: 50px;
+  margin-right: auto;
+}
+
+:global(html[dir="ltr"]) .unconfirmedBadgeCount {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+.confirmedBadgeCount {
+  background-color: #059669;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.15rem 0.55rem;
+  border-radius: 50px;
+}
+
 .sidebarFooter {
   margin-top: auto;
   padding-top: 1rem;
   border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .viewLiveSiteBtn {
@@ -155,17 +187,44 @@
   background-color: #ffffff;
   border: 1px solid #cbd5e1;
   color: #0f172a;
-  padding: 0.75rem;
+  padding: 0.75rem 1rem;
   border-radius: 50px;
-  text-decoration: none;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 700;
+  text-decoration: none;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
 }
 
 .viewLiveSiteBtn:hover {
-  border-color: var(--primary-blue, #0052cc);
-  color: var(--primary-blue, #0052cc);
+  background-color: #f8fafc;
+  border-color: #0052cc;
+  color: #0052cc;
+}
+
+.logoutBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  background-color: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  color: #dc2626;
+  padding: 0.75rem 1rem;
+  border-radius: 50px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.logoutBtn:hover {
+  background-color: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
 }
 
 /* =========================================
@@ -464,14 +523,44 @@
   color: #059669;
 }
 
-.pending {
-  background-color: rgba(245, 158, 11, 0.1);
+.provisional {
+  background-color: rgba(245, 158, 11, 0.15);
   color: #d97706;
 }
 
 .cancelled {
   background-color: rgba(239, 68, 68, 0.1);
   color: #dc2626;
+}
+
+/* شارة التحذير والصفوف المتضاربة */
+.rowConflicted {
+  border-right: 4px solid #f59e0b !important;
+}
+
+:global(html[dir="ltr"]) .rowConflicted {
+  border-right: none !important;
+  border-left: 4px solid #f59e0b !important;
+}
+
+.conflictWarningBadge {
+  background-color: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  padding: 0.15rem 0.55rem;
+  border-radius: 50px;
+  font-size: 0.725rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  animation: pulseConflict 2s infinite;
+}
+
+@keyframes pulseConflict {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+  100% { transform: scale(1); }
 }
 
 .actionBtn {
@@ -492,14 +581,129 @@
   border-color: var(--primary-blue, #0052cc);
 }
 
+.confirmBookingBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background-color: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  padding: 0.45rem 0.95rem;
+  border-radius: 50px;
+  font-weight: 800;
+  font-size: 0.825rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirmBookingBtn:hover {
+  background-color: #059669;
+  color: #ffffff;
+  border-color: #059669;
+  box-shadow: 0 4px 10px rgba(5, 150, 105, 0.2);
+}
+
+.cancelBookingBtn {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  padding: 0.45rem 0.85rem;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelBookingBtn:hover {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
 /* =========================================
-   4. أنميشن وتصميم شاشات التبويبات الأخرى
+   4. أنميشن وتصميم شبكة التقويم (Slots)
    ========================================= */
+.calendarHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.monthNavGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: #f8fafc;
+  padding: 0.4rem 0.85rem;
+  border-radius: 50px;
+  border: 1px solid #cbd5e1;
+}
+
+.monthNavBtn {
+  background: none;
+  border: none;
+  color: #334155;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.monthNavBtn:hover {
+  background-color: #e2e8f0;
+  color: #0052cc;
+}
+
+.currentMonthTitle {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+  min-width: 120px;
+  text-align: center;
+}
+
+.calendarLegendBar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 1rem;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+  border: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.825rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dotFree { background-color: #10b981; }
+.dotConfirmed { background-color: #ef4444; }
+.dotProvisional { background-color: #f59e0b; }
+
 .calendarSimGrid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 0.5rem;
-  margin-top: 1.5rem;
+  margin-top: 1rem;
 }
 
 .calDayHeader {
@@ -510,51 +714,83 @@
   padding: 0.5rem;
 }
 
-.calCell {
-  min-height: 70px;
-  background-color: #f8fafc;
+.calSlotCellEmpty {
+  min-height: 90px;
+  background-color: rgba(241, 245, 249, 0.3);
+  border-radius: 12px;
+  border: 1px dashed #e2e8f0;
+}
+
+.calSlotCell {
+  min-height: 95px;
+  background-color: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
-  padding: 0.4rem;
+  padding: 0.45rem;
   display: flex;
   flex-direction: column;
+  gap: 0.35rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.calSlotCell:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.calNumRow {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
+  margin-bottom: 0.1rem;
 }
 
 .calNum {
   font-weight: 800;
-  font-size: 0.85rem;
-  color: #475569;
+  font-size: 0.825rem;
+  color: #334155;
+  background-color: #f1f5f9;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.calBooked {
-  background-color: rgba(239, 68, 68, 0.08);
-  border-color: rgba(239, 68, 68, 0.2);
-}
-
-.calPending {
-  background-color: rgba(245, 158, 11, 0.08);
-  border-color: rgba(245, 158, 11, 0.2);
-}
-
-.calTag {
-  background-color: #dc2626;
-  color: #fff;
-  font-size: 0.65rem;
-  padding: 0.2rem 0.4rem;
-  border-radius: 50px;
-  text-align: center;
+.slotItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0.45rem;
+  border-radius: 8px;
+  font-size: 0.725rem;
   font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease;
 }
 
-.calTagPending {
-  background-color: #d97706;
-  color: #fff;
-  font-size: 0.65rem;
-  padding: 0.2rem 0.4rem;
-  border-radius: 50px;
-  text-align: center;
-  font-weight: 700;
+.slotItem:hover {
+  transform: translateY(-1px);
+}
+
+.slotFree {
+  background-color: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.slotConfirmed {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.slotProvisional {
+  background-color: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
 }
 
 .siteCustomizerForm {
@@ -597,25 +833,6 @@
   border-color: var(--primary-blue, #0052cc);
   background-color: #fff;
   box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
-}
-
-.imageUploadGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1rem;
-}
-
-.imgPreviewCard {
-  height: 100px;
-  background-color: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.85rem;
-  color: #475569;
 }
 
 .uploadPlaceholderBtn {
@@ -696,17 +913,6 @@
 .staffInfo small {
   font-size: 0.75rem;
   color: #64748b;
-}
-
-.removeWorkerBtn {
-  background: none;
-  border: 1px solid #ef4444;
-  color: #ef4444;
-  padding: 0.3rem 0.7rem;
-  border-radius: 50px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  cursor: pointer;
 }
 
 .gridTwoCols {
@@ -871,6 +1077,80 @@
   z-index: 95;
 }
 
+.sectionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 0.5rem;
+}
+
+.sectionBlock h3 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0.5rem 0 0.25rem 0;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  background-color: #f8fafc;
+  padding: 0.8rem 1.25rem;
+  border-radius: 50px;
+  border: 1px solid #cbd5e1;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.checkboxLabel:hover {
+  border-color: var(--primary-blue, #0052cc);
+  background-color: #ffffff;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-blue, #0052cc);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sectionTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.subSectionBox {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+
+.subSectionBox h4 {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 0.85rem;
+}
+
+.addImageBar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
 /* =========================================
    6. التجاوب الكامل مع الجوال والهواتف
    ========================================= */
@@ -921,296 +1201,4 @@
     align-items: flex-start;
     gap: 1.25rem;
   }
-}
-/* التذييل السفلي للشريط الجانبي */
-.sidebarFooter {
-  margin-top: auto;
-  padding-top: 1.25rem;
-  padding-bottom: 0.5rem;
-  border-top: 1px solid #e2e8f0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-/* زر معاينة موقع الصالة */
-.viewLiveSiteBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
-  background-color: #ffffff;
-  border: 1px solid #cbd5e1;
-  color: #0f172a;
-  padding: 0.75rem 1rem;
-  border-radius: 50px;
-  font-size: 0.875rem;
-  font-weight: 700;
-  text-decoration: none;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
-}
-
-.viewLiveSiteBtn:hover {
-  background-color: #f8fafc;
-  border-color: #0052cc;
-  color: #0052cc;
-}
-
-/* زر تسجيل الخروج العصري */
-.logoutBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
-  background-color: rgba(239, 68, 68, 0.06);
-  border: 1px solid rgba(239, 68, 68, 0.18);
-  color: #dc2626;
-  padding: 0.75rem 1rem;
-  border-radius: 50px;
-  font-size: 0.875rem;
-  font-weight: 700;
-  cursor: pointer;
-  width: 100%;
-  box-sizing: border-box;
-  transition: all 0.2s ease;
-}
-
-.logoutBtn:hover {
-  background-color: #dc2626;
-  color: #ffffff;
-  border-color: #dc2626;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
-}
-
-.logoutBtn svg {
-  flex-shrink: 0;
-}
-/* =========================================
-   تنسيقات التخصيص المتقدمة لصفحة القاعة
-   ========================================= */
-.sectionBlock {
-  display: flex;
-  flex-direction: column;
-  gap: 1.1rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid #f1f5f9;
-  margin-bottom: 0.5rem;
-}
-
-.sectionBlock h3, .amenitiesCheckGrid h3 {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #0f172a;
-  margin: 0.5rem 0 0.25rem 0;
-}
-
-.checkboxLabel {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: #334155;
-  cursor: pointer;
-  background-color: #f8fafc;
-  padding: 0.8rem 1.25rem;
-  border-radius: 50px;
-  border: 1px solid #cbd5e1;
-  transition: all 0.2s ease;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.checkboxLabel:hover {
-  border-color: var(--primary-blue, #0052cc);
-  background-color: #ffffff;
-}
-
-.checkboxLabel input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--primary-blue, #0052cc);
-  cursor: pointer;
-  flex-shrink: 0;
-}
-/* =========================================
-   تنسيقات شبكة 20 صورة والفيديو
-   ========================================= */
-.sectionTitleRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-
-.subSectionBox {
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 1.25rem;
-}
-
-.subSectionBox h4 {
-  font-size: 1rem;
-  font-weight: 800;
-  color: #0f172a;
-  margin-bottom: 0.85rem;
-}
-
-/* شريط إدخال رابط أو رفع صورة */
-.addImageBar {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
-}
-
-.addUrlBtn {
-  background-color: #0052cc;
-  color: #ffffff;
-  border: none;
-  padding: 0.75rem 1.25rem;
-  border-radius: 50px;
-  font-weight: 800;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.uploadLocalBtn {
-  background-color: #ffffff;
-  border: 1px solid #cbd5e1;
-  color: #334155;
-  padding: 0.75rem 1.25rem;
-  border-radius: 50px;
-  font-weight: 800;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-}
-
-.uploadLocalBtn:hover {
-  border-color: #0052cc;
-  color: #0052cc;
-}
-
-/* شبكة الصور (20 صورة) */
-.mediaGrid20 {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 1rem;
-}
-
-.mediaCard {
-  position: relative;
-  width: 100%;
-  height: 120px;
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid #cbd5e1;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.mediaCard img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.imgIndexBadge {
-  position: absolute;
-  bottom: 6px;
-  right: 6px;
-  background-color: rgba(15, 23, 42, 0.75);
-  color: #ffffff;
-  font-size: 0.75rem;
-  font-weight: 800;
-  padding: 0.15rem 0.5rem;
-  border-radius: 50px;
-}
-
-:global(html[dir="ltr"]) .imgIndexBadge {
-  right: auto;
-  left: 6px;
-}
-
-.deleteImgBtn {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background-color: rgba(225, 29, 72, 0.9);
-  color: #ffffff;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.85rem;
-  font-weight: 800;
-  transition: transform 0.2s ease;
-}
-
-:global(html[dir="ltr"]) .deleteImgBtn {
-  left: auto;
-  right: 6px;
-}
-
-.deleteImgBtn:hover {
-  transform: scale(1.15);
-  background-color: #e11d48;
-}
-
-/* بطاقة إضافة صورة جديدة + */
-.addMoreCard {
-  height: 120px;
-  border: 2px dashed #cbd5e1;
-  border-radius: 14px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  background-color: #ffffff;
-  color: #64748b;
-  transition: all 0.2s ease;
-}
-
-.addMoreCard:hover {
-  border-color: #0052cc;
-  color: #0052cc;
-  background-color: #eff6ff;
-}
-
-.plusIcon {
-  font-size: 1.5rem;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.addMoreCard small {
-  font-size: 0.75rem;
-  margin-top: 0.2rem;
-}
-
-/* معاينة الفيديو */
-.videoPreviewContainer {
-  margin-top: 1rem;
-  position: relative;
-  padding-bottom: 56.25%;
-  height: 0;
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid #cbd5e1;
-}
-
-.videoPreviewContainer iframe {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: 0;
 }

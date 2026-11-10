@@ -14,6 +14,13 @@ const IconDashboard = () => (
   </svg>
 );
 
+const IconInbox = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+    <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+  </svg>
+);
+
 const IconCalendar = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -116,13 +123,6 @@ const IconAlertTriangle = () => (
   </svg>
 );
 
-const IconClock = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"></circle>
-    <polyline points="12 6 12 12 16 14"></polyline>
-  </svg>
-);
-
 const IconLogout = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -137,6 +137,18 @@ const IconWhatsApp = () => (
   </svg>
 );
 
+const IconChevronLeft = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 18 9 12 15 6"></polyline>
+  </svg>
+);
+
+const IconChevronRight = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 18 15 12 9 6"></polyline>
+  </svg>
+);
+
 export default function AdminDashboard() {
   const [lang, setLang] = useState(document.documentElement.lang || 'ar');
   const [activeTab, setActiveTab] = useState('overview');
@@ -147,17 +159,15 @@ export default function AdminDashboard() {
   const [isInspectionModalOpen, setIsInspectionModalOpen] = useState(false);
   const [selectedBookingForContract, setSelectedBookingForContract] = useState(null);
   
-  // حالة التحكم بنوافذ التنبيه في المنتصف
+  const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date(2026, 10, 1));
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  // بيانات المستخدم والقاعة من Supabase
   const [user, setUser] = useState(null);
   const [hallData, setHallData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
-  // حالة نموذج المعلومات الأساسية للموقع مع إضافة Slug
   const [siteForm, setSiteForm] = useState({
     slug: '',
     name: '',
@@ -167,32 +177,21 @@ export default function AdminDashboard() {
     map_url: ''
   });
 
-  // إعدادات زر الواتساب العائم
   const [showWhatsapp, setShowWhatsapp] = useState(true);
   const [whatsappNumber, setWhatsappNumber] = useState('');
-
-  // وسائط القاعة
   const [galleryImages, setGalleryImages] = useState([]);
   const [videoUrl, setVideoUrl] = useState('');
   const [newImageUrl, setNewImageUrl] = useState('');
-
-  // الخصائص والمرافق المكتوبة
   const [amenities, setAmenities] = useState([]);
-
-  // جدول أسعار الفترات والخدمات المخصص
   const [pricingPackages, setPricingPackages] = useState([]);
-
-  // الحجوزات الحقيقية
   const [bookings, setBookings] = useState([]);
 
-  // 1. الفضاءات المتاحة بالقاعة
   const [spaces] = useState([
     { id: 'sp-1', name: 'القاعة الكبرى (النساء)', capacity: 400 },
     { id: 'sp-2', name: 'قاعة الرجال الفرعية', capacity: 200 },
     { id: 'sp-3', name: 'الفضاء الخارجي والحديقة', capacity: 150 }
   ]);
 
-  // 2. نموذج بيانات حجز جديد
   const [newBooking, setNewBooking] = useState({
     client: '',
     phone: '',
@@ -203,23 +202,16 @@ export default function AdminDashboard() {
     amount: '',
     deposit: '',
     holdHours: '72',
-    services: {
-      catering: false,
-      waiters: false,
-      decor: false,
-      dj: false
-    }
+    status: 'provisional',
+    services: { catering: false, waiters: false, decor: false, dj: false }
   });
 
-  // 3. فريق العمل
   const [staffList] = useState([
     { id: 1, name: 'مالك القاعة (أنت)', role: 'owner', phone: '', email: '' }
   ]);
 
-  // 4. قائمة الانتظار
   const [waitlist] = useState([]);
 
-  // 5. بيانات التراخيص
   const [licenseInfo] = useState({
     insuranceDate: '2026-12-01',
     permitDate: '2027-05-15',
@@ -228,7 +220,6 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-
     const observer = new MutationObserver(() => {
       setLang(document.documentElement.lang || 'ar');
     });
@@ -239,14 +230,11 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      // 1. جلب بيانات الحساب المفتوح
       const { data: authUser } = await supabase.auth.getUser();
       const currentUser = authUser?.user;
       setUser(currentUser);
 
       let hall = null;
-
-      // أ) البحث بأول قاعة مملوكة للمستخدم الحالي إن وجد
       if (currentUser?.id) {
         const { data: userHall } = await supabase
           .from('halls')
@@ -256,7 +244,6 @@ export default function AdminDashboard() {
         hall = userHall;
       }
 
-      // ب) إذا لم يجد قاعة للمستخدم، يجلب أحدث قاعة مسجلة في النظام
       if (!hall) {
         const { data: latestHalls } = await supabase
           .from('halls')
@@ -268,7 +255,6 @@ export default function AdminDashboard() {
         }
       }
 
-      // ج) إذا لم توجد أي قاعة إطلاقاً في الجدول، يتم إنشاء قاعة افتراضية
       if (!hall) {
         const defaultSlug = 'salle-el-bahdja';
         const { data: newHall } = await supabase
@@ -323,7 +309,6 @@ export default function AdminDashboard() {
 
         setPricingPackages(hall.pricing_packages || []);
 
-        // جلب الحجوزات الخاصة بهذه القاعة حصراً
         const { data: bookingsData } = await supabase
           .from('bookings')
           .select('*')
@@ -343,8 +328,7 @@ export default function AdminDashboard() {
               status: b.status || 'provisional',
               amount: b.amount ? `${b.amount} دج` : '0 دج',
               deposit: b.deposit ? `${b.deposit} دج` : '0 دج',
-              contractSigned: b.status === 'confirmed',
-              holdExpiresAt: b.status === 'provisional' ? 'ينتهي خلال 48 ساعة' : null
+              contractSigned: b.status === 'confirmed'
             }))
           );
         } else {
@@ -391,19 +375,15 @@ export default function AdminDashboard() {
     setGalleryImages(galleryImages.filter((_, idx) => idx !== indexToRemove));
   };
 
-  // دالة رفع الصور إلى Supabase Storage بدلاً من الروابط المحلية المؤقتة
   const uploadImageToSupabase = async (file) => {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
       const filePath = `halls/${fileName}`;
 
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('hall-images')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+        .upload(filePath, file, { cacheControl: '3600', upsert: false });
 
       if (error) throw error;
 
@@ -427,15 +407,11 @@ export default function AdminDashboard() {
 
     setUploading(true);
     const selectedFiles = files.slice(0, remainingSlots);
-    
-    // رفع الصور مباشرة وحفظ روابطها الدائمة
     const uploadPromises = selectedFiles.map(file => uploadImageToSupabase(file));
     const uploadedUrls = await Promise.all(uploadPromises);
     const validUploadedUrls = uploadedUrls.filter(url => Boolean(url));
-
     setUploading(false);
 
-    // إضافة الصور مباشرة إلى المعرض دون إظهار التنبيه المنبثق
     if (validUploadedUrls.length > 0) {
       setGalleryImages(prevImages => [...prevImages, ...validUploadedUrls]);
     }
@@ -447,9 +423,7 @@ export default function AdminDashboard() {
     setAmenities(updated);
   };
 
-  const handleAddAmenity = () => {
-    setAmenities([...amenities, '']);
-  };
+  const handleAddAmenity = () => setAmenities([...amenities, '']);
 
   const handleRemoveAmenity = (indexToRemove) => {
     setAmenities(amenities.filter((_, idx) => idx !== indexToRemove));
@@ -472,52 +446,67 @@ export default function AdminDashboard() {
   const showSuccessModal = (msg) => {
     setSuccessMessage(msg);
     setIsSuccessModalOpen(true);
-    setTimeout(() => {
-      setIsSuccessModalOpen(false);
-    }, 3000);
+    setTimeout(() => setIsSuccessModalOpen(false), 3000);
   };
 
-  // 1. إضافة حجز جديد في قاعدة البيانات Supabase
+  /* دالة فحص وجود طلب متضارب لنفس اليوم والفترة */
+  const isBookingConflicted = (bookingItem) => {
+    if (bookingItem.status === 'cancelled') return false;
+    return bookings.some(b => 
+      b.id !== bookingItem.id &&
+      b.date === bookingItem.date &&
+      b.status !== 'cancelled' &&
+      (b.timeSlot === bookingItem.timeSlot || b.timeSlot === 'full_day' || bookingItem.timeSlot === 'full_day')
+    );
+  };
+
   const handleAddBookingSubmit = async (e) => {
     e.preventDefault();
-    if (!newBooking.client || !newBooking.date) return;
+    if (!newBooking.date) return;
     
     const selectedSpace = spaces.find(s => s.id === newBooking.spaceId);
+    const clientName = newBooking.client || (isAr ? 'يوم مغلق من المالك' : 'Journée bloquée');
 
     try {
       if (hallData?.id) {
         const { data, error } = await supabase.from('bookings').insert([
           {
             hall_id: hallData.id,
-            client_name: newBooking.client,
-            client_phone: newBooking.phone,
+            client_name: clientName,
+            client_phone: newBooking.phone || '0000000000',
             event_date: newBooking.date,
             time_slot: newBooking.timeSlot,
             event_type: newBooking.type,
-            amount: newBooking.amount,
+            amount: newBooking.amount || '0',
             deposit: newBooking.deposit || '0',
-            status: 'provisional'
+            status: newBooking.status || 'provisional'
           }
         ]).select();
 
-        if (error) throw error;
+        if (error) {
+          if (error.code === '23505') {
+            showSuccessModal(isAr ? '⚠️ عذراً! هذا التاريخ والفترة محجوزة ومغلقة بالفعل.' : '⚠️ Date déjà réservée !');
+            return;
+          }
+          throw error;
+        }
 
         if (data && data.length > 0) {
           const created = {
             id: data[0].id,
-            client: newBooking.client,
-            phone: newBooking.phone,
+            client: clientName,
+            phone: newBooking.phone || '',
             date: newBooking.date,
             timeSlot: newBooking.timeSlot,
             spaceName: selectedSpace ? selectedSpace.name : 'القاعة الرئيسية',
             type: newBooking.type,
-            status: 'provisional',
-            amount: `${Number(newBooking.amount).toLocaleString()} دج`,
+            status: newBooking.status || 'provisional',
+            amount: `${Number(newBooking.amount || 0).toLocaleString()} دج`,
             deposit: newBooking.deposit ? `${Number(newBooking.deposit).toLocaleString()} دج` : '0 دج',
-            contractSigned: false,
-            holdExpiresAt: `ينتهي خلال ${newBooking.holdHours} ساعة`
+            contractSigned: newBooking.status === 'confirmed'
           };
           setBookings([created, ...bookings]);
+          showSuccessModal(isAr ? 'تم إضافة الطلب / غلق اليوم بنجاح!' : 'Demande ajoutée avec succès!');
         }
       }
     } catch (err) {
@@ -535,14 +524,62 @@ export default function AdminDashboard() {
       amount: '',
       deposit: '',
       holdHours: '72',
+      status: 'provisional',
       services: { catering: false, waiters: false, decor: false, dj: false }
     });
   };
 
-  // حفظ أو إنشاء معلومات القاعة تلقائياً باستخدام upsert
+  const handleUpdateBookingStatus = async (bookingId, newStatus) => {
+    try {
+      const target = bookings.find(b => b.id === bookingId);
+
+      if (newStatus === 'confirmed' && target) {
+        // 1. تأكيد الطلب المختار في Supabase
+        await supabase
+          .from('bookings')
+          .update({ status: 'confirmed' })
+          .eq('id', bookingId);
+
+        // 2. إلغاء كافة الطلبات المؤقتة المتضاربة على نفس اليوم والفترة تلقائياً
+        const conflictingIds = bookings
+          .filter(b => 
+            b.id !== bookingId && 
+            b.date === target.date && 
+            b.status === 'provisional' &&
+            (b.timeSlot === target.timeSlot || b.timeSlot === 'full_day' || target.timeSlot === 'full_day')
+          )
+          .map(b => b.id);
+
+        if (conflictingIds.length > 0) {
+          await supabase
+            .from('bookings')
+            .update({ status: 'cancelled' })
+            .in('id', conflictingIds);
+        }
+
+        setBookings(bookings.map(b => {
+          if (b.id === bookingId) return { ...b, status: 'confirmed', contractSigned: true };
+          if (conflictingIds.includes(b.id)) return { ...b, status: 'cancelled' };
+          return b;
+        }));
+
+        showSuccessModal(isAr ? 'تم تأكيد الحجز وإغلاق اليوم، وإلغاء الطلب المنافس تلقائياً!' : 'Réservation confirmée et conflit résolu!');
+      } else {
+        await supabase
+          .from('bookings')
+          .update({ status: newStatus })
+          .eq('id', bookingId);
+
+        setBookings(bookings.map(b => b.id === bookingId ? { ...b, status: newStatus, contractSigned: newStatus === 'confirmed' } : b));
+        showSuccessModal(isAr ? 'تم تحديث حالة الحجز وتثبيت التاريخ!' : 'Statut mis à jour!');
+      }
+    } catch (err) {
+      console.error('خطأ في تغيير الحالة:', err);
+    }
+  };
+
   const handleSaveSiteSettings = async (e) => {
     e.preventDefault();
-
     try {
       const { data: authUser } = await supabase.auth.getUser();
       const currentUser = authUser?.user;
@@ -555,7 +592,6 @@ export default function AdminDashboard() {
       const formattedAmenities = amenities.filter(item => Boolean(item));
       const formattedPricing = pricingPackages.filter(pkg => pkg && pkg.title && pkg.price);
 
-      // كائن البيانات الكامل للإدراج أو التحديث
       const hallPayload = {
         ...(hallData?.id ? { id: hallData.id } : {}),
         owner_id: currentUser?.id || null,
@@ -605,10 +641,8 @@ export default function AdminDashboard() {
     setIsContractModalOpen(true);
   };
 
-  // 3. تأكيد التوقيع الإلكتروني وتحديث الحالة في Supabase
   const handleSignContract = async () => {
     if (!selectedBookingForContract) return;
-
     try {
       await supabase
         .from('bookings')
@@ -619,43 +653,78 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error('خطأ في تحديث الحالة:', err);
     }
-
     setIsContractModalOpen(false);
   };
 
   const getTimeSlotLabel = (slot) => {
-    if (slot === 'afternoon') return isAr ? 'الظهيرة (12:00 - 17:00)' : 'Après-midi';
-    if (slot === 'evening') return isAr ? 'المساء / العشاء (18:00 - 23:00)' : 'Soirée';
+    if (slot === 'afternoon') return isAr ? 'فترة الظهيرة (12:00 - 17:00)' : 'Après-midi';
+    if (slot === 'evening') return isAr ? 'فترة المساء / العشاء (18:00 - 23:00)' : 'Soirée';
     return isAr ? 'يوم كامل (الظهيرة + المساء)' : 'Journée entière';
   };
 
+  const getCalendarDays = () => {
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysArray = [];
+
+    for (let i = 0; i < firstDayIndex; i++) {
+      daysArray.push({ isPadding: true });
+    }
+
+    for (let d = 1; d <= totalDaysInMonth; d++) {
+      const formattedDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      daysArray.push({
+        dayNum: d,
+        dateStr: formattedDate,
+        isPadding: false
+      });
+    }
+
+    return daysArray;
+  };
+
+  const changeCalendarMonth = (offset) => {
+    setCurrentCalendarDate(prev => new Date(prev.getFullYear(), prev.getMonth() + offset, 1));
+  };
+
+  const calendarMonthLabel = currentCalendarDate.toLocaleDateString(isAr ? 'ar-EG' : 'fr-FR', {
+    month: 'long',
+    year: 'numeric'
+  });
+
+  // تصفية وحساب الطلبات حسب الحالة
+  const unconfirmedOrders = bookings.filter(b => b.status === 'provisional');
+  const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
+
   const t = {
     overview: isAr ? 'نظرة عامة' : 'Vue générale',
+    orders: isAr ? 'الطلبات' : 'Demandes',
     calendar: isAr ? 'التقويم والحجوزات' : 'Calendrier & Réservations',
     site: isAr ? 'موقع القاعة الخاص' : 'Site Web de la Salle',
     staff: isAr ? 'فريق العمل والعُمّال' : 'Équipe & Personnel',
     sms: isAr ? 'تذكيرات SMS والـ QR' : 'Rappels SMS & QR',
     inspection: isAr ? 'معاينة القاعة قبل/بعد' : 'Inspection Pré/Post',
     settings: isAr ? 'الإعدادات والاشتراك' : 'Paramètres & Offre',
-    newBookingBtn: isAr ? 'إضافة حجز جديد' : 'Nouvelle Réservation',
+    newBookingBtn: isAr ? 'إضافة طلب / حجز جديد' : 'Nouvelle Demande',
     viewSiteBtn: isAr ? 'معاينة موقع الصالة' : 'Voir le site Web',
     logoutBtn: isAr ? 'تسجيل الخروج' : 'Déconnexion',
-    kpi1: isAr ? 'إجمالي حجوزات الشهر' : 'Réservations du mois',
-    kpi2: isAr ? 'حجوزات مؤقتة (تنتظر العربون)' : 'Réservations provisoires',
-    kpi3: isAr ? 'المناسبة القادمة' : 'Prochain Événement',
+    kpi1: isAr ? 'إجمالي طلبات الشهر' : 'Demandes du mois',
+    kpi2: isAr ? 'طلبات غير مؤكدة (في انتظار المعاينة)' : 'En attente de visite',
+    kpi3: isAr ? 'حجوزات مؤكدة (أيام مغلقة)' : 'Réservations Confirmées',
     kpi4: isAr ? 'قائمة الانتظار' : 'Liste d\'attente',
-    recentBookings: isAr ? 'أحدث طلبات وفترات الحجز' : 'Dernières Réservations',
-    bookingId: isAr ? 'رقم الحجز' : 'ID',
+    recentBookings: isAr ? 'أحدث طلبات الحجز' : 'Dernières Demandes',
+    bookingId: isAr ? 'رقم الطلب' : 'ID',
     client: isAr ? 'اسم الزبون' : 'Client',
     date: isAr ? 'التاريخ والفترة' : 'Date & Créneau',
     space: isAr ? 'الفضاء' : 'Espace',
     amount: isAr ? 'المبلغ' : 'Montant',
-    status: isAr ? 'الحالة والمهلة' : 'Statut & Délai',
-    action: isAr ? 'الإجراء والعقد' : 'Action & Contrat',
-    confirmed: isAr ? 'مؤكد' : 'Confirmé',
-    provisional: isAr ? 'مؤقت (بانتظار العربون)' : 'Provisoire',
+    status: isAr ? 'حالة المعاينة' : 'Statut Visite',
+    action: isAr ? 'الإجراء وإغلاق اليوم' : 'Action & Confirmation',
+    confirmed: isAr ? 'مؤكد (اليوم مغلق)' : 'Confirmé (Bloqué)',
+    provisional: isAr ? 'غير مؤكد (لم يعاين الصالة)' : 'Non Confirmé',
     cancelled: isAr ? 'ملغى' : 'Annulé',
-    manage: isAr ? 'إدارة' : 'Gérer',
     contractBtn: isAr ? 'العقد الرقمي' : 'Contrat Numérique',
     addWorker: isAr ? 'إضافة مساعد / عامل' : 'Ajouter un assistant',
   };
@@ -688,66 +757,76 @@ export default function AdminDashboard() {
             className={`${styles.navItem} ${activeTab === 'overview' ? styles.navItemActive : ''}`}
             onClick={() => { setActiveTab('overview'); setSidebarOpen(false); }}
           >
-            <IconDashboard />
+            <IconDashboard/>
             <span>{t.overview}</span>
+          </button>
+
+          {/* تبويب قسم الطلبات المفعّل مع عداد التنبيه */}
+          <button 
+            className={`${styles.navItem} ${activeTab === 'orders' ? styles.navItemActive : ''}`}
+            onClick={() => { setActiveTab('orders'); setSidebarOpen(false); }}
+          >
+            <IconInbox/>
+            <span className={styles.navLabel}>{t.orders}</span>
+            <span className={styles.unconfirmedBadgeCount}>{unconfirmedOrders.length}</span>
           </button>
 
           <button 
             className={`${styles.navItem} ${activeTab === 'calendar' ? styles.navItemActive : ''}`}
             onClick={() => { setActiveTab('calendar'); setSidebarOpen(false); }}
           >
-            <IconCalendar />
-            <span>{t.calendar}</span>
+            <IconCalendar/>
+            <span className={styles.navLabel}>{t.calendar}</span>
           </button>
 
           <button 
             className={`${styles.navItem} ${activeTab === 'site' ? styles.navItemActive : ''}`}
             onClick={() => { setActiveTab('site'); setSidebarOpen(false); }}
           >
-            <IconHallSite />
-            <span>{t.site}</span>
+            <IconHallSite/>
+            <span className={styles.navLabel}>{t.site}</span>
           </button>
 
           <button 
             className={`${styles.navItem} ${activeTab === 'inspection' ? styles.navItemActive : ''}`}
             onClick={() => { setActiveTab('inspection'); setSidebarOpen(false); }}
           >
-            <IconClipboardCheck />
-            <span>{t.inspection}</span>
+            <IconClipboardCheck/>
+            <span className={styles.navLabel}>{t.inspection}</span>
           </button>
 
           <button 
             className={`${styles.navItem} ${activeTab === 'staff' ? styles.navItemActive : ''}`}
             onClick={() => { setActiveTab('staff'); setSidebarOpen(false); }}
           >
-            <IconUsers />
-            <span>{t.staff}</span>
+            <IconUsers/>
+            <span className={styles.navLabel}>{t.staff}</span>
           </button>
 
           <button 
             className={`${styles.navItem} ${activeTab === 'sms' ? styles.navItemActive : ''}`}
             onClick={() => { setActiveTab('sms'); setSidebarOpen(false); }}
           >
-            <IconSms />
-            <span>{t.sms}</span>
+            <IconSms/>
+            <span className={styles.navLabel}>{t.sms}</span>
           </button>
 
           <button 
             className={`${styles.navItem} ${activeTab === 'settings' ? styles.navItemActive : ''}`}
             onClick={() => { setActiveTab('settings'); setSidebarOpen(false); }}
           >
-            <IconSettings />
-            <span>{t.settings}</span>
+            <IconSettings/>
+            <span className={styles.navLabel}>{t.settings}</span>
           </button>
         </nav>
 
         <div className={styles.sidebarFooter}>
           <a href={`/v/${hallData?.slug}`} target="_blank" rel="noreferrer" className={styles.viewLiveSiteBtn}>
-            <IconHallSite />
+            <IconHallSite/>
             <span>{t.viewSiteBtn}</span>
           </a>
           <button onClick={handleLogout} className={styles.logoutBtn}>
-            <IconLogout />
+            <IconLogout/>
             <span>{t.logoutBtn}</span>
           </button>
         </div>
@@ -759,19 +838,19 @@ export default function AdminDashboard() {
       <div className={styles.mainWrapper}>
         <header className={styles.adminHeader}>
           <button className={styles.toggleMenuBtn} onClick={() => setSidebarOpen(true)}>
-            <IconMenu />
+            <IconMenu/>
           </button>
           
           <h1 className={styles.headerTitle}>{isAr ? 'لوحة إدارة القاعة' : 'Gestion de la Salle'}</h1>
 
           <div className={styles.headerActions}>
             <button className={styles.langBtn} onClick={toggleLanguage}>
-              <IconGlobe />
+              <IconGlobe/>
               <span>{isAr ? 'FR' : 'AR'}</span>
             </button>
 
             <button className={styles.addBookingBtn} onClick={() => setIsAddBookingOpen(true)}>
-              <IconPlus />
+              <IconPlus/>
               <span>{t.newBookingBtn}</span>
             </button>
 
@@ -784,7 +863,7 @@ export default function AdminDashboard() {
 
         {licenseInfo.daysToExpiry <= 30 && (
           <div className={styles.alertBanner}>
-            <IconAlertTriangle />
+            <IconAlertTriangle/>
             <span>
               {isAr 
                 ? `تنبيه إداري: ينتهي تأمين المنشأة ورخصة السلامة خلال ${licenseInfo.daysToExpiry} يوماً (${licenseInfo.insuranceDate}). يُرجى التجديد.`
@@ -800,24 +879,24 @@ export default function AdminDashboard() {
             <div className={styles.tabPaneAnim}>
               <section className={styles.kpiGrid}>
                 <div className={styles.kpiCard}>
-                  <div className={styles.kpiIcon}>📅</div>
+                  <div className={styles.kpiIcon}>📨</div>
                   <div className={styles.kpiData}>
                     <span>{t.kpi1}</span>
-                    <strong>{bookings.length} {isAr ? 'حجوزات' : 'réservations'}</strong>
+                    <strong>{bookings.length} {isAr ? 'طلبات' : 'demandes'}</strong>
                   </div>
                 </div>
                 <div className={styles.kpiCard}>
                   <div className={styles.kpiIcon}>⏳</div>
                   <div className={styles.kpiData}>
                     <span>{t.kpi2}</span>
-                    <strong>{bookings.filter(b => b.status === 'provisional').length} {isAr ? 'مؤقتة' : 'provisoires'}</strong>
+                    <strong>{unconfirmedOrders.length} {isAr ? 'غير مؤكدة' : 'non confirmées'}</strong>
                   </div>
                 </div>
                 <div className={styles.kpiCard}>
-                  <div className={styles.kpiIcon}>🎉</div>
+                  <div className={styles.kpiIcon}>✅</div>
                   <div className={styles.kpiData}>
                     <span>{t.kpi3}</span>
-                    <strong>-</strong>
+                    <strong>{confirmedBookings.length} {isAr ? 'مؤكدة (مغلقة)' : 'confirmées'}</strong>
                   </div>
                 </div>
                 <div className={styles.kpiCard}>
@@ -833,17 +912,17 @@ export default function AdminDashboard() {
                 <div className={styles.tableHeader}>
                   <div>
                     <h2>{t.recentBookings}</h2>
-                    <p>{isAr ? 'إدارة فترات الظهيرة والعشاء مع مهلة تحرير العربون التلقائي' : 'Gérez vos créneaux et acomptes'}</p>
+                    <p>{isAr ? 'قائمة الطلبات الواردة من الصالة ومتابعة حالة المعاينة الحضورية' : 'Suivi des demandes d\'événements'}</p>
                   </div>
-                  <button className={styles.secondaryBtn} onClick={() => setActiveTab('calendar')}>
-                    {isAr ? 'عرض التقويم بالفترات' : 'Voir créneaux'}
+                  <button className={styles.secondaryBtn} onClick={() => setActiveTab('orders')}>
+                    {isAr ? 'انتقل إلى قسم الطلبات' : 'Voir toutes les demandes'}
                   </button>
                 </div>
 
                 <div className={styles.tableContainer}>
                   {bookings.length === 0 ? (
                     <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
-                      {isAr ? 'لا توجد حجوزات مسجلة بعد في هذه القاعة' : 'Aucune réservation enregistrée.'}
+                      {isAr ? 'لا توجد طلبات حجز مسجلة بعد' : 'Aucune demande enregistrée.'}
                     </div>
                   ) : (
                     <table className={styles.bookingsTable}>
@@ -859,9 +938,192 @@ export default function AdminDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {bookings.map((item) => (
+                        {bookings.map((item) => {
+                          const hasConflict = isBookingConflicted(item);
+                          return (
+                            <tr key={item.id} className={hasConflict ? styles.rowConflicted : ''}>
+                              <td className={styles.bookingId}>#{item.id}</td>
+                              <td className={styles.clientName}>
+                                <div>{item.client}</div>
+                                <small className={styles.subText}>{item.phone}</small>
+                              </td>
+                              <td>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                  <span>{item.date}</span>
+                                  {hasConflict && (
+                                    <span className={styles.conflictWarningBadge} title={isAr ? 'يوجد حجز آخر بنفس التاريخ والتوقيت!' : 'Conflit de réservation !'}>
+                                      ⚠️ {isAr ? 'طلب متضارب' : 'Conflit'}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className={styles.timeSlotBadge}>{getTimeSlotLabel(item.timeSlot)}</span>
+                              </td>
+                              <td>{item.spaceName}</td>
+                              <td className={styles.amountText}>
+                                <div>{item.amount}</div>
+                                <small className={styles.subText}>{isAr ? `العربون: ${item.deposit}` : `Acompte: ${item.deposit}`}</small>
+                              </td>
+                              <td>
+                                <span className={`${styles.statusBadge} ${styles[item.status]}`}>
+                                  {item.status === 'confirmed' ? (isAr ? 'مؤكد (اليوم مغلق)' : 'Confirmé') : (isAr ? 'غير مؤكد (لم يعاين الصالة)' : 'Non Confirmé')}
+                                </span>
+                              </td>
+                              <td>
+                                <div className={styles.tableActions}>
+                                  {item.status === 'provisional' ? (
+                                    <button 
+                                      className={styles.confirmBookingBtn} 
+                                      onClick={() => handleUpdateBookingStatus(item.id, 'confirmed')}
+                                      title={isAr ? "انقر لتأكيد الحجز وإغلاق اليوم وإلغاء الطلب المتضارب" : "Confirmer la réservation"}
+                                    >
+                                      <IconCheck/> <span>{isAr ? 'تأكيد الحجز وتثبيت اليوم' : 'Confirmer'}</span>
+                                    </button>
+                                  ) : (
+                                    <button className={styles.actionBtn} onClick={() => handleOpenContract(item)}>
+                                      <IconFileText/> <span>{t.contractBtn}</span>
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* تبويب 2: قسم الطلبات الخاص والمفصل بالكامل */}
+          {activeTab === 'orders' && (
+            <div className={styles.tabPaneAnim}>
+              
+              {/* 1. قسم الطلبات الغير مؤكدة */}
+              <section className={styles.panelCard} style={{ marginBottom: '1.5rem' }}>
+                <div className={styles.panelHeader}>
+                  <div>
+                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      ⏳ {isAr ? 'طلبات بانتظار المعاينة والتأكيد (غير مؤكدة)' : 'Demandes non confirmées'}
+                      <span className={styles.unconfirmedBadgeCount}>{unconfirmedOrders.length}</span>
+                    </h2>
+                    <p className={styles.sectionDesc}>
+                      {isAr ? 'هذه الطلبات أرسلها العملاء ولم يعاينوا الصالة بعد. عند معاينتها واقتناعهم، اضغط على زر "تأكيد الحجز" ليصبح هذا اليوم مغلقاً في التقويم وتنتقل لمؤكد.' : 'Clients n\'ayant pas encore visité la salle.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.tableContainer}>
+                  {unconfirmedOrders.length === 0 ? (
+                    <div style={{ padding: '2.5rem', textAlign: 'center', color: '#64748b', background: '#f8fafc', borderRadius: '16px' }}>
+                      🎉 {isAr ? 'لا توجد أي طلبات معلقة بانتظار المعاينة حالياً' : 'Aucune demande en attente.'}
+                    </div>
+                  ) : (
+                    <table className={styles.bookingsTable}>
+                      <thead>
+                        <tr>
+                          <th>رقم الطلب</th>
+                          <th>معلومات العميل</th>
+                          <th>اليوم والفترة المطلوبة</th>
+                          <th>الفضاء</th>
+                          <th>المبلغ والتمويل</th>
+                          <th>حالة الطلب</th>
+                          <th>إجراء التأكيد والقبول</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {unconfirmedOrders.map((item) => {
+                          const hasConflict = isBookingConflicted(item);
+                          return (
+                            <tr key={item.id} className={hasConflict ? styles.rowConflicted : ''} style={{ background: hasConflict ? '#fff7ed' : '#fffbeb' }}>
+                              <td className={styles.bookingId}>#{item.id}</td>
+                              <td className={styles.clientName}>
+                                <div>{item.client}</div>
+                                <small className={styles.subText}>📱 {item.phone}</small>
+                              </td>
+                              <td>
+                                <div style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                  <span>📅 {item.date}</span>
+                                  {hasConflict && (
+                                    <span className={styles.conflictWarningBadge}>
+                                      ⚠️ {isAr ? 'طلب متضارب' : 'Conflit'}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className={styles.timeSlotBadge}>{getTimeSlotLabel(item.timeSlot)}</span>
+                              </td>
+                              <td>{item.spaceName}</td>
+                              <td className={styles.amountText}>
+                                <div>{item.amount}</div>
+                                <small className={styles.subText}>{isAr ? `العربون المقترح: ${item.deposit}` : `Acompte: ${item.deposit}`}</small>
+                              </td>
+                              <td>
+                                <span className={`${styles.statusBadge} ${styles.provisional}`}>
+                                  ⏳ {isAr ? 'غير مؤكد (لم يعاين الصالة)' : 'En attente'}
+                                </span>
+                              </td>
+                              <td>
+                                <div className={styles.tableActions} style={{ display: 'flex', gap: '0.5rem' }}>
+                                  <button 
+                                    className={styles.confirmBookingBtn} 
+                                    onClick={() => handleUpdateBookingStatus(item.id, 'confirmed')}
+                                  >
+                                    <IconCheck/> <span>{isAr ? 'تأكيد الحجز وتثبيت اليوم' : 'Confirmer et Bloquer'}</span>
+                                  </button>
+                                  <button 
+                                    className={styles.cancelBookingBtn} 
+                                    onClick={() => handleUpdateBookingStatus(item.id, 'cancelled')}
+                                  >
+                                    ✕ {isAr ? 'إلغاء الطلب' : 'Annuler'}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </section>
+
+              {/* 2. قسم الطلبات والحجوزات المؤكدة */}
+              <section className={styles.panelCard}>
+                <div className={styles.panelHeader}>
+                  <div>
+                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#059669' }}>
+                      ✅ {isAr ? 'الحجوزات المؤكدة (التواريخ المغلقة)' : 'Réservations confirmées'}
+                      <span className={styles.confirmedBadgeCount}>{confirmedBookings.length}</span>
+                    </h2>
+                    <p className={styles.sectionDesc}>
+                      {isAr ? 'الحجوزات التي زار أصحابها القاعة وتم تأكيدها ورسميتها، وأيامها مغلقة في التقويم للمستهلكين.' : 'Dates verrouillées et confirmées.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.tableContainer}>
+                  {confirmedBookings.length === 0 ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+                      {isAr ? 'لا توجد حجوزات مؤكدة حتى الآن' : 'Aucune réservation confirmée.'}
+                    </div>
+                  ) : (
+                    <table className={styles.bookingsTable}>
+                      <thead>
+                        <tr>
+                          <th>رقم الحجز</th>
+                          <th>العميل المؤكد</th>
+                          <th>التاريخ المغلق والفترة</th>
+                          <th>الفضاء المحجوز</th>
+                          <th>المبلغ المترتب</th>
+                          <th>الحالة</th>
+                          <th>العقد التوثيقي</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {confirmedBookings.map((item) => (
                           <tr key={item.id}>
-                            <td className={styles.bookingId}>{item.id}</td>
+                            <td className={styles.bookingId}>#{item.id}</td>
                             <td className={styles.clientName}>
                               <div>{item.client}</div>
                               <small className={styles.subText}>{item.phone}</small>
@@ -873,24 +1135,17 @@ export default function AdminDashboard() {
                             <td>{item.spaceName}</td>
                             <td className={styles.amountText}>
                               <div>{item.amount}</div>
-                              <small className={styles.subText}>{isAr ? `العربون: ${item.deposit}` : `Acompte: ${item.deposit}`}</small>
+                              <small className={styles.subText}>{isAr ? `العربون المدفوع: ${item.deposit}` : `Acompte: ${item.deposit}`}</small>
                             </td>
                             <td>
-                              <span className={`${styles.statusBadge} ${styles[item.status]}`}>
-                                {t[item.status] || item.status}
+                              <span className={`${styles.statusBadge} ${styles.confirmed}`}>
+                                ✓ {isAr ? 'مؤكد (مغلق)' : 'Confirmé'}
                               </span>
-                              {item.status === 'provisional' && (
-                                <div className={styles.expiryTimer}>
-                                  <IconClock /> <span>{item.holdExpiresAt}</span>
-                                </div>
-                              )}
                             </td>
                             <td>
-                              <div className={styles.tableActions}>
-                                <button className={styles.actionBtn} onClick={() => handleOpenContract(item)}>
-                                  <IconFileText /> <span>{t.contractBtn}</span>
-                                </button>
-                              </div>
+                              <button className={styles.actionBtn} onClick={() => handleOpenContract(item)}>
+                                <IconFileText/> <span>{t.contractBtn}</span>
+                              </button>
                             </td>
                           </tr>
                         ))}
@@ -900,73 +1155,141 @@ export default function AdminDashboard() {
                 </div>
               </section>
 
-              <section className={styles.panelCard} style={{ marginTop: '1.5rem' }}>
-                <div className={styles.panelHeader}>
-                  <h2>{isAr ? 'قائمة الانتظار لموسم الذروة' : 'Liste d\'attente Haute Saison'}</h2>
-                  <span className={styles.waitCountBadge}>{waitlist.length} {isAr ? 'طلبات متراكمة' : 'demandes'}</span>
-                </div>
-                {waitlist.length === 0 ? (
-                  <p style={{ color: '#64748b', fontSize: '0.9rem', margin: '0.5rem 0 0 0' }}>{isAr ? 'لا توجد طلبات انتظار حالياً' : 'Aucune demande en attente'}</p>
-                ) : (
-                  <div className={styles.staffGrid}>
-                    {waitlist.map((wl) => (
-                      <div key={wl.id} className={styles.staffCard}>
-                        <div className={styles.staffAvatar}>⏳</div>
-                        <div className={styles.staffInfo}>
-                          <strong>{wl.client} ({wl.phone})</strong>
-                          <span>{isAr ? `التاريخ المطلوب: ${wl.desiredDate} (${getTimeSlotLabel(wl.timeSlot)})` : wl.desiredDate}</span>
-                          <small>{wl.note}</small>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
             </div>
           )}
 
-          {/* تبويب 2: التقويم */}
+          {/* تبويب 3: التقويم التفاعلي */}
           {activeTab === 'calendar' && (
             <div className={styles.tabPaneAnim}>
               <div className={styles.panelCard}>
-                <div className={styles.panelHeader}>
+                
+                <div className={styles.calendarHeaderRow}>
                   <div>
-                    <h2>{isAr ? 'تقويم الشغور مقسّم بالفترات (الظهيرة / المساء)' : 'Calendrier par Créneaux'}</h2>
-                    <p className={styles.sectionDesc}>{isAr ? 'كل يوم يحتوي على فترتين مستقلتين بسعر وساعات خاصة' : 'Chaque jour a deux créneaux مستقلين'}</p>
+                    <h2>{isAr ? 'تقويم الشغور وإدارة الفترات الحية' : 'Gestion du Calendrier'}</h2>
+                    <p className={styles.sectionDesc}>{isAr ? 'عند تأكيد أي طلب من قسم الطلبات، سينغلق اليوم في هذه الشبكة أوتوماتيكياً' : 'Gérez vos dates par créneaux'}</p>
                   </div>
+
+                  <div className={styles.monthNavGroup}>
+                    <button className={styles.monthNavBtn} onClick={() => changeCalendarMonth(-1)}>
+                      <IconChevronRight/>
+                    </button>
+                    <span className={styles.currentMonthTitle}>{calendarMonthLabel}</span>
+                    <button className={styles.monthNavBtn} onClick={() => changeCalendarMonth(1)}>
+                      <IconChevronLeft/>
+                    </button>
+                  </div>
+
                   <button className={styles.addBookingBtn} onClick={() => setIsAddBookingOpen(true)}>
-                    <IconPlus /> <span>{t.newBookingBtn}</span>
+                    <IconPlus/> <span>{t.newBookingBtn}</span>
                   </button>
+                </div>
+
+                <div className={styles.calendarLegendBar}>
+                  <div className={styles.legendItem}>
+                    <span className={`${styles.legendDot} ${styles.dotFree}`} />
+                    <span>{isAr ? 'متاح للحجز' : 'Disponible'}</span>
+                  </div>
+                  <div className={styles.legendItem}>
+                    <span className={`${styles.legendDot} ${styles.dotConfirmed}`} />
+                    <span>{isAr ? 'مغلق / مؤكد (تم المعاينة)' : 'Bloqué / Confirmé'}</span>
+                  </div>
+                  <div className={styles.legendItem}>
+                    <span className={`${styles.legendDot} ${styles.dotProvisional}`} />
+                    <span>{isAr ? 'غير مؤكد (بانتظار المعاينة)' : 'En attente'}</span>
+                  </div>
                 </div>
 
                 <div className={styles.calendarSimGrid}>
                   {['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'].map((day, idx) => (
                     <div key={idx} className={styles.calDayHeader}>{day}</div>
                   ))}
-                  {Array.from({ length: 28 }).map((_, i) => {
-                    const dayNum = i + 1;
+
+                  {getCalendarDays().map((cell, i) => {
+                    if (cell.isPadding) {
+                      return <div key={i} className={styles.calSlotCellEmpty} />;
+                    }
+
+                    const dayAfternoonBooking = bookings.find(
+                      b => b.date === cell.dateStr && (b.timeSlot === 'afternoon' || b.timeSlot === 'full_day') && b.status !== 'cancelled'
+                    );
+
+                    const dayEveningBooking = bookings.find(
+                      b => b.date === cell.dateStr && (b.timeSlot === 'evening' || b.timeSlot === 'full_day') && b.status !== 'cancelled'
+                    );
+
                     return (
                       <div key={i} className={styles.calSlotCell}>
                         <div className={styles.calNumRow}>
-                          <span className={styles.calNum}>{dayNum}</span>
+                          <span className={styles.calNum}>{cell.dayNum}</span>
                         </div>
-                        <div className={`${styles.slotItem} ${styles.slotFree}`}>
-                          <span>{isAr ? 'الظهيرة' : 'Midi'}</span>
-                          <small>{isAr ? 'شاغر' : 'Libre'}</small>
-                        </div>
-                        <div className={`${styles.slotItem} ${styles.slotFree}`}>
-                          <span>{isAr ? 'المساء' : 'Soir'}</span>
-                          <small>{isAr ? 'شاغر' : 'Libre'}</small>
-                        </div>
+
+                        {/* فترة الظهيرة */}
+                        {dayAfternoonBooking ? (
+                          <div 
+                            className={`${styles.slotItem} ${dayAfternoonBooking.status === 'confirmed' ? styles.slotConfirmed : styles.slotProvisional}`}
+                            title={`${dayAfternoonBooking.client} (${dayAfternoonBooking.phone})`}
+                          >
+                            <span>☀️ {isAr ? 'الظهيرة' : 'Midi'}</span>
+                            <small>{dayAfternoonBooking.client.split(' ')[0]}</small>
+                          </div>
+                        ) : (
+                          <div 
+                            className={`${styles.slotItem} ${styles.slotFree}`}
+                            onClick={() => {
+                              setNewBooking({
+                                ...newBooking,
+                                date: cell.dateStr,
+                                timeSlot: 'afternoon',
+                                status: 'provisional',
+                                client: ''
+                              });
+                              setIsAddBookingOpen(true);
+                            }}
+                            title={isAr ? "اضغط لإضافة طلب في فترة الظهيرة" : "Ajouter demande midi"}
+                          >
+                            <span>☀️ {isAr ? 'الظهيرة' : 'Midi'}</span>
+                            <small>{isAr ? '+ طلب' : '+ Demande'}</small>
+                          </div>
+                        )}
+
+                        {/* فترة المساء */}
+                        {dayEveningBooking ? (
+                          <div 
+                            className={`${styles.slotItem} ${dayEveningBooking.status === 'confirmed' ? styles.slotConfirmed : styles.slotProvisional}`}
+                            title={`${dayEveningBooking.client} (${dayEveningBooking.phone})`}
+                          >
+                            <span>🌙 {isAr ? 'المساء' : 'Soir'}</span>
+                            <small>{dayEveningBooking.client.split(' ')[0]}</small>
+                          </div>
+                        ) : (
+                          <div 
+                            className={`${styles.slotItem} ${styles.slotFree}`}
+                            onClick={() => {
+                              setNewBooking({
+                                ...newBooking,
+                                date: cell.dateStr,
+                                timeSlot: 'evening',
+                                status: 'provisional',
+                                client: ''
+                              });
+                              setIsAddBookingOpen(true);
+                            }}
+                            title={isAr ? "اضغط لإضافة طلب في فترة المساء" : "Ajouter demande soir"}
+                          >
+                            <span>🌙 {isAr ? 'المساء' : 'Soir'}</span>
+                            <small>{isAr ? '+ طلب' : '+ Demande'}</small>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
                 </div>
+
               </div>
             </div>
           )}
 
-          {/* تبويب 3: موقع القاعة الخاص والخصائص */}
+          {/* تبويب 4: موقع القاعة الخاص والخصائص */}
           {activeTab === 'site' && (
             <div className={styles.tabPaneAnim}>
               <div className={styles.panelCard}>
@@ -976,11 +1299,8 @@ export default function AdminDashboard() {
                 </p>
 
                 <form className={styles.siteCustomizerForm} onSubmit={handleSaveSiteSettings}>
-                  
-                  {/* 1. المعلومات الأساسية والتواصل والموقع */}
                   <div className={styles.sectionBlock}>
                     <h3>{isAr ? '1. المعلومات الأساسية والتواصل والموقع' : '1. Informations Générales & Localisation'}</h3>
-                    
                     <div className={styles.inputGroup} style={{ marginBottom: '1rem' }}>
                       <label>{isAr ? 'رابط موقع القاعة المباشر (Slug)' : 'Lien Web (Slug)'}</label>
                       <input 
@@ -990,7 +1310,6 @@ export default function AdminDashboard() {
                         placeholder="salle-el-bahdja"
                       />
                     </div>
-
                     <div className={styles.formRow}>
                       <div className={styles.inputGroup}>
                         <label>{isAr ? 'اسم القاعة التجاري' : 'Nom commercial'}</label>
@@ -1011,7 +1330,6 @@ export default function AdminDashboard() {
                         />
                       </div>
                     </div>
-
                     <div className={styles.formRow}>
                       <div className={styles.inputGroup}>
                         <label>{isAr ? 'رقم الهاتف المباشر للاتصال' : 'Téléphone direct'}</label>
@@ -1032,7 +1350,6 @@ export default function AdminDashboard() {
                         />
                       </div>
                     </div>
-
                     <div className={styles.inputGroup}>
                       <label>{isAr ? 'رابط الموقع الجغرافي على Google Maps' : 'Lien Google Maps'}</label>
                       <input 
@@ -1044,13 +1361,11 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  {/* إعدادات زر الواتساب العائم */}
                   <div className={styles.sectionBlock}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                      <span style={{ color: '#25D366' }}><IconWhatsApp /></span>
+                      <span style={{ color: '#25D366' }}><IconWhatsApp/></span>
                       <h3 style={{ margin: 0 }}>{isAr ? 'إعدادات زر التواصل عبر WhatsApp' : 'Paramètres WhatsApp'}</h3>
                     </div>
-
                     <div className={styles.formRow}>
                       <label className={styles.checkboxLabel}>
                         <input 
@@ -1061,7 +1376,6 @@ export default function AdminDashboard() {
                         <span>{isAr ? 'إظهار زر الواتساب العائم في أسفل الموقع للزبائن' : 'Afficher le bouton WhatsApp flottant sur le site'}</span>
                       </label>
                     </div>
-
                     {showWhatsapp && (
                       <div className={styles.inputGroup} style={{ marginTop: '0.85rem' }}>
                         <label>{isAr ? 'رقم هاتف الواتساب المخصص للرد على استفسارات الزبائن' : 'Numéro WhatsApp de contact'}</label>
@@ -1075,19 +1389,13 @@ export default function AdminDashboard() {
                     )}
                   </div>
 
-                  {/* 2. الخصائص والمرافق المكتوبة */}
                   <div className={styles.sectionBlock}>
                     <div className={styles.sectionTitleRow} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                       <h3 style={{ margin: 0 }}>{isAr ? '2. الخصائص والمرافق المتاحة (Amenities)' : '2. Équipements & Commodités'}</h3>
-                      <button 
-                        type="button" 
-                        className={styles.secondaryBtn}
-                        onClick={handleAddAmenity}
-                      >
+                      <button type="button" className={styles.secondaryBtn} onClick={handleAddAmenity}>
                         + {isAr ? 'إضافة خاصية جديدة' : 'Ajouter une commodité'}
                       </button>
                     </div>
-
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       {amenities.map((item, index) => (
                         <div key={index} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -1101,50 +1409,23 @@ export default function AdminDashboard() {
                           <button
                             type="button"
                             onClick={() => handleRemoveAmenity(index)}
-                            title={isAr ? 'حذف الخاصية' : 'Supprimer'}
-                            style={{ 
-                              background: 'rgba(239, 68, 68, 0.1)', 
-                              color: '#ef4444', 
-                              border: '1px solid #fca5a5', 
-                              borderRadius: '8px', 
-                              padding: '0.6rem 0.8rem', 
-                              cursor: 'pointer', 
-                              fontWeight: 'bold' 
-                            }}
-                          >
-                            ✕
-                          </button>
+                            style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #fca5a5', borderRadius: '8px', padding: '0.6rem 0.8rem', cursor: 'pointer', fontWeight: 'bold' }}
+                          >✕</button>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* 3. أسعار الفترات والخدمات المخصص */}
                   <div className={styles.sectionBlock}>
                     <div className={styles.sectionTitleRow} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                       <h3 style={{ margin: 0 }}>{isAr ? '3. جدول أسعار الفترات والخدمات' : '3. Tarifs et Prestations'}</h3>
-                      <button 
-                        type="button" 
-                        className={styles.secondaryBtn}
-                        onClick={handleAddPricingPackage}
-                      >
+                      <button type="button" className={styles.secondaryBtn} onClick={handleAddPricingPackage}>
                         + {isAr ? 'إضافة سعر/فترة جديدة' : 'Ajouter un tarif'}
                       </button>
                     </div>
-
                     <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #cbd5e1', overflow: 'hidden' }}>
                       {pricingPackages.map((pkg, index) => (
-                        <div 
-                          key={index} 
-                          style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '0.75rem', 
-                            padding: '0.75rem 1rem', 
-                            borderBottom: index < pricingPackages.length - 1 ? '1px solid #e2e8f0' : 'none',
-                            background: index % 2 === 0 ? '#ffffff' : '#f8fafc'
-                          }}
-                        >
+                        <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', borderBottom: index < pricingPackages.length - 1 ? '1px solid #e2e8f0' : 'none', background: index % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
                           <input
                             type="text"
                             value={pkg.title}
@@ -1165,25 +1446,13 @@ export default function AdminDashboard() {
                           <button
                             type="button"
                             onClick={() => handleRemovePricingPackage(index)}
-                            title={isAr ? 'حذف البند' : 'Supprimer'}
-                            style={{ 
-                              background: 'rgba(239, 68, 68, 0.1)', 
-                              color: '#ef4444', 
-                              border: '1px solid #fca5a5', 
-                              borderRadius: '8px', 
-                              padding: '0.55rem 0.75rem', 
-                              cursor: 'pointer', 
-                              fontWeight: 'bold' 
-                            }}
-                          >
-                            ✕
-                          </button>
+                            style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #fca5a5', borderRadius: '8px', padding: '0.55rem 0.75rem', cursor: 'pointer', fontWeight: 'bold' }}
+                          >✕</button>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* 4. وسائط القاعة */}
                   <div className={styles.sectionBlock}>
                     <div className={styles.sectionTitleRow} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                       <h3>{isAr ? '4. وسائط القاعة (الصور والفيديو)' : '4. Médias (Photos & Vidéo)'}</h3>
@@ -1220,29 +1489,16 @@ export default function AdminDashboard() {
                             placeholder={isAr ? 'رابط صورة أونلاين (https://...)' : 'URL de la photo...'}
                             style={{ flex: 1, minWidth: '220px', padding: '0.6rem 0.8rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
                           />
-                          <button
-                            type="button"
-                            className={styles.secondaryBtn}
-                            onClick={() => handleAddImage(newImageUrl)}
-                            style={{ padding: '0.6rem 1.25rem' }}
-                          >
+                          <button type="button" className={styles.secondaryBtn} onClick={() => handleAddImage(newImageUrl)} style={{ padding: '0.6rem 1.25rem' }}>
                             {isAr ? 'إضافة بالرابط' : 'Ajouter URL'}
                           </button>
                           <label className={styles.addBookingBtn} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', margin: 0, padding: '0.6rem 1.25rem' }}>
                             📁 {uploading ? (isAr ? 'جاري الرفع...' : 'Téléversement...') : (isAr ? 'رفع من الجهاز' : 'Uploader')}
-                            <input
-                              type="file"
-                              accept="image/*"
-                              multiple
-                              disabled={uploading}
-                              onChange={handleFileUpload}
-                              style={{ display: 'none' }}
-                            />
+                            <input type="file" accept="image/*" multiple disabled={uploading} onChange={handleFileUpload} style={{ display: 'none' }} />
                           </label>
                         </div>
                       )}
 
-                      {/* عرض الصور المحددة في الأسفل بشكل منظم وواضح */}
                       <div style={{ marginTop: '1rem', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
                         <h5 style={{ margin: '0 0 1rem 0', color: '#334155', fontSize: '0.95rem' }}>
                           🖼️ {isAr ? 'الصور المحددة حالياً' : 'Photos sélectionnées'} ({galleryImages.length})
@@ -1255,62 +1511,10 @@ export default function AdminDashboard() {
                         ) : (
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
                             {galleryImages.map((imgUrl, index) => (
-                              <div 
-                                key={index} 
-                                style={{ 
-                                  position: 'relative', 
-                                  height: '120px', 
-                                  borderRadius: '10px', 
-                                  overflow: 'hidden', 
-                                  border: '1px solid #e2e8f0', 
-                                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)', 
-                                  background: '#f8fafc' 
-                                }}
-                              >
-                                <img 
-                                  src={imgUrl} 
-                                  alt={`صورة ${index + 1}`} 
-                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                                />
-                                <span 
-                                  style={{ 
-                                    position: 'absolute', 
-                                    bottom: '6px', 
-                                    right: '6px', 
-                                    background: 'rgba(15, 23, 42, 0.75)', 
-                                    color: '#fff', 
-                                    fontSize: '0.75rem', 
-                                    padding: '2px 8px', 
-                                    borderRadius: '12px', 
-                                    fontWeight: 'bold' 
-                                  }}
-                                >
-                                  #{index + 1}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveImage(index)}
-                                  title={isAr ? 'حذف الصورة' : 'Supprimer'}
-                                  style={{ 
-                                    position: 'absolute', 
-                                    top: '6px', 
-                                    left: '6px', 
-                                    background: 'rgba(239, 68, 68, 0.9)', 
-                                    color: '#fff', 
-                                    border: 'none', 
-                                    borderRadius: '50%', 
-                                    width: '26px', 
-                                    height: '26px', 
-                                    cursor: 'pointer', 
-                                    fontWeight: 'bold', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center',
-                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                  }}
-                                >
-                                  ✕
-                                </button>
+                              <div key={index} style={{ position: 'relative', height: '120px', borderRadius: '10px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', background: '#f8fafc' }}>
+                                <img src={imgUrl} alt={`صورة ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <span style={{ position: 'absolute', bottom: '6px', right: '6px', background: 'rgba(15, 23, 42, 0.75)', color: '#fff', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>#{index + 1}</span>
+                                <button type="button" onClick={() => handleRemoveImage(index)} style={{ position: 'absolute', top: '6px', left: '6px', background: 'rgba(239, 68, 68, 0.9)', color: '#fff', border: 'none', borderRadius: '50%', width: '26px', height: '26px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
                               </div>
                             ))}
                           </div>
@@ -1320,14 +1524,14 @@ export default function AdminDashboard() {
                   </div>
 
                   <button type="submit" className={styles.saveChangesBtn}>
-                    <IconCheck /> <span>{isAr ? 'حفظ التعديلات ونشر الموقع' : 'Enregistrer et Publier'}</span>
+                    <IconCheck/> <span>{isAr ? 'حفظ التعديلات ونشر الموقع' : 'Enregistrer et Publier'}</span>
                   </button>
                 </form>
               </div>
             </div>
           )}
 
-          {/* تبويب 4: المعاينة */}
+          {/* تبويب 5: المعاينة */}
           {activeTab === 'inspection' && (
             <div className={styles.tabPaneAnim}>
               <div className={styles.panelCard}>
@@ -1337,10 +1541,9 @@ export default function AdminDashboard() {
                     <p className={styles.sectionDesc}>{isAr ? 'وثيقة توثيق حالة الأثاث والتجهيزات بالصور قبل التسليم وبعد المغادرة لتفادي النزاعات' : 'État des lieux et équipements avec photos'}</p>
                   </div>
                   <button className={styles.addBookingBtn} onClick={() => setIsInspectionModalOpen(true)}>
-                    <IconPlus /> <span>{isAr ? 'إجراء معاينة جديدة' : 'Nouvelle inspection'}</span>
+                    <IconPlus/> <span>{isAr ? 'إجراء معاينة جديدة' : 'Nouvelle inspection'}</span>
                   </button>
                 </div>
-
                 <div className={styles.staffGrid}>
                   <p style={{ color: '#64748b' }}>{isAr ? 'لا توجد تقارير معاينة حالياً' : 'Aucune inspection enregistrée'}</p>
                 </div>
@@ -1348,7 +1551,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* تبويب 5: طاقم العمل */}
+          {/* تبويب 6: طاقم العمل */}
           {activeTab === 'staff' && (
             <div className={styles.tabPaneAnim}>
               <div className={styles.panelCard}>
@@ -1358,10 +1561,9 @@ export default function AdminDashboard() {
                     <p className={styles.sectionDesc}>{isAr ? 'إدارة صلاحيات العامل الوحيد أو مساعد الاستقبال' : 'Gérer l\'accès de vos assistants'}</p>
                   </div>
                   <button className={styles.addBookingBtn} onClick={() => setIsAddWorkerOpen(true)}>
-                    <IconPlus /> <span>{t.addWorker}</span>
+                    <IconPlus/> <span>{t.addWorker}</span>
                   </button>
                 </div>
-
                 <div className={styles.staffGrid}>
                   {staffList.map((member) => (
                     <div key={member.id} className={styles.staffCard}>
@@ -1378,7 +1580,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* تبويب 6: SMS والـ QR */}
+          {/* تبويب 7: SMS والـ QR */}
           {activeTab === 'sms' && (
             <div className={styles.tabPaneAnim}>
               <div className={styles.gridTwoCols}>
@@ -1398,7 +1600,7 @@ export default function AdminDashboard() {
                   <h2>{isAr ? 'رمز Google Maps QR Code' : 'QR Code Google Maps'}</h2>
                   <p className={styles.sectionDesc}>{isAr ? 'اطبع الرمز في الاستقبال لجمع تقييمات الزبائن وتكثير زبائنك' : 'Imprimez votre QR code pour booster vos avis'}</p>
                   <div className={styles.qrDisplayBox}>
-                    <IconQr />
+                    <IconQr/>
                     <span>Google Maps QR Code</span>
                     <button className={styles.secondaryBtn}>{isAr ? 'تحميل جاهز للطباعة (PDF)' : 'Télécharger (PDF)'}</button>
                   </div>
@@ -1407,7 +1609,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* تبويب 7: الإعدادات والاشتراكات */}
+          {/* تبويب 8: الإعدادات والاشتراكات */}
           {activeTab === 'settings' && (
             <div className={styles.tabPaneAnim}>
               <div className={styles.panelCard}>
@@ -1452,7 +1654,7 @@ export default function AdminDashboard() {
         <div className={styles.modalBackdrop}>
           <div className={styles.modalBox} style={{ maxWidth: '420px', textAlign: 'center', padding: '2rem 1.5rem' }}>
             <div style={{ width: '60px', height: '60px', background: '#dcfce7', color: '#16a34a', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem auto' }}>
-              <IconCheck />
+              <IconCheck/>
             </div>
             <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b' }}>{isAr ? 'تمت العملية بنجاح!' : 'Succès!'}</h3>
             <p style={{ margin: '0 0 1.5rem 0', color: '#64748b', fontSize: '0.95rem' }}>{successMessage}</p>
@@ -1468,6 +1670,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* نافذة إضافة طلب جديد */}
       {isAddBookingOpen && (
         <div className={styles.modalBackdrop}>
           <div className={styles.modalBox}>
@@ -1476,11 +1679,24 @@ export default function AdminDashboard() {
               <button className={styles.modalCloseBtn} onClick={() => setIsAddBookingOpen(false)}>✕</button>
             </div>
             <form onSubmit={handleAddBookingSubmit} className={styles.modalForm}>
+              
               <div className={styles.inputGroup}>
-                <label>{isAr ? 'اسم الزبون الكامل' : 'Nom du client'}</label>
+                <label>{isAr ? 'حالة الطلب البدائية' : 'Statut initial'}</label>
+                <select 
+                  value={newBooking.status} 
+                  onChange={(e) => setNewBooking({...newBooking, status: e.target.value})}
+                  className={styles.selectInput}
+                >
+                  <option value="provisional">{isAr ? 'غير مؤكد (بانتظار المعاينة الحضورية)' : 'Provisoire (En attente)'}</option>
+                  <option value="confirmed">{isAr ? 'مؤكد مباشر (إغلاق هذا اليوم أوتوماتيكياً)' : 'Confirmé direct'}</option>
+                </select>
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label>{isAr ? 'اسم الزبون' : 'Nom du client'}</label>
                 <input 
                   type="text" 
-                  required 
+                  required
                   value={newBooking.client} 
                   onChange={(e) => setNewBooking({...newBooking, client: e.target.value})}
                   placeholder={isAr ? 'مثال: محمد العماري' : 'Ex: Mohamed Amari'} 
@@ -1492,14 +1708,14 @@ export default function AdminDashboard() {
                   <label>{isAr ? 'رقم الهاتف' : 'Téléphone'}</label>
                   <input 
                     type="tel" 
-                    required 
+                    required
                     value={newBooking.phone} 
                     onChange={(e) => setNewBooking({...newBooking, phone: e.target.value})}
                     placeholder="0550 00 00 00" 
                   />
                 </div>
                 <div className={styles.inputGroup}>
-                  <label>{isAr ? 'تاريخ المناسبة' : 'Date'}</label>
+                  <label>{isAr ? 'التاريخ المطلوب' : 'Date'}</label>
                   <input 
                     type="date" 
                     required 
@@ -1539,7 +1755,6 @@ export default function AdminDashboard() {
                   <label>{isAr ? 'المبلغ الإجمالي (دج)' : 'Montant total (DZD)'}</label>
                   <input 
                     type="number" 
-                    required 
                     placeholder="140000"
                     value={newBooking.amount} 
                     onChange={(e) => setNewBooking({...newBooking, amount: e.target.value})}
@@ -1561,7 +1776,7 @@ export default function AdminDashboard() {
                   {isAr ? 'إلغاء' : 'Annuler'}
                 </button>
                 <button type="submit" className={styles.addBookingBtn}>
-                  {isAr ? 'حفظ الحجز والمتابعة' : 'Enregistrer'}
+                  {isAr ? 'حفظ الطلب' : 'Enregistrer'}
                 </button>
               </div>
             </form>
@@ -1573,7 +1788,7 @@ export default function AdminDashboard() {
         <div className={styles.modalBackdrop}>
           <div className={styles.modalBox} style={{ maxWidth: '650px' }}>
             <div className={styles.modalHeader}>
-              <h3>{isAr ? `العقد الرقمي للحجز ${selectedBookingForContract.id}` : `Contrat ${selectedBookingForContract.id}`}</h3>
+              <h3>{isAr ? `العقد الرقمي للحجز #${selectedBookingForContract.id}` : `Contrat ${selectedBookingForContract.id}`}</h3>
               <button className={styles.modalCloseBtn} onClick={() => setIsContractModalOpen(false)}>✕</button>
             </div>
             
@@ -1614,7 +1829,7 @@ export default function AdminDashboard() {
               </button>
               {!selectedBookingForContract.contractSigned && (
                 <button type="button" className={styles.addBookingBtn} onClick={handleSignContract}>
-                  <IconCheck /> <span>{isAr ? 'تأكيد التوقيع الإلكتروني' : 'Valider la signature'}</span>
+                  <IconCheck/> <span>{isAr ? 'تأكيد التوقيع الإلكتروني' : 'Valider la signature'}</span>
                 </button>
               )}
             </div>
@@ -1663,7 +1878,7 @@ export default function AdminDashboard() {
                 <label>{isAr ? 'الحجز المرتبط' : 'Réservation'}</label>
                 <select>
                   {bookings.map(b => (
-                    <option key={b.id} value={b.id}>{b.id} - {b.client} ({b.date})</option>
+                    <option key={b.id} value={b.id}>#{b.id} - {b.client} ({b.date})</option>
                   ))}
                 </select>
               </div>

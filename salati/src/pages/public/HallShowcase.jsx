@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { supabase } from '../../lib/supabaseClient';
 import styles from './HallShowcase.module.css';
 
@@ -56,7 +58,6 @@ const IconWhatsApp = () => (
   </svg>
 );
 
-// دالة مساعدة لفك تشفير حقول JSON أو المصفوفات بأمان
 const parseJsonField = (field) => {
   if (!field) return [];
   if (Array.isArray(field)) return field;
@@ -68,7 +69,6 @@ const parseJsonField = (field) => {
   }
 };
 
-// دالة تنظيف وتجهيز رابط الخريطة مع معالجة كافة الأشكال والروابط الزائدة
 const getCleanMapEmbedUrl = (rawUrl) => {
   if (!rawUrl) return '';
   let url = rawUrl.trim();
@@ -94,7 +94,6 @@ const getCleanMapEmbedUrl = (rawUrl) => {
   return `https://maps.google.com/maps?q=${encodeURIComponent(url)}&hl=ar&z=15&output=embed`;
 };
 
-// دالة تحويل رابط الفيديو ليكون صالحاً للتضمين
 const getCleanVideoEmbedUrl = (rawUrl) => {
   if (!rawUrl) return '';
   let url = rawUrl.trim();
@@ -124,7 +123,6 @@ export default function HallShowcase() {
   const [bookedDates, setBookedDates] = useState([]);
   const [dateError, setDateError] = useState('');
 
-  // متغيرات تتبع سحب وإفلات الأصبع على اللمس
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
 
@@ -133,15 +131,13 @@ export default function HallShowcase() {
     lastName: '',
     phone: '',
     eventDate: '',
-    timeSlot: '',
+    timeSlot: 'evening',
     eventType: 'عرس'
   });
 
   const currentPath = window.location.pathname;
   const rawSlug = currentPath.split('/v/')[1];
   const hallSlug = rawSlug ? rawSlug.split('?')[0].split('#')[0] : null;
-
-  const todayDate = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     fetchHallData();
@@ -162,14 +158,13 @@ export default function HallShowcase() {
       }
 
       if (!hallData) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: userHall } = await supabase
-            .from('halls')
-            .select('*')
-            .eq('owner_id', user.id)
-            .maybeSingle();
-          hallData = userHall;
+        const { data: latestHalls } = await supabase
+          .from('halls')
+          .select('*')
+          .order('updated_at', { ascending: false })
+          .limit(1);
+        if (latestHalls && latestHalls.length > 0) {
+          hallData = latestHalls[0];
         }
       }
 
@@ -186,9 +181,10 @@ export default function HallShowcase() {
 
   const fetchBookedDates = async (hallId) => {
     try {
+      // جلب الحجوزات غير الإلغاء للتحقق من التضارب
       const { data: bookings } = await supabase
         .from('bookings')
-        .select('event_date, time_slot')
+        .select('event_date, time_slot, status')
         .eq('hall_id', hallId)
         .neq('status', 'cancelled');
 
@@ -245,43 +241,20 @@ export default function HallShowcase() {
     setCurrentImgIndex((prev) => (prev - 1 + hallImages.length) % hallImages.length);
   };
 
-  /* -------------------------------------------------------------
-     مؤقت التبديل التلقائي للصور كل 3 ثوانٍ
-     ------------------------------------------------------------- */
   useEffect(() => {
     if (hallImages.length <= 1) return;
-
-    const timer = setInterval(() => {
-      nextImage();
-    }, 3000);
-
+    const timer = setInterval(() => { nextImage(); }, 3000);
     return () => clearInterval(timer);
   }, [hallImages.length, currentImgIndex]);
 
-  /* -------------------------------------------------------------
-     التحكم في اللمس والسحب باليد (Touch Swipe Events)
-     ------------------------------------------------------------- */
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.targetTouches[0].clientX;
-  };
-
-  const handleTouchMove = (e) => {
-    touchEndX.current = e.targetTouches[0].clientX;
-  };
+  const handleTouchStart = (e) => { touchStartX.current = e.targetTouches[0].clientX; };
+  const handleTouchMove = (e) => { touchEndX.current = e.targetTouches[0].clientX; };
 
   const handleTouchEnd = () => {
     if (!touchStartX.current || !touchEndX.current) return;
     const distance = touchStartX.current - touchEndX.current;
-    const minSwipeDistance = 40; // أدنى مسافة بالبكسل لتمرير الصورة
-
-    if (distance > minSwipeDistance) {
-      // السحب إلى اليسار -> الصورة التالية
-      nextImage();
-    } else if (distance < -minSwipeDistance) {
-      // السحب إلى اليمين -> الصورة السابقة
-      prevImage();
-    }
-
+    if (distance > 40) nextImage();
+    else if (distance < -40) prevImage();
     touchStartX.current = null;
     touchEndX.current = null;
   };
@@ -292,22 +265,30 @@ export default function HallShowcase() {
   };
 
   const handleDateChange = (selectedDate, selectedSlot) => {
-    const defaultSlot = pricingPackages[0]?.title || '';
-    const slotToCheck = selectedSlot || bookingForm.timeSlot || defaultSlot;
+  const slotToCheck = selectedSlot || bookingForm.timeSlot || 'evening';
+  
+  if (selectedDate) {
+    const dayBookings = bookedDates.filter(b => b.event_date === selectedDate);
     
-    const isTaken = bookedDates.some(
-      b => b.event_date === selectedDate && b.time_slot === slotToCheck
+    const isTaken = dayBookings.some(
+      b => b.time_slot === slotToCheck || b.time_slot === 'full_day' || slotToCheck === 'full_day'
     );
 
     if (isTaken) {
-      setDateError(isAr ? 'عذراً، هذا التاريخ محجوز لهذه الفترة!' : 'Désolé, cette date est déjà réservée!');
+      setDateError(
+        isAr 
+          ? `عذراً، ${slotToCheck === 'evening' ? 'فترة المساء' : slotToCheck === 'afternoon' ? 'فترة الظهيرة' : 'هذا اليوم'} محجوزة بالفعل لهذا التاريخ. يرجى اختيار فترة أخرى.`
+          : 'Créneau déjà réservé pour cette date.'
+      );
     } else {
       setDateError('');
     }
+  } else {
+    setDateError('');
+  }
 
-    setBookingForm({ ...bookingForm, eventDate: selectedDate, timeSlot: slotToCheck });
-  };
-
+  setBookingForm({ ...bookingForm, eventDate: selectedDate, timeSlot: slotToCheck });
+};
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
     if (dateError) return;
@@ -315,20 +296,28 @@ export default function HallShowcase() {
     setBookingStatus('submitting');
     try {
       const fullClientName = `${bookingForm.firstName} ${bookingForm.lastName}`.trim();
-      const defaultSlot = pricingPackages[0]?.title || '';
 
       if (hall?.id) {
-        await supabase.from('bookings').insert([
+        const { error } = await supabase.from('bookings').insert([
           {
             hall_id: hall.id,
             client_name: fullClientName,
             client_phone: bookingForm.phone,
             event_date: bookingForm.eventDate,
-            time_slot: bookingForm.timeSlot || defaultSlot,
+            time_slot: bookingForm.timeSlot || 'evening',
             event_type: bookingForm.eventType,
             status: 'provisional'
           }
         ]);
+
+        if (error) {
+          if (error.code === '23505') {
+            setDateError(isAr ? 'عذراً، تم حجز هذا التاريخ للتو!' : 'Date déjà réservée !');
+            setBookingStatus(null);
+            return;
+          }
+          throw error;
+        }
       }
       setBookingStatus('submitted');
       setTimeout(() => {
@@ -338,6 +327,8 @@ export default function HallShowcase() {
       }, 2500);
     } catch (err) {
       console.error('فشل إرسال الطلب:', err);
+      alert(isAr ? 'حدث خطأ في الإرسال: ' + err.message : 'Erreur: ' + err.message);
+      setBookingStatus(null);
     }
   };
 
@@ -361,13 +352,15 @@ export default function HallShowcase() {
   const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(isAr ? `مرحباً، أريد الاستفسار عن حجز ${hallName}` : `Bonjour, je souhaite me renseigner sur la salle ${hallName}`)}`;
 
   const currencyUnit = isAr ? 'دج' : 'DA';
-
   const hasNoContent = hallImages.length === 0 && amenitiesList.length === 0 && !mapUrl && pricingPackages.length === 0;
+
+  const disabledDates = bookedDates
+    .filter(b => !bookingForm.timeSlot || b.time_slot === bookingForm.timeSlot || b.time_slot === 'full_day')
+    .map(b => new Date(b.event_date));
 
   return (
     <div className={styles.showcaseLayout}>
       
-      {/* الترويسة العلوية */}
       <header className={styles.topHeader}>
         <div className={styles.headerContainer}>
           <div className={styles.venueLogo}>
@@ -402,7 +395,6 @@ export default function HallShowcase() {
 
       <main className={styles.mainContainer}>
         
-        {/* في حالة عدم تحميل أي محتوى */}
         {hasNoContent && (
           <div style={{ padding: '4rem 2rem', textAlign: 'center', color: '#64748b' }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏰</div>
@@ -411,7 +403,6 @@ export default function HallShowcase() {
           </div>
         )}
 
-        {/* 1. معرض الصور مع دعم التمرير باللمس والتبديل التلقائي */}
         {hallImages.length > 0 && (
           <section className={styles.heroCarouselSection}>
             <div 
@@ -461,7 +452,6 @@ export default function HallShowcase() {
           </section>
         )}
 
-        {/* 2. قسم الخصائص والموقع */}
         {(amenitiesList.length > 0 || mapUrl) && (
           <section className={styles.middleTwoColumnsSection}>
             
@@ -523,7 +513,6 @@ export default function HallShowcase() {
           </section>
         )}
 
-        {/* 3. جدول الأسعار */}
         {pricingPackages.length > 0 && (
           <section id="pricing" className={styles.pricingSection}>
             <div className={styles.pricingCardContainer}>
@@ -536,7 +525,6 @@ export default function HallShowcase() {
                   <button 
                     className={styles.rowBookBtn} 
                     onClick={() => {
-                      handleDateChange(bookingForm.eventDate, pkg.title);
                       setIsBookingModalOpen(true);
                     }}
                   >
@@ -550,7 +538,6 @@ export default function HallShowcase() {
 
       </main>
 
-      {/* دائرة الواتساب */}
       {showWhatsApp && (
         <a
           href={whatsappUrl}
@@ -564,7 +551,6 @@ export default function HallShowcase() {
         </a>
       )}
 
-      {/* النافذة المنبثقة للفيديو */}
       {isVideoModalOpen && videoUrl && (
         <div className={styles.modalBackdrop} onClick={() => setIsVideoModalOpen(false)}>
           <div className={styles.videoModalBox} onClick={(e) => e.stopPropagation()}>
@@ -579,7 +565,6 @@ export default function HallShowcase() {
         </div>
       )}
 
-      {/* نافذة طلب الحجز المنبثقة */}
       {isBookingModalOpen && (
         <div className={styles.modalBackdrop}>
           <div className={styles.modalBox}>
@@ -632,13 +617,59 @@ export default function HallShowcase() {
                   </div>
                   <div className={styles.inputGroup}>
                     <label>{isAr ? 'تاريخ المناسبة' : 'Date de l\'événement'}</label>
-                    <input
-                      type="date"
-                      required
-                      min={todayDate}
-                      value={bookingForm.eventDate}
-                      onChange={(e) => handleDateChange(e.target.value, bookingForm.timeSlot)}
-                    />
+                <DatePicker
+  selected={bookingForm.eventDate ? new Date(bookingForm.eventDate) : null}
+  onChange={(date) => {
+    if (date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day}`;
+      handleDateChange(formattedDate, bookingForm.timeSlot);
+    } else {
+      handleDateChange('', bookingForm.timeSlot);
+    }
+  }}
+  /* تمييز الأيام المغلقة تماماً فقط باللون الأحمر */
+  dayClassName={(date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${day}`;
+
+    // جلب كافة حجوزات هذا اليوم
+    const dayBookings = bookedDates.filter(b => b.event_date === formattedDate);
+    
+    const hasFullDay = dayBookings.some(b => b.time_slot === 'full_day');
+    const hasAfternoon = dayBookings.some(b => b.time_slot === 'afternoon');
+    const hasEvening = dayBookings.some(b => b.time_slot === 'evening');
+
+    // يُغلق اليوم باللون الأحمر فقط إذا كان يوم كامل أو الفترتان محجوزتين
+    const isFullyBooked = hasFullDay || (hasAfternoon && hasEvening);
+
+    return isFullyBooked ? styles.bookedDay : undefined;
+  }}
+  /* منع الضغط فقط على الأيام المغلقة تماماً */
+  filterDate={(date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${day}`;
+
+    const dayBookings = bookedDates.filter(b => b.event_date === formattedDate);
+
+    const hasFullDay = dayBookings.some(b => b.time_slot === 'full_day');
+    const hasAfternoon = dayBookings.some(b => b.time_slot === 'afternoon');
+    const hasEvening = dayBookings.some(b => b.time_slot === 'evening');
+
+    return !(hasFullDay || (hasAfternoon && hasEvening));
+  }}
+  minDate={new Date()}
+  dateFormat="yyyy-MM-dd"
+  placeholderText={isAr ? "اختر التاريخ" : "Sélectionner la date"}
+  className={styles.selectInput}
+  required
+/>
                   </div>
                 </div>
 
@@ -647,6 +678,19 @@ export default function HallShowcase() {
                     <span>⚠️ {dateError}</span>
                   </div>
                 )}
+
+                <div className={styles.inputGroup}>
+                  <label>{isAr ? 'فترة الحجز' : 'Créneau horaire'}</label>
+                  <select
+                    className={styles.selectInput}
+                    value={bookingForm.timeSlot}
+                    onChange={(e) => handleDateChange(bookingForm.eventDate, e.target.value)}
+                  >
+                    <option value="evening">{isAr ? 'فترة المساء / العشاء (18:00 - 23:00)' : 'Soirée'}</option>
+                    <option value="afternoon">{isAr ? 'فترة الظهيرة (12:00 - 17:00)' : 'Après-midi'}</option>
+                    <option value="full_day">{isAr ? 'يوم كامل (الظهيرة + المساء)' : 'Journée entière'}</option>
+                  </select>
+                </div>
 
                 <div className={styles.inputGroup}>
                   <label>{isAr ? 'نوع المناسبة' : 'Type d\'événement'}</label>
@@ -664,23 +708,6 @@ export default function HallShowcase() {
                   </select>
                 </div>
 
-                {pricingPackages.length > 0 && (
-                  <div className={styles.inputGroup}>
-                    <label>{isAr ? 'الفترة الزمنية المتاحة' : 'Créneau horaire disponible'}</label>
-                    <select
-                      className={styles.selectInput}
-                      value={bookingForm.timeSlot || pricingPackages[0]?.title}
-                      onChange={(e) => handleDateChange(bookingForm.eventDate, e.target.value)}
-                    >
-                      {pricingPackages.map((pkg, idx) => (
-                        <option key={idx} value={pkg.title}>
-                          {pkg.title} ({pkg.price} {currencyUnit})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
                 <button type="submit" disabled={!!dateError} className={styles.submitBookingBtn}>
                   {isAr ? 'إرسال طلب الحجز' : 'Envoyer la demande'}
                 </button>
@@ -692,4 +719,4 @@ export default function HallShowcase() {
 
     </div>
   );
-}   
+}
