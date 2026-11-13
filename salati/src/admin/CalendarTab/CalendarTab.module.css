@@ -1,0 +1,65 @@
+/* src/admin/CalendarTab/CalendarTab.module.css */
+.tabPaneAnim { animation: fadeIn 0.25s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+.panelCard {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 1.5rem;
+}
+
+.calendarHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.sectionDesc { color: #64748b; font-size: 0.88rem; }
+
+.monthNavGroup { display: flex; align-items: center; gap: 0.75rem; background: #f8fafc; padding: 0.4rem 0.8rem; border-radius: 10px; border: 1px solid #e2e8f0; }
+.monthNavBtn { border: none; background: transparent; cursor: pointer; color: #475569; display: flex; align-items: center; }
+.currentMonthTitle { font-weight: bold; color: #0f172a; min-width: 120px; text-align: center; }
+
+.addBookingBtn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.1rem;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.calendarLegendBar { display: flex; gap: 1.25rem; margin-bottom: 1rem; }
+.legendItem { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: #64748b; }
+.legendDot { width: 10px; height: 10px; border-radius: 50%; }
+.dotFree { background: #3b82f6; }
+.dotConfirmed { background: #10b981; }
+.dotProvisional { background: #f59e0b; }
+
+.calendarSimGrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; }
+.calDayHeader { text-align: center; font-weight: bold; font-size: 0.85rem; color: #64748b; padding: 0.5rem; }
+
+.calSlotCell { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.4rem; min-height: 100px; display: flex; flex-direction: column; gap: 0.3rem; }
+.calSlotCellEmpty { background: transparent; }
+.calNumRow { display: flex; justify-content: flex-end; }
+.calNum { font-size: 0.8rem; font-weight: bold; color: #94a3b8; }
+
+.slotItem {
+  border-radius: 6px;
+  padding: 0.3rem 0.4rem;
+  font-size: 0.72rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+.slotFree { background: #eff6ff; color: #2563eb; border: 1px dashed #bfdbfe; }
+.slotConfirmed { background: #dcfce7; color: #15803d; font-weight: bold; }
+.slotProvisional { background: #fef3c7; color: #b45309; font-weight: bold; }

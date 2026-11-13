@@ -112,6 +112,30 @@ const getCleanVideoEmbedUrl = (rawUrl) => {
   return url;
 };
 
+// 🎯 دالة مساعدة لتنظيف تحويل السعر إلى رقم صافي
+const parsePriceNumber = (val) => {
+  if (val === null || val === undefined) return 0;
+  if (typeof val === 'number') return val;
+  const cleaned = String(val).replace(/[^0-9.]/g, '');
+  return parseFloat(cleaned) || 0;
+};
+
+// 🎯 تحديد الفترة المرتبطة باسم الباقة (صباح/ظهيرة، مساء، أو يوم كامل)
+const getPackageSlot = (pkg) => {
+  if (!pkg || !pkg.title) return null;
+  const title = pkg.title.toLowerCase();
+  if (title.includes('كامل') || title.includes('journée') || title.includes('journee') || title.includes('full')) {
+    return 'full_day';
+  }
+  if (title.includes('صباح') || title.includes('ظهير') || title.includes('نهار') || title.includes('matin') || title.includes('après-midi') || title.includes('apres-midi')) {
+    return 'afternoon';
+  }
+  if (title.includes('مساء') || title.includes('عشاء') || title.includes('ليل') || title.includes('soir')) {
+    return 'evening';
+  }
+  return null;
+};
+
 export default function HallShowcase() {
   const [lang, setLang] = useState(document.documentElement.lang || 'ar');
   const [hall, setHall] = useState(null);
@@ -123,8 +147,12 @@ export default function HallShowcase() {
   const [bookedDates, setBookedDates] = useState([]);
   const [dateError, setDateError] = useState('');
 
+  // 🎯 حالة لتخزين الباقة المختارة من الجدول عند الضغط على حجز
+  const [selectedPackage, setSelectedPackage] = useState(null);
+
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
+  const isSubmittingRef = useRef(false);
 
   const [bookingForm, setBookingForm] = useState({
     firstName: '',
@@ -181,12 +209,16 @@ export default function HallShowcase() {
 
   const fetchBookedDates = async (hallId) => {
     try {
-      // جلب الحجوزات غير الإلغاء للتحقق من التضارب
-      const { data: bookings } = await supabase
+      const { data: bookings, error } = await supabase
         .from('bookings')
         .select('event_date, time_slot, status')
         .eq('hall_id', hallId)
-        .neq('status', 'cancelled');
+        .eq('status', 'confirmed');
+
+      if (error) {
+        console.error('خطأ في جلب التواريخ المحجوزة:', error);
+        return;
+      }
 
       if (bookings) {
         setBookedDates(bookings);
@@ -264,71 +296,210 @@ export default function HallShowcase() {
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleDateChange = (selectedDate, selectedSlot) => {
-  const slotToCheck = selectedSlot || bookingForm.timeSlot || 'evening';
-  
-  if (selectedDate) {
-    const dayBookings = bookedDates.filter(b => b.event_date === selectedDate);
-    
-    const isTaken = dayBookings.some(
-      b => b.time_slot === slotToCheck || b.time_slot === 'full_day' || slotToCheck === 'full_day'
-    );
+  // 🎯 فحص حالة الفترات في تاريخ معين (فترة الظهيرة، فترة المساء، اليوم الكامل) للحجوزات المؤكدة فقط
+  const getDaySlotAvailability = (dateStr, listToCheck = bookedDates) => {
+    if (!dateStr) {
+      return {
+        eveningTaken: false,
+        afternoonTaken: false,
+        fullDayTaken: false,
+        isFullyBooked: false
+      };
+    }
 
-    if (isTaken) {
-      setDateError(
-        isAr 
-          ? `عذراً، ${slotToCheck === 'evening' ? 'فترة المساء' : slotToCheck === 'afternoon' ? 'فترة الظهيرة' : 'هذا اليوم'} محجوزة بالفعل لهذا التاريخ. يرجى اختيار فترة أخرى.`
-          : 'Créneau déjà réservé pour cette date.'
-      );
+    const dayBookings = listToCheck.filter(b => b.event_date === dateStr && b.status === 'confirmed');
+    const hasFullDay = dayBookings.some(b => b.time_slot === 'full_day');
+    const hasEvening = dayBookings.some(b => b.time_slot === 'evening');
+    const hasAfternoon = dayBookings.some(b => b.time_slot === 'afternoon');
+
+    const eveningTaken = hasFullDay || hasEvening;
+    const afternoonTaken = hasFullDay || hasAfternoon;
+    const fullDayTaken = hasFullDay || hasEvening || hasAfternoon;
+    const isFullyBooked = hasFullDay || (hasEvening && hasAfternoon);
+
+    return {
+      eveningTaken,
+      afternoonTaken,
+      fullDayTaken,
+      isFullyBooked
+    };
+  };
+
+  const checkSlotConflict = (dateStr, slotStr, listToCheck = bookedDates) => {
+    if (!dateStr) return false;
+    const { eveningTaken, afternoonTaken, fullDayTaken } = getDaySlotAvailability(dateStr, listToCheck);
+    if (slotStr === 'evening') return eveningTaken;
+    if (slotStr === 'afternoon') return afternoonTaken;
+    if (slotStr === 'full_day') return fullDayTaken;
+    return false;
+  };
+
+  const isPackageUnavailable = (pkg, dateStr) => {
+    if (!pkg || !dateStr) return false;
+    const pkgSlot = getPackageSlot(pkg);
+    if (!pkgSlot) return false;
+    return checkSlotConflict(dateStr, pkgSlot, bookedDates);
+  };
+
+  const handleDateChange = (selectedDate, selectedSlot, isSlotExplicit = false) => {
+    let slotToUse = selectedSlot || bookingForm.timeSlot || 'evening';
+
+    if (selectedDate) {
+      const { eveningTaken, afternoonTaken, fullDayTaken, isFullyBooked } = getDaySlotAvailability(selectedDate, bookedDates);
+
+      // إذا اختار المستخدم التاريخ ولم يغيّر الفترة يدوياً، ننتقل تلقائياً للفترة المتاحة
+      if (!isSlotExplicit && !isFullyBooked) {
+        if (slotToUse === 'evening' && eveningTaken && !afternoonTaken) {
+          slotToUse = 'afternoon';
+        } else if (slotToUse === 'afternoon' && afternoonTaken && !eveningTaken) {
+          slotToUse = 'evening';
+        } else if (slotToUse === 'full_day' && fullDayTaken) {
+          if (!eveningTaken) slotToUse = 'evening';
+          else if (!afternoonTaken) slotToUse = 'afternoon';
+        }
+      }
+
+      // إذا كانت الباقة المختارة سابقاً محجوزة في هذا التاريخ، نبدّلها للباقة المتاحة أو نلغي تحديدها
+      if (selectedPackage && isPackageUnavailable(selectedPackage, selectedDate)) {
+        const availablePkg = pricingPackages.find(p => !isPackageUnavailable(p, selectedDate));
+        setSelectedPackage(availablePkg || null);
+      }
+
+      const isTaken = checkSlotConflict(selectedDate, slotToUse, bookedDates);
+
+      if (isTaken) {
+        setDateError(
+          isAr
+            ? `عذراً، ${slotToUse === 'evening' ? 'فترة المساء' : slotToUse === 'afternoon' ? 'فترة الظهيرة' : 'اليوم الكامل'} محجوزة بالفعل في هذا التاريخ. يرجى اختيار الفترة المتاحة أو تاريخ آخر.`
+            : 'Créneau déjà réservé pour cette date. Veuillez choisir un autre créneau.'
+        );
+      } else {
+        setDateError('');
+      }
     } else {
       setDateError('');
     }
-  } else {
-    setDateError('');
-  }
 
-  setBookingForm({ ...bookingForm, eventDate: selectedDate, timeSlot: slotToCheck });
-};
+    setBookingForm({ ...bookingForm, eventDate: selectedDate, timeSlot: slotToUse });
+  };
+
+  // 🎯 دالة فتح حوار الحجز مع تخزين الباقة والسعر المختارة وتحديث التواريخ المحجوزة
+  const handleOpenBookingModal = (pkg = null) => {
+    setSelectedPackage(pkg);
+    setDateError('');
+    if (pkg) {
+      const pkgSlot = getPackageSlot(pkg);
+      if (pkgSlot) {
+        setBookingForm(prev => ({ ...prev, timeSlot: pkgSlot }));
+      }
+    }
+    if (hall?.id) {
+      fetchBookedDates(hall.id);
+    }
+    setIsBookingModalOpen(true);
+  };
+
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
-    if (dateError) return;
+    if (dateError || isSubmittingRef.current || !bookingForm.eventDate) return;
 
+    const chosenSlot = bookingForm.timeSlot || 'evening';
+
+    // 1. تحقق محلي من عدم وجود تعارض مع الحجوزات المؤكدة
+    if (checkSlotConflict(bookingForm.eventDate, chosenSlot, bookedDates) || isPackageUnavailable(selectedPackage, bookingForm.eventDate)) {
+      setDateError(
+        isAr
+          ? 'عذراً، هذه الفترة محجوزة من قبل في هذا التاريخ. لا يمكن إتمام الطلبية.'
+          : 'Désolé, ce créneau est déjà réservé.'
+      );
+      return;
+    }
+
+    isSubmittingRef.current = true;
     setBookingStatus('submitting');
     try {
       const fullClientName = `${bookingForm.firstName} ${bookingForm.lastName}`.trim();
 
+      // 🎯 قراءة السعر من الباقة المختارة داخل النافذة أو من الزر
+      const finalAmount = selectedPackage ? parsePriceNumber(selectedPackage.price) : 0;
+      const finalEventType = selectedPackage
+        ? `${bookingForm.eventType} (${selectedPackage.title})`
+        : bookingForm.eventType;
+
       if (hall?.id) {
+        // 2. تحقق مباشر من قاعدة البيانات للحجوزات المؤكدة فقط
+        const { data: existingBookings } = await supabase
+          .from('bookings')
+          .select('event_date, time_slot, status')
+          .eq('hall_id', hall.id)
+          .eq('event_date', bookingForm.eventDate)
+          .eq('status', 'confirmed');
+
+        if (existingBookings && checkSlotConflict(bookingForm.eventDate, chosenSlot, existingBookings)) {
+          setDateError(
+            isAr
+              ? 'عذراً، هذه الفترة محجوزة من قبل في هذا التاريخ. يرجى اختيار فترة أخرى أو تاريخ آخر.'
+              : 'Désolé, ce créneau est déjà réservé.'
+          );
+          fetchBookedDates(hall.id);
+          setBookingStatus(null);
+          isSubmittingRef.current = false;
+          return;
+        }
+
         const { error } = await supabase.from('bookings').insert([
           {
             hall_id: hall.id,
             client_name: fullClientName,
             client_phone: bookingForm.phone,
             event_date: bookingForm.eventDate,
-            time_slot: bookingForm.timeSlot || 'evening',
-            event_type: bookingForm.eventType,
+            time_slot: chosenSlot,
+            event_type: finalEventType,
+            amount: finalAmount,
+            deposit: 0,
             status: 'provisional'
           }
         ]);
 
         if (error) {
           if (error.code === '23505') {
-            setDateError(isAr ? 'عذراً، تم حجز هذا التاريخ للتو!' : 'Date déjà réservée !');
+            setDateError(
+              isAr
+                ? 'عذراً، هذه الفترة محجوزة من قبل في هذا التاريخ. يرجى اختيار فترة أخرى.'
+                : 'Désolé, ce créneau est déjà réservé.'
+            );
+            fetchBookedDates(hall.id);
             setBookingStatus(null);
+            isSubmittingRef.current = false;
             return;
           }
           throw error;
         }
+
+        fetchBookedDates(hall.id);
       }
+
       setBookingStatus('submitted');
       setTimeout(() => {
         setIsBookingModalOpen(false);
         setBookingStatus(null);
         setDateError('');
+        setSelectedPackage(null);
+        setBookingForm({
+          firstName: '',
+          lastName: '',
+          phone: '',
+          eventDate: '',
+          timeSlot: 'evening',
+          eventType: 'عرس'
+        });
+        isSubmittingRef.current = false;
       }, 2500);
     } catch (err) {
       console.error('فشل إرسال الطلب:', err);
       alert(isAr ? 'حدث خطأ في الإرسال: ' + err.message : 'Erreur: ' + err.message);
       setBookingStatus(null);
+      isSubmittingRef.current = false;
     }
   };
 
@@ -337,6 +508,7 @@ export default function HallShowcase() {
   }
 
   const hallName = hall?.name || (isAr ? 'قاعتي' : 'Ma Salle');
+  const hallDescription = hall?.description || '';
   const hallAddress = hall?.address || (hall?.visiting_hours ? `${isAr ? 'أوقات المعاينة' : 'Visites'}: ${hall.visiting_hours}` : '');
   const phone = hall?.phone || '';
   const mapUrl = hall?.map_url || '';
@@ -352,11 +524,10 @@ export default function HallShowcase() {
   const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(isAr ? `مرحباً، أريد الاستفسار عن حجز ${hallName}` : `Bonjour, je souhaite me renseigner sur la salle ${hallName}`)}`;
 
   const currencyUnit = isAr ? 'دج' : 'DA';
-  const hasNoContent = hallImages.length === 0 && amenitiesList.length === 0 && !mapUrl && pricingPackages.length === 0;
+  const hasNoContent = hallImages.length === 0 && !hallDescription && amenitiesList.length === 0 && !mapUrl && pricingPackages.length === 0;
 
-  const disabledDates = bookedDates
-    .filter(b => !bookingForm.timeSlot || b.time_slot === bookingForm.timeSlot || b.time_slot === 'full_day')
-    .map(b => new Date(b.event_date));
+  // حالة الفترات للتاريخ المختار حالياً لتعطيل المحجوز منها في القائمة
+  const selectedDayAvailability = getDaySlotAvailability(bookingForm.eventDate, bookedDates);
 
   return (
     <div className={styles.showcaseLayout}>
@@ -369,6 +540,9 @@ export default function HallShowcase() {
           </div>
 
           <nav className={styles.navLinks}>
+            {hallDescription && (
+              <button onClick={() => scrollToSection('about')}>{isAr ? 'وصف الصالة' : 'Présentation'}</button>
+            )}
             {amenitiesList.length > 0 && (
               <button onClick={() => scrollToSection('features')}>{isAr ? 'مميزات القاعة' : 'Commodités'}</button>
             )}
@@ -381,7 +555,7 @@ export default function HallShowcase() {
           </nav>
 
           <div className={styles.headerRightGroup}>
-            <button className={styles.headerCtaBtn} onClick={() => setIsBookingModalOpen(true)}>
+            <button className={styles.headerCtaBtn} onClick={() => handleOpenBookingModal(null)}>
               <span>{isAr ? 'طلب حجز' : 'Réservation'}</span>
             </button>
 
@@ -452,6 +626,20 @@ export default function HallShowcase() {
           </section>
         )}
 
+        {/* 🎯 قسم وصف الصالة */}
+        {hallDescription && (
+          <section id="about" className={styles.pricingSection}>
+            <div className={styles.columnFeatures} style={{ width: '100%' }}>
+              <div className={styles.cardHeader}>
+                <h2 className={styles.columnTitle}>{isAr ? 'وصف الصالة' : 'À propos de la salle'}</h2>
+              </div>
+              <p style={{ margin: 0, color: '#475569', lineHeight: '1.85', fontSize: '0.98rem', whiteSpace: 'pre-line' }}>
+                {hallDescription}
+              </p>
+            </div>
+          </section>
+        )}
+
         {(amenitiesList.length > 0 || mapUrl) && (
           <section className={styles.middleTwoColumnsSection}>
             
@@ -503,7 +691,7 @@ export default function HallShowcase() {
                   </div>
                 )}
 
-                <a href={mapUrl} target="_blank" rel="noreferrer" className={styles.openMapsBtn}>
+                <a href={mapEmbedUrl || mapUrl} target="_blank" rel="noreferrer" className={styles.openMapsBtn}>
                   <IconNavigation />
                   <span>{isAr ? 'فتح اتجاهات الوصول في Google Maps' : 'Itinéraire sur Google Maps'}</span>
                 </a>
@@ -513,6 +701,7 @@ export default function HallShowcase() {
           </section>
         )}
 
+        {/* 🎯 جدول الأسعار المربوط بتمرير الباقة والسعر */}
         {pricingPackages.length > 0 && (
           <section id="pricing" className={styles.pricingSection}>
             <div className={styles.pricingCardContainer}>
@@ -524,9 +713,7 @@ export default function HallShowcase() {
                   </div>
                   <button 
                     className={styles.rowBookBtn} 
-                    onClick={() => {
-                      setIsBookingModalOpen(true);
-                    }}
+                    onClick={() => handleOpenBookingModal(pkg)}
                   >
                     {isAr ? 'حجز' : 'Réserver'}
                   </button>
@@ -569,8 +756,10 @@ export default function HallShowcase() {
         <div className={styles.modalBackdrop}>
           <div className={styles.modalBox}>
             <div className={styles.modalHeader}>
-              <h3>{isAr ? 'إرسال طلب حجز أونلاين' : 'Demande de réservation en ligne'}</h3>
-              <button className={styles.modalCloseBtn} onClick={() => setIsBookingModalOpen(false)}>✕</button>
+              <div>
+                <h3>{isAr ? 'إرسال طلب حجز أونلاين' : 'Demande de réservation en ligne'}</h3>
+              </div>
+              <button className={styles.modalCloseBtn} onClick={() => { setIsBookingModalOpen(false); setSelectedPackage(null); }}>✕</button>
             </div>
 
             {bookingStatus === 'submitted' ? (
@@ -617,59 +806,43 @@ export default function HallShowcase() {
                   </div>
                   <div className={styles.inputGroup}>
                     <label>{isAr ? 'تاريخ المناسبة' : 'Date de l\'événement'}</label>
-                <DatePicker
-  selected={bookingForm.eventDate ? new Date(bookingForm.eventDate) : null}
-  onChange={(date) => {
-    if (date) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const formattedDate = `${year}-${month}-${day}`;
-      handleDateChange(formattedDate, bookingForm.timeSlot);
-    } else {
-      handleDateChange('', bookingForm.timeSlot);
-    }
-  }}
-  /* تمييز الأيام المغلقة تماماً فقط باللون الأحمر */
-  dayClassName={(date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const formattedDate = `${year}-${month}-${day}`;
+                    <DatePicker
+                      selected={bookingForm.eventDate ? new Date(`${bookingForm.eventDate}T00:00:00`) : null}
+                      onChange={(date) => {
+                        if (date) {
+                          const year = date.getFullYear();
+                          const month = String(date.getMonth() + 1).padStart(2, '0');
+                          const day = String(date.getDate()).padStart(2, '0');
+                          const formattedDate = `${year}-${month}-${day}`;
+                          handleDateChange(formattedDate, bookingForm.timeSlot, false);
+                        } else {
+                          handleDateChange('', bookingForm.timeSlot, false);
+                        }
+                      }}
+                      dayClassName={(date) => {
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const formattedDate = `${year}-${month}-${day}`;
 
-    // جلب كافة حجوزات هذا اليوم
-    const dayBookings = bookedDates.filter(b => b.event_date === formattedDate);
-    
-    const hasFullDay = dayBookings.some(b => b.time_slot === 'full_day');
-    const hasAfternoon = dayBookings.some(b => b.time_slot === 'afternoon');
-    const hasEvening = dayBookings.some(b => b.time_slot === 'evening');
+                        const { isFullyBooked } = getDaySlotAvailability(formattedDate, bookedDates);
+                        return isFullyBooked ? styles.bookedDay : undefined;
+                      }}
+                      filterDate={(date) => {
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const formattedDate = `${year}-${month}-${day}`;
 
-    // يُغلق اليوم باللون الأحمر فقط إذا كان يوم كامل أو الفترتان محجوزتين
-    const isFullyBooked = hasFullDay || (hasAfternoon && hasEvening);
-
-    return isFullyBooked ? styles.bookedDay : undefined;
-  }}
-  /* منع الضغط فقط على الأيام المغلقة تماماً */
-  filterDate={(date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const formattedDate = `${year}-${month}-${day}`;
-
-    const dayBookings = bookedDates.filter(b => b.event_date === formattedDate);
-
-    const hasFullDay = dayBookings.some(b => b.time_slot === 'full_day');
-    const hasAfternoon = dayBookings.some(b => b.time_slot === 'afternoon');
-    const hasEvening = dayBookings.some(b => b.time_slot === 'evening');
-
-    return !(hasFullDay || (hasAfternoon && hasEvening));
-  }}
-  minDate={new Date()}
-  dateFormat="yyyy-MM-dd"
-  placeholderText={isAr ? "اختر التاريخ" : "Sélectionner la date"}
-  className={styles.selectInput}
-  required
-/>
+                        const { isFullyBooked } = getDaySlotAvailability(formattedDate, bookedDates);
+                        return !isFullyBooked;
+                      }}
+                      minDate={new Date()}
+                      dateFormat="yyyy-MM-dd"
+                      placeholderText={isAr ? "اختر التاريخ" : "Sélectionner la date"}
+                      className={styles.selectInput}
+                      required
+                    />
                   </div>
                 </div>
 
@@ -684,13 +857,57 @@ export default function HallShowcase() {
                   <select
                     className={styles.selectInput}
                     value={bookingForm.timeSlot}
-                    onChange={(e) => handleDateChange(bookingForm.eventDate, e.target.value)}
+                    onChange={(e) => handleDateChange(bookingForm.eventDate, e.target.value, true)}
                   >
-                    <option value="evening">{isAr ? 'فترة المساء / العشاء (18:00 - 23:00)' : 'Soirée'}</option>
-                    <option value="afternoon">{isAr ? 'فترة الظهيرة (12:00 - 17:00)' : 'Après-midi'}</option>
-                    <option value="full_day">{isAr ? 'يوم كامل (الظهيرة + المساء)' : 'Journée entière'}</option>
+                    <option value="evening" disabled={selectedDayAvailability.eveningTaken}>
+                      {isAr
+                        ? `فترة المساء / العشاء (18:00 - 23:00)${selectedDayAvailability.eveningTaken ? ' (محجوزة)' : ''}`
+                        : `Soirée${selectedDayAvailability.eveningTaken ? ' (Réservé)' : ''}`}
+                    </option>
+                    <option value="afternoon" disabled={selectedDayAvailability.afternoonTaken}>
+                      {isAr
+                        ? `فترة الظهيرة (12:00 - 17:00)${selectedDayAvailability.afternoonTaken ? ' (محجوزة)' : ''}`
+                        : `Après-midi${selectedDayAvailability.afternoonTaken ? ' (Réservé)' : ''}`}
+                    </option>
+                    <option value="full_day" disabled={selectedDayAvailability.fullDayTaken}>
+                      {isAr
+                        ? `يوم كامل (الظهيرة + المساء)${selectedDayAvailability.fullDayTaken ? ' (غير متاح)' : ''}`
+                        : `Journée entière${selectedDayAvailability.fullDayTaken ? ' (Indisponible)' : ''}`}
+                    </option>
                   </select>
                 </div>
+
+                {/* 🎯 حقل اختيار الباقة والسعر من النافذة مباشرة مع تعطيل الباقات المحجوزة */}
+                {pricingPackages.length > 0 && (
+                  <div className={styles.inputGroup}>
+                    <label>{isAr ? 'الباقة / السعر المقترح' : 'Formule & Tarif'}</label>
+                    <select
+                      className={styles.selectInput}
+                      value={selectedPackage ? JSON.stringify(selectedPackage) : ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const parsedPkg = val ? JSON.parse(val) : null;
+                        setSelectedPackage(parsedPkg);
+                        if (parsedPkg) {
+                          const pkgSlot = getPackageSlot(parsedPkg);
+                          if (pkgSlot) {
+                            handleDateChange(bookingForm.eventDate, pkgSlot, true);
+                          }
+                        }
+                      }}
+                    >
+                      <option value="">{isAr ? '-- اختر باقة السعر (اختياري) --' : '-- Choisir une formule --'}</option>
+                      {pricingPackages.map((pkg, idx) => {
+                        const pkgDisabled = isPackageUnavailable(pkg, bookingForm.eventDate);
+                        return (
+                          <option key={idx} value={JSON.stringify(pkg)} disabled={pkgDisabled}>
+                            {pkg.title} - ({pkg.price} {currencyUnit}){pkgDisabled ? (isAr ? ' (محجوزة)' : ' (Réservé)') : ''}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                )}
 
                 <div className={styles.inputGroup}>
                   <label>{isAr ? 'نوع المناسبة' : 'Type d\'événement'}</label>
@@ -708,8 +925,14 @@ export default function HallShowcase() {
                   </select>
                 </div>
 
-                <button type="submit" disabled={!!dateError} className={styles.submitBookingBtn}>
-                  {isAr ? 'إرسال طلب الحجز' : 'Envoyer la demande'}
+                <button
+                  type="submit"
+                  disabled={!!dateError || bookingStatus === 'submitting'}
+                  className={styles.submitBookingBtn}
+                >
+                  {bookingStatus === 'submitting'
+                    ? (isAr ? 'جاري الإرسال...' : 'Envoi en cours...')
+                    : (isAr ? 'إرسال طلب الحجز' : 'Envoyer la demande')}
                 </button>
               </form>
             )}

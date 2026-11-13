@@ -1,0 +1,249 @@
+.inspectionContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  animation: fadeSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pageTitleBar {
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.pageMainTitle {
+  font-size: 1.65rem;
+  font-weight: 900;
+  color: #0f172a;
+  margin: 0;
+}
+
+.subSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.25rem;
+}
+
+.subSectionLabel {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #334155;
+}
+
+/* الحاوية الكبيرة كما في التصميم */
+.largeInspectionCard {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 28px;
+  padding: 1.75rem;
+  min-height: 440px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.025);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.uploadToolbar {
+  display: grid;
+  grid-template-columns: 1.1fr 1.2fr 1.2fr auto;
+  gap: 0.75rem;
+  background-color: #f8fafc;
+  padding: 0.85rem;
+  border-radius: 22px;
+  border: 1px solid #e2e8f0;
+}
+
+.pillSelect,
+.pillInput {
+  padding: 0.65rem 1rem;
+  border-radius: 50px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0f172a;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pillSelect:focus,
+.pillInput:focus {
+  border-color: var(--primary-blue, #0052cc);
+  box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
+}
+
+.addPhotoActionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  background-color: var(--primary-blue, #0052cc);
+  color: #ffffff;
+  border: none;
+  padding: 0.65rem 1.35rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 82, 204, 0.2);
+  transition: all 0.2s ease;
+}
+
+.addPhotoActionBtn:hover {
+  background-color: #0043a8;
+  transform: translateY(-1px);
+}
+
+/* حالة الفراغ داخل الإطار الكبير */
+.emptyInspectionArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 1.5rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 22px;
+  background-color: #f8fafc;
+  gap: 0.65rem;
+}
+
+.emptyIconCircle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: rgba(0, 82, 204, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.emptyInspectionArea h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.emptyInspectionArea p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #64748b;
+  max-width: 440px;
+}
+
+/* شبكة صور المعاينة */
+.inspectionGalleryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.inspectionPhotoCard {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: cardPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+@keyframes cardPop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.inspectionPhotoCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.photoImageWrap {
+  position: relative;
+  height: 170px;
+  background-color: #e2e8f0;
+}
+
+.photoImageWrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.deleteEntryBtn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background-color: rgba(220, 38, 38, 0.9);
+  color: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photoCardBody {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.bookingTag {
+  align-self: flex-start;
+  background-color: rgba(0, 82, 204, 0.08);
+  color: var(--primary-blue, #0052cc);
+  padding: 0.2rem 0.65rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.photoNoteText {
+  font-size: 0.92rem;
+  color: #0f172a;
+}
+
+.photoTimeText {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  color: #059669;
+  font-weight: 700;
+}
+
+@media (max-width: 1024px) {
+  .uploadToolbar {
+    grid-template-columns: 1fr;
+  }
+}

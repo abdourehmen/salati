@@ -1,0 +1,289 @@
+.orderCard {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.03);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease;
+  animation: cardAppear 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@keyframes cardAppear {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.orderCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0, 82, 204, 0.08);
+  border-color: #cbd5e1;
+}
+
+.cardConfirmed {
+  border-top: 4px solid #059669;
+}
+
+.cardProvisional {
+  border-top: 4px solid #d97706;
+}
+
+.cardCancelled {
+  border-top: 4px solid #94a3b8;
+  opacity: 0.82;
+}
+
+.cardConflicted {
+  border: 1.5px solid #f59e0b;
+  border-top: 4px solid #dc2626;
+}
+
+/* شريط التاريخ والحالة */
+.cardTopMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+}
+
+.dateBadge {
+  color: #475569;
+  font-weight: 700;
+  background-color: #f8fafc;
+  padding: 0.25rem 0.65rem;
+  border-radius: 50px;
+  border: 1px solid #e2e8f0;
+}
+
+.statusPill {
+  padding: 0.22rem 0.7rem;
+  border-radius: 50px;
+  font-weight: 800;
+  font-size: 0.75rem;
+}
+
+.statusConfirmed {
+  background-color: #ecfdf5;
+  color: #059669;
+}
+
+.statusProvisional {
+  background-color: #fffbeb;
+  color: #d97706;
+}
+
+.statusCancelled {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+/* الصندوق المالي العلوي */
+.financialBox {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.totalPriceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.priceLabel {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.totalPriceValue {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.amountsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.depositBox,
+.remainingBox {
+  border-radius: 14px;
+  padding: 0.6rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.2rem;
+  transition: transform 0.2s ease;
+}
+
+.depositBox:hover,
+.remainingBox:hover {
+  transform: scale(1.02);
+}
+
+.depositBox {
+  background-color: #ecfdf5;
+  border: 1px solid #a7f3d0;
+}
+
+.remainingBox {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.boxSubLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.depositValue {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #059669;
+}
+
+.remainingValue {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #dc2626;
+}
+
+.addDepositBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  background-color: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 50px;
+  padding: 0.5rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.addDepositBtn:hover {
+  background-color: var(--primary-blue, #0052cc);
+  color: #ffffff;
+  border-color: var(--primary-blue, #0052cc);
+  box-shadow: 0 4px 12px rgba(0, 82, 204, 0.2);
+}
+
+.addDepositBtn:active {
+  transform: scale(0.97);
+}
+
+/* الخط الفاصل */
+.cardDivider {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 0.1rem 0;
+}
+
+/* بيانات العميل */
+.clientDetailsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0 0.25rem;
+}
+
+.detailRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.88rem;
+}
+
+.detailLabel {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.detailValue {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.phoneValue {
+  color: var(--primary-blue, #0052cc);
+  font-weight: 800;
+  text-decoration: none;
+  font-family: var(--font-en, sans-serif);
+}
+
+.phoneValue:hover {
+  text-decoration: underline;
+}
+
+/* أزرار التحكم السفلية */
+.cardActionsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+  margin-top: 0.25rem;
+}
+
+.detailsBtn,
+.deleteBtn {
+  padding: 0.55rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.detailsBtn {
+  background-color: rgba(0, 82, 204, 0.08);
+  color: var(--primary-blue, #0052cc);
+  border: 1px solid rgba(0, 82, 204, 0.2);
+}
+
+.detailsBtn:hover {
+  background-color: var(--primary-blue, #0052cc);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 82, 204, 0.22);
+}
+
+.deleteBtn {
+  background-color: rgba(239, 68, 68, 0.06);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.deleteBtn:hover {
+  background-color: #dc2626;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.22);
+}
+
+.detailsBtn:active,
+.deleteBtn:active {
+  transform: scale(0.96);
+}

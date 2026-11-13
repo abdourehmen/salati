@@ -1202,3 +1202,449 @@
     gap: 1.25rem;
   }
 }
+/* =========================================
+   تنسيقات قسم الطلبات المتطورة والحديثة
+   ========================================= */
+.ordersHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.countBadgeMain {
+  background-color: #e2e8f0;
+  color: #0f172a;
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 0.2rem 0.65rem;
+  border-radius: 50px;
+}
+
+.searchBarBox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  min-width: 260px;
+  transition: all 0.2s ease;
+}
+
+.searchBarBox:focus-within {
+  border-color: #0052cc;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
+}
+
+.searchBarBox input {
+  border: none;
+  background: none;
+  outline: none;
+  font-size: 0.875rem;
+  color: #0f172a;
+  width: 100%;
+}
+
+.clearSearchBtn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.filterPillsBar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 1.25rem;
+}
+
+.filterPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.filterPill:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.filterPillActive {
+  background-color: #0052cc !important;
+  color: #ffffff !important;
+  border-color: #0052cc !important;
+}
+
+.pillBadge {
+  background-color: rgba(0, 0, 0, 0.08);
+  padding: 0.1rem 0.45rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+}
+
+.filterPillActive .pillBadge {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.pillBadgeWarning {
+  background-color: #f59e0b;
+  color: #ffffff;
+  padding: 0.1rem 0.45rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+}
+
+.pillBadgeSuccess {
+  background-color: #10b981;
+  color: #ffffff;
+  padding: 0.1rem 0.45rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+}
+
+.pillBadgeDanger {
+  background-color: #ef4444;
+  color: #ffffff;
+  padding: 0.1rem 0.45rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+}
+
+.rowProvisionalBg {
+  background-color: #fffbeb !important;
+}
+
+.timeSlotBadge {
+  display: inline-block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  background-color: #f1f5f9;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+}
+/* =========================================
+   تنسيقات شبكة بطاقات الطلبات (Order Cards Grid)
+   ========================================= */
+.orderCardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.orderCard {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.orderCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+}
+
+/* التميز البصري حسب الحالة */
+.orderCardProvisional {
+  border-top: 4px solid #f59e0b;
+}
+
+.orderCardConfirmed {
+  border-top: 4px solid #10b981;
+  background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
+}
+
+.orderCardCancelled {
+  border-top: 4px solid #94a3b8;
+  opacity: 0.85;
+}
+
+.orderCardConflicted {
+  border: 2px solid #f59e0b !important;
+  border-top: 4px solid #ef4444 !important;
+}
+
+/* ترويسة البطاقة */
+.orderCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.orderIdGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.orderIdBadge {
+  font-family: var(--font-en, sans-serif);
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: #0f172a;
+  background-color: #f1f5f9;
+  padding: 0.2rem 0.55rem;
+  border-radius: 8px;
+}
+
+.eventTypeBadge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #3b82f6;
+  background-color: #eff6ff;
+  padding: 0.2rem 0.55rem;
+  border-radius: 8px;
+}
+
+.orderStatusBadgeGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+/* =========================================
+   تنسيقات شبكة كروت الطلبات المنظمة
+   ========================================= */
+.orderPriceBox {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.priceMainRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.priceLabel {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.priceAmount {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+/* تقسيم العربون والمتبقي في عمودين متناسقين */
+.financialBreakdownGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.depositChip, .remainingChip {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.775rem;
+}
+
+.depositChip {
+  background-color: #ecfdf5;
+  border: 1px solid #d1fae5;
+}
+
+.remainingChip {
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+}
+
+.chipLabel {
+  color: #64748b;
+  font-size: 0.725rem;
+  font-weight: 700;
+  margin-bottom: 0.15rem;
+}
+
+.depositAmountText {
+  color: #059669;
+  font-weight: 900;
+  font-size: 0.95rem;
+}
+
+.remainingAmountText {
+  color: #dc2626;
+  font-weight: 900;
+  font-size: 0.95rem;
+}
+
+/* زر التعديل بعرض جذاب */
+.addDepositBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background-color: #ffffff;
+  color: #047857;
+  border: 1.5px solid #a7f3d0;
+  padding: 0.45rem 0.85rem;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.addDepositBtn:hover {
+  background-color: #10b981;
+  color: #ffffff;
+  border-color: #10b981;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+}
+
+.subLabel {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+/* =========================================
+   تنسيقات زر وقيم العربون داخل بطاقة الطلب
+   ========================================= */
+.depositSubGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+.depositSub {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.depositAmountText {
+  color: #059669;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+/* زر إدخال وتعديل العربون داخل الكرت */
+.addDepositBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  padding: 0.3rem 0.65rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.addDepositBtn:hover {
+  background-color: #10b981;
+  color: #ffffff;
+  border-color: #10b981;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  transform: translateY(-1px);
+}
+/* =========================================
+   تنسيقات زر وقيم العربون داخل بطاقة الطلب
+   ========================================= */
+.depositSubGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+.depositSub {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.depositAmountText {
+  color: #059669;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+/* زر إدخال وتعديل العربون داخل الكرت */
+.addDepositBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  padding: 0.3rem 0.65rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.addDepositBtn:hover {
+  background-color: #10b981;
+  color: #ffffff;
+  border-color: #10b981;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  transform: translateY(-1px);
+}
+/* =========================================
+   تنسيقات إضافية لحسابات العربون والمتبقي
+   ========================================= */
+.remainingSub {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #1e293b;
+  margin-top: 0.1rem;
+}
+
+.remainingAmountText {
+  color: #dc2626;
+  font-weight: 800;
+  font-size: 0.95rem;
+}

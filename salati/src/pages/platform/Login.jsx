@@ -65,7 +65,7 @@ export default function Login() {
     });
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMessage('');
@@ -73,14 +73,31 @@ export default function Login() {
     try {
       // 1. تسجيل الدخول عبر Supabase Auth
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
+        email: formData.email.trim(),
         password: formData.password,
       });
 
       if (error) throw error;
 
       if (data?.user) {
-        // 2. التوجيه المباشر إلى لوحة التحكم عند نجاح الدخول
+        // 2. التحقق إن كان الداخل موظفاً وحسابه موقوف
+        const { data: staffRecord } = await supabase
+          .from('hall_staff')
+          .select('is_active')
+          .eq('email', formData.email.trim().toLowerCase())
+          .maybeSingle();
+
+        if (staffRecord && staffRecord.is_active === false) {
+          await supabase.auth.signOut();
+          setErrorMessage(
+            lang === 'ar'
+              ? 'تم إيقاف حسابك مؤقتاً من طرف مالك القاعة.'
+              : 'Votre compte a été suspendu par le propriétaire.'
+          );
+          return;
+        }
+
+        // 3. التوجيه المباشر إلى لوحة التحكم
         navigate('/admin');
       }
     } catch (error) {
@@ -93,7 +110,6 @@ export default function Login() {
       setLoading(false);
     }
   };
-
   const t = translations[lang] || translations.ar;
 
   return (
