@@ -141,7 +141,7 @@ export default function AdminDashboard() {
         const { data: staffRecord } = await supabase
           .from('hall_staff')
           .select('hall_id')
-          .eq('email', currentUser.email.toLowerCase())
+          .ilike('email', currentUser.email.trim())
           .maybeSingle();
 
         if (staffRecord?.hall_id) {
@@ -151,17 +151,6 @@ export default function AdminDashboard() {
             .eq('id', staffRecord.hall_id)
             .maybeSingle();
           hall = staffHall;
-        }
-      }
-
-      if (!hall) {
-        const { data: latestHalls } = await supabase
-          .from('halls')
-          .select('*')
-          .order('updated_at', { ascending: false })
-          .limit(1);
-        if (latestHalls && latestHalls.length > 0) {
-          hall = latestHalls[0];
         }
       }
 
@@ -208,7 +197,7 @@ export default function AdminDashboard() {
         const matchedStaff = staffRows?.find(
           (s) =>
             (currentUser?.id && s.user_id === currentUser.id) ||
-            (currentUser?.email && s.email.toLowerCase() === currentUser.email.toLowerCase())
+            (currentUser?.email && s.email?.toLowerCase().trim() === currentUser.email.toLowerCase().trim())
         );
 
         if (matchedStaff && hall.owner_id !== currentUser?.id) {
@@ -225,16 +214,34 @@ export default function AdminDashboard() {
           }
           setIsOwnerUser(false);
           setCurrentOperatorName(matchedStaff.full_name);
-          const p = matchedStaff.permissions || {};
-          setStaffPermissions({
+
+          let rawPerms = matchedStaff.permissions || {};
+          if (typeof rawPerms === 'string') {
+            try {
+              rawPerms = JSON.parse(rawPerms);
+            } catch {
+              rawPerms = {};
+            }
+          }
+
+          const nextPerms = {
             overview: false,
-            orders: p.orders ?? true,
-            calendar: p.calendar ?? true,
-            site: p.site ?? false,
-            inspection: p.inspection ?? false,
+            orders: rawPerms.orders === true,
+            calendar: rawPerms.calendar === true,
+            site: rawPerms.site === true,
+            inspection: rawPerms.inspection === true,
             staff: false
-          });
-          setActiveTab(p.orders !== false ? 'orders' : 'calendar');
+          };
+          setStaffPermissions(nextPerms);
+
+          // توجيه الموظف لأول قسم مسموح له فعلياً
+          const firstAllowedTab =
+            (nextPerms.orders && 'orders') ||
+            (nextPerms.calendar && 'calendar') ||
+            (nextPerms.inspection && 'inspection') ||
+            (nextPerms.site && 'site') ||
+            'orders';
+          setActiveTab(firstAllowedTab);
         } else {
           setIsOwnerUser(true);
           setCurrentOperatorName('مالك القاعة');
@@ -270,6 +277,29 @@ export default function AdminDashboard() {
             })
           );
         }
+      } else {
+        // حساب جديد بدون صالة مسجلة بعد: تهيئة بيانات نظيفة ومستقلة
+        setHallData(null);
+        setIsOwnerUser(true);
+        setCurrentOperatorName('مالك القاعة');
+        setBookings([]);
+        setStaffMembers([]);
+        const defaultName = currentUser?.user_metadata?.hall_name || '';
+        const autoSlug = defaultName
+          ? `${defaultName.trim().toLowerCase().replace(/\s+/g, '-')}-${String(
+              currentUser?.id || Date.now()
+            ).slice(0, 5)}`
+          : `hall-${String(currentUser?.id || Date.now()).slice(0, 6)}`;
+
+        setSiteForm({
+          slug: autoSlug,
+          name: defaultName,
+          capacity: '',
+          phone: currentUser?.user_metadata?.phone || '',
+          visiting_hours: '',
+          map_url: '',
+          description: ''
+        });
       }
     } catch (err) {
       console.error('خطأ جلب البيانات:', err);
@@ -564,7 +594,7 @@ export default function AdminDashboard() {
 
       const hallPayload = {
         ...(hallData?.id ? { id: hallData.id } : {}),
-        owner_id: currentUser?.id || null,
+        owner_id: hallData?.owner_id || currentUser?.id || null,
         slug: targetSlug,
         name: siteForm.name || 'قاعتي الجديدة',
         capacity: parseInt(siteForm.capacity, 10) || 0,
@@ -837,7 +867,7 @@ export default function AdminDashboard() {
 
         <div className={styles.sidebarFooter}>
           <a
-            href={`/v/${hallData?.slug || 'salle-el-bahdja'}`}
+            href={`/v/${hallData?.slug || siteForm.slug || 'new-hall'}`}
             target="_blank"
             rel="noreferrer"
             className={styles.viewLiveSiteBtn}

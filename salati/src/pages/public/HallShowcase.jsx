@@ -162,10 +162,9 @@ export default function HallShowcase() {
     timeSlot: 'evening',
     eventType: 'عرس'
   });
-
-  const currentPath = window.location.pathname;
+const currentPath = window.location.pathname;
   const rawSlug = currentPath.split('/v/')[1];
-  const hallSlug = rawSlug ? rawSlug.split('?')[0].split('#')[0] : null;
+  const hallSlug = rawSlug ? decodeURIComponent(rawSlug.split('?')[0].split('#')[0]) : null;
 
   useEffect(() => {
     fetchHallData();
@@ -183,13 +182,10 @@ export default function HallShowcase() {
           .eq('slug', hallSlug)
           .maybeSingle();
         hallData = data;
-      }
-
-      if (!hallData) {
+      } else {
         const { data: latestHalls } = await supabase
           .from('halls')
           .select('*')
-          .order('updated_at', { ascending: false })
           .limit(1);
         if (latestHalls && latestHalls.length > 0) {
           hallData = latestHalls[0];
@@ -199,6 +195,8 @@ export default function HallShowcase() {
       if (hallData) {
         setHall(hallData);
         fetchBookedDates(hallData.id);
+      } else {
+        setHall(null);
       }
     } catch (err) {
       console.error('خطأ في جلب البيانات:', err);

@@ -21,8 +21,9 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const generateSlug = (name) => {
-    if (!name) return `hall-${Date.now()}`;
+  const generateSlug = (name, userId = '') => {
+    const suffix = userId ? `-${String(userId).slice(0, 5)}` : `-${Date.now().toString().slice(-4)}`;
+    if (!name) return `hall${suffix}`;
     
     const cleaned = name
       .trim()
@@ -31,7 +32,7 @@ export default function Register() {
       .replace(/[\s_]+/g, '-')
       .replace(/^-+|-+$/g, '');
 
-    return cleaned || `hall-${Date.now()}`;
+    return cleaned ? `${cleaned}${suffix}` : `hall${suffix}`;
   };
 
   const handleChange = (e) => {
@@ -46,12 +47,13 @@ export default function Register() {
     try {
       // 1. إنشاء الحساب في Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
+        email: formData.email.trim(),
         password: formData.password,
         options: {
           data: {
             full_name: formData.fullName,
-            phone: formData.phone
+            phone: formData.phone,
+            hall_name: formData.hallName
           }
         }
       });
@@ -61,16 +63,18 @@ export default function Register() {
       const user = authData.user;
 
       if (user) {
-        // 2. إنشاء سجل القاعة في جدول halls
-        const generatedSlug = generateSlug(formData.hallName);
+        // 2. إنشاء سجل القاعة في جدول halls مربوطاً بمعرّف المالك owner_id
+        const generatedSlug = generateSlug(formData.hallName, user.id);
 
         const { error: hallError } = await supabase
           .from('halls')
           .insert([
             {
-              name: formData.hallName,
+              owner_id: user.id,
+              name: formData.hallName.trim(),
               slug: generatedSlug,
-              wilaya: formData.wilaya,
+              phone: formData.phone.trim(),
+              address: formData.wilaya,
               capacity: 500
             }
           ]);

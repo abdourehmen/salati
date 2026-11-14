@@ -1,22 +1,7 @@
 import React, { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabaseClient';
 import styles from './StaffTab.module.css';
 import { IconPlus, IconCheck } from '../Icons';
-
-// عميل ثانوي بدون حفظ الجلسة لإنشاء حساب للموظف دون تسجيل خروج المالك
-const createTempAuthClient = () => {
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
-  return createClient(url, key, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false
-    }
-  });
-};
 
 export default function StaffTab({
   isAr = true,
@@ -37,8 +22,140 @@ export default function StaffTab({
   });
   const [creating, setCreating] = useState(false);
 
+  // حالات تعديل الصلاحيات مباشرة من البطاقة
+  const [editingMemberId, setEditingMemberId] = useState(null);
+  const [editingPerms, setEditingPerms] = useState({
+    orders: true,
+    calendar: true,
+    inspection: false,
+    site: false
+  });
+  const [savingPerms, setSavingPerms] = useState(false);
+
+  // حالات تغيير كلمة المرور مباشرة من البطاقة
+  const [passwordMemberId, setPasswordMemberId] = useState(null);
+  const [newMemberPassword, setNewMemberPassword] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
+
   const togglePermission = (key) => {
     setPermissions((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleStartEditPermissions = (member) => {
+    const currentPerms = member.permissions || {};
+    setPasswordMemberId(null);
+    setNewMemberPassword('');
+    setEditingMemberId(member.id);
+    setEditingPerms({
+      orders: currentPerms.orders ?? true,
+      calendar: currentPerms.calendar ?? true,
+      inspection: currentPerms.inspection ?? false,
+      site: currentPerms.site ?? false
+    });
+  };
+
+  const handleToggleEditingPerm = (key) => {
+    setEditingPerms((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleSaveCardPermissions = async (memberId) => {
+    if (savingPerms) return;
+    setSavingPerms(true);
+    try {
+      const { data, error } = await supabase
+        .from('hall_staff')
+        .update({ permissions: editingPerms })
+        .eq('id', memberId)
+        .select();
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        alert(
+          isAr
+            ? 'تحذير: قاعدة البيانات رفضت حفظ الصلاحيات! نفّذ أمر SQL الخاص بجدول hall_staff في Supabase.'
+            : 'Erreur : mise à jour refusée par Supabase.'
+        );
+        return;
+      }
+
+      setStaffMembers((prev) =>
+        prev.map((m) =>
+          m.id === memberId ? { ...m, permissions: data[0].permissions } : m
+        )
+      );
+      setEditingMemberId(null);
+      alert(isAr ? 'تم حفظ صلاحيات الموظف في قاعدة البيانات بنجاح!' : 'Permissions enregistrées !');
+    } catch (err) {
+      console.error('خطأ في تحديث صلاحيات الموظف:', err);
+      alert(
+        isAr
+          ? 'فشل حفظ الصلاحيات: ' + err.message
+          : 'Erreur lors de la mise à jour : ' + err.message
+      );
+    } finally {
+      setSavingPerms(false);
+    }
+  };
+
+  const handleStartChangePassword = (member) => {
+    setEditingMemberId(null);
+    setPasswordMemberId(member.id);
+    setNewMemberPassword('');
+  };
+
+  const handleSaveMemberPassword = async (member) => {
+    if (savingPassword) return;
+    if (!newMemberPassword.trim() || newMemberPassword.trim().length < 6) {
+      alert(
+        isAr
+          ? 'يرجى إدخال كلمة مرور جديدة من 6 أحرف على الأقل.'
+          : 'Le mot de passe doit contenir au moins 6 caractères.'
+      );
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      const { data: updatedUserId, error: rpcError } = await supabase.rpc(
+        'upsert_staff_auth_account',
+        {
+          p_email: member.email.trim().toLowerCase(),
+          p_password: newMemberPassword.trim(),
+          p_full_name: member.full_name || ''
+        }
+      );
+
+      if (rpcError) throw rpcError;
+
+      if (updatedUserId && !member.user_id) {
+        await supabase
+          .from('hall_staff')
+          .update({ user_id: updatedUserId })
+          .eq('id', member.id);
+
+        setStaffMembers((prev) =>
+          prev.map((m) => (m.id === member.id ? { ...m, user_id: updatedUserId } : m))
+        );
+      }
+
+      setPasswordMemberId(null);
+      setNewMemberPassword('');
+      alert(
+        isAr
+          ? `تم تغيير كلمة مرور الموظف "${member.full_name}" بنجاح!`
+          : `Mot de passe de "${member.full_name}" mis à jour avec succès !`
+      );
+    } catch (err) {
+      console.error('خطأ في تغيير كلمة مرور الموظف:', err);
+      alert(
+        isAr
+          ? 'فشل تغيير كلمة المرور: ' + err.message
+          : 'Erreur lors du changement de mot de passe : ' + err.message
+      );
+    } finally {
+      setSavingPassword(false);
+    }
   };
 
   const handleAddStaffSubmit = async (e) => {
@@ -57,45 +174,67 @@ export default function StaffTab({
     setCreating(true);
     try {
       const cleanEmail = email.trim().toLowerCase();
-      let createdUserId = null;
 
-      // إنشاء حساب دخول للموظف في Supabase Auth
-      const tempClient = createTempAuthClient();
-      if (tempClient) {
-        const { data: signUpData, error: signUpError } = await tempClient.auth.signUp({
-          email: cleanEmail,
-          password: password.trim(),
-          options: {
-            data: { full_name: fullName.trim(), role: 'staff' }
-          }
-        });
-
-        if (signUpError && !signUpError.message.toLowerCase().includes('already registered')) {
-          throw signUpError;
+      // 1. إنشاء الحساب أو تحديث كلمة المرور وتأكيد البريد تلقائياً إذا كان مسجلاً مسبقاً
+      const { data: createdUserId, error: rpcError } = await supabase.rpc(
+        'upsert_staff_auth_account',
+        {
+          p_email: cleanEmail,
+          p_password: password.trim(),
+          p_full_name: fullName.trim()
         }
-        createdUserId = signUpData?.user?.id || null;
-      }
+      );
 
-      const { data: insertedStaff, error: dbError } = await supabase
-        .from('hall_staff')
-        .insert([
-          {
-            hall_id: hallId,
-            user_id: createdUserId,
+      if (rpcError) throw rpcError;
+
+      // 2. التحقق إن كان الموظف موجوداً مسبقاً في جدول hall_staff لنفس الصالة لتحديثه بدلاً من تكراره
+      const existingMember = staffMembers.find(
+        (m) => m.email?.toLowerCase() === cleanEmail
+      );
+
+      if (existingMember) {
+        const { data: updatedStaff, error: updateError } = await supabase
+          .from('hall_staff')
+          .update({
+            user_id: createdUserId || existingMember.user_id,
             full_name: fullName.trim(),
             phone: phone.trim(),
-            email: cleanEmail,
             is_active: true,
             permissions
-          }
-        ])
-        .select()
-        .single();
+          })
+          .eq('id', existingMember.id)
+          .select()
+          .single();
 
-      if (dbError) throw dbError;
+        if (updateError) throw updateError;
 
-      if (insertedStaff && setStaffMembers) {
-        setStaffMembers((prev) => [insertedStaff, ...prev]);
+        if (updatedStaff && setStaffMembers) {
+          setStaffMembers((prev) =>
+            prev.map((m) => (m.id === updatedStaff.id ? updatedStaff : m))
+          );
+        }
+      } else {
+        const { data: insertedStaff, error: dbError } = await supabase
+          .from('hall_staff')
+          .insert([
+            {
+              hall_id: hallId,
+              user_id: createdUserId || null,
+              full_name: fullName.trim(),
+              phone: phone.trim(),
+              email: cleanEmail,
+              is_active: true,
+              permissions
+            }
+          ])
+          .select()
+          .single();
+
+        if (dbError) throw dbError;
+
+        if (insertedStaff && setStaffMembers) {
+          setStaffMembers((prev) => [insertedStaff, ...prev]);
+        }
       }
 
       setFullName('');
@@ -106,8 +245,8 @@ export default function StaffTab({
 
       alert(
         isAr
-          ? 'تم إنشاء حساب الموظف بنجاح! يمكنه الآن تسجيل الدخول ببريده وكلمة المرور.'
-          : 'Compte employé créé avec succès !'
+          ? 'تم تفعيل حساب الموظف وتحديث كلمة مروره بنجاح! يمكنه الدخول الآن فوراً.'
+          : 'Compte employé activé et mot de passe mis à jour avec succès !'
       );
     } catch (err) {
       console.error('خطأ في إضافة الموظف:', err);
@@ -143,24 +282,30 @@ export default function StaffTab({
     if (
       !window.confirm(
         isAr
-          ? `هل أنت متأكد من حذف الموظف "${member.full_name}"؟`
-          : `Supprimer l'employé "${member.full_name}" ?`
+          ? `هل أنت متأكد من حذف الموظف "${member.full_name}" وحسابه نهائياً؟`
+          : `Supprimer définitivement l'employé "${member.full_name}" et son compte ?`
       )
     ) {
       return;
     }
 
     try {
-      const { error } = await supabase
-        .from('hall_staff')
-        .delete()
-        .eq('id', member.id);
+      const { error } = await supabase.rpc('delete_staff_account', {
+        p_staff_id: member.id,
+        p_user_id: member.user_id || null,
+        p_email: member.email || null
+      });
 
       if (error) throw error;
 
       setStaffMembers((prev) => prev.filter((m) => m.id !== member.id));
     } catch (err) {
       console.error('خطأ في حذف الموظف:', err);
+      alert(
+        isAr
+          ? 'حدث خطأ أثناء الحذف النهائي: ' + err.message
+          : 'Erreur lors de la suppression : ' + err.message
+      );
     }
   };
 
@@ -304,8 +449,8 @@ export default function StaffTab({
                     ? 'جاري الإنشاء...'
                     : 'Création...'
                   : isAr
-                  ? 'إنشاء حساب الموظف'
-                  : 'Créer le compte'}
+                  ? 'إنشاء / تحديث حساب الموظف'
+                  : 'Créer / Mettre à jour'}
               </span>
             </button>
           </div>
@@ -334,6 +479,8 @@ export default function StaffTab({
             {staffMembers.map((member) => {
               const confirmedCount = getConfirmedCountByStaff(member.full_name);
               const perms = member.permissions || {};
+              const isEditingThisCard = editingMemberId === member.id;
+              const isChangingPassThisCard = passwordMemberId === member.id;
 
               return (
                 <div key={member.id} className={styles.staffCard}>
@@ -375,30 +522,224 @@ export default function StaffTab({
                     </strong>
                   </div>
 
-                  <div className={styles.staffPermsBadges}>
-                    {perms.orders && (
-                      <span className={styles.miniPermTag}>
-                        ✓ {isAr ? 'الطلبيات' : 'Demandes'}
+                  {/* وضع تغيير كلمة المرور مباشرة من البطاقة */}
+                  {isChangingPassThisCard && (
+                    <div
+                      style={{
+                        backgroundColor: '#f8fafc',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '14px',
+                        padding: '0.7rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.55rem'
+                      }}
+                    >
+                      <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155' }}>
+                        {isAr ? 'أدخل كلمة المرور الجديدة (6 أحرف على الأقل):' : 'Nouveau mot de passe (min 6 car.) :'}
                       </span>
-                    )}
-                    {perms.calendar && (
-                      <span className={styles.miniPermTag}>
-                        ✓ {isAr ? 'التقويم' : 'Calendrier'}
+
+                      <input
+                        type="text"
+                        minLength={6}
+                        placeholder={isAr ? 'كلمة المرور الجديدة...' : 'Nouveau mot de passe...'}
+                        value={newMemberPassword}
+                        onChange={(e) => setNewMemberPassword(e.target.value)}
+                        style={{
+                          padding: '0.45rem 0.75rem',
+                          borderRadius: '999px',
+                          border: '1px solid #cbd5e1',
+                          fontSize: '0.84rem',
+                          outline: 'none'
+                        }}
+                      />
+
+                      <div style={{ display: 'flex', gap: '0.45rem' }}>
+                        <button
+                          type="button"
+                          disabled={savingPassword}
+                          className={styles.submitStaffBtn}
+                          style={{ padding: '0.38rem 0.85rem', fontSize: '0.78rem' }}
+                          onClick={() => handleSaveMemberPassword(member)}
+                        >
+                          <IconCheck />
+                          <span>
+                            {savingPassword
+                              ? isAr
+                                ? 'جاري التحديث...'
+                                : 'Mise à jour...'
+                              : isAr
+                              ? 'حفظ كلمة المرور'
+                              : 'Enregistrer'}
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          className={styles.toggleActiveBtn}
+                          style={{ flex: 'none', padding: '0.38rem 0.75rem', fontSize: '0.78rem' }}
+                          onClick={() => {
+                            setPasswordMemberId(null);
+                            setNewMemberPassword('');
+                          }}
+                        >
+                          {isAr ? 'إلغاء' : 'Annuler'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* وضع تعديل الصلاحيات أو عرض الصلاحيات الحالية */}
+                  {isEditingThisCard ? (
+                    <div
+                      style={{
+                        backgroundColor: '#f8fafc',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '14px',
+                        padding: '0.7rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.55rem'
+                      }}
+                    >
+                      <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155' }}>
+                        {isAr ? 'حدد الأقسام المسموحة:' : 'Sections autorisées :'}
                       </span>
-                    )}
-                    {perms.inspection && (
-                      <span className={styles.miniPermTag}>
-                        ✓ {isAr ? 'المعاينة' : 'Inspection'}
-                      </span>
-                    )}
-                    {perms.site && (
-                      <span className={styles.miniPermTag}>
-                        ✓ {isAr ? 'موقع الصالة' : 'Site Web'}
-                      </span>
-                    )}
-                  </div>
+
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                        <label
+                          className={`${styles.permChip} ${
+                            editingPerms.orders ? styles.permChipActive : ''
+                          }`}
+                          style={{ padding: '0.3rem 0.65rem', fontSize: '0.76rem' }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={editingPerms.orders}
+                            onChange={() => handleToggleEditingPerm('orders')}
+                          />
+                          <span>{isAr ? 'الطلبيات' : 'Demandes'}</span>
+                        </label>
+
+                        <label
+                          className={`${styles.permChip} ${
+                            editingPerms.calendar ? styles.permChipActive : ''
+                          }`}
+                          style={{ padding: '0.3rem 0.65rem', fontSize: '0.76rem' }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={editingPerms.calendar}
+                            onChange={() => handleToggleEditingPerm('calendar')}
+                          />
+                          <span>{isAr ? 'التقويم' : 'Calendrier'}</span>
+                        </label>
+
+                        <label
+                          className={`${styles.permChip} ${
+                            editingPerms.inspection ? styles.permChipActive : ''
+                          }`}
+                          style={{ padding: '0.3rem 0.65rem', fontSize: '0.76rem' }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={editingPerms.inspection}
+                            onChange={() => handleToggleEditingPerm('inspection')}
+                          />
+                          <span>{isAr ? 'المعاينة' : 'Inspection'}</span>
+                        </label>
+
+                        <label
+                          className={`${styles.permChip} ${
+                            editingPerms.site ? styles.permChipActive : ''
+                          }`}
+                          style={{ padding: '0.3rem 0.65rem', fontSize: '0.76rem' }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={editingPerms.site}
+                            onChange={() => handleToggleEditingPerm('site')}
+                          />
+                          <span>{isAr ? 'موقع الصالة' : 'Site Web'}</span>
+                        </label>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '0.45rem', marginTop: '0.2rem' }}>
+                        <button
+                          type="button"
+                          disabled={savingPerms}
+                          className={styles.submitStaffBtn}
+                          style={{ padding: '0.38rem 0.85rem', fontSize: '0.78rem' }}
+                          onClick={() => handleSaveCardPermissions(member.id)}
+                        >
+                          <IconCheck />
+                          <span>
+                            {savingPerms
+                              ? isAr
+                                ? 'جاري الحفظ...'
+                                : 'Enregistrement...'
+                              : isAr
+                              ? 'حفظ الصلاحيات'
+                              : 'Enregistrer'}
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          className={styles.toggleActiveBtn}
+                          style={{ flex: 'none', padding: '0.38rem 0.75rem', fontSize: '0.78rem' }}
+                          onClick={() => setEditingMemberId(null)}
+                        >
+                          {isAr ? 'إلغاء' : 'Annuler'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={styles.staffPermsBadges}>
+                      {perms.orders && (
+                        <span className={styles.miniPermTag}>
+                          ✓ {isAr ? 'الطلبيات' : 'Demandes'}
+                        </span>
+                      )}
+                      {perms.calendar && (
+                        <span className={styles.miniPermTag}>
+                          ✓ {isAr ? 'التقويم' : 'Calendrier'}
+                        </span>
+                      )}
+                      {perms.inspection && (
+                        <span className={styles.miniPermTag}>
+                          ✓ {isAr ? 'المعاينة' : 'Inspection'}
+                        </span>
+                      )}
+                      {perms.site && (
+                        <span className={styles.miniPermTag}>
+                          ✓ {isAr ? 'موقع الصالة' : 'Site Web'}
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   <div className={styles.staffCardActions}>
+                    {!isEditingThisCard && (
+                      <button
+                        type="button"
+                        className={styles.toggleActiveBtn}
+                        onClick={() => handleStartEditPermissions(member)}
+                      >
+                        {isAr ? 'تعديل الصلاحيات' : 'Permissions'}
+                      </button>
+                    )}
+
+                    {!isChangingPassThisCard && (
+                      <button
+                        type="button"
+                        className={styles.toggleActiveBtn}
+                        onClick={() => handleStartChangePassword(member)}
+                      >
+                        {isAr ? 'كلمة المرور' : 'Mot de passe'}
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       className={styles.toggleActiveBtn}
@@ -407,10 +748,10 @@ export default function StaffTab({
                       <IconCheck />{' '}
                       {member.is_active
                         ? isAr
-                          ? 'إيقاف الدخول مؤقتاً'
+                          ? 'إيقاف'
                           : 'Suspendre'
                         : isAr
-                        ? 'تفعيل الحساب'
+                        ? 'تفعيل'
                         : 'Activer'}
                     </button>
 
@@ -430,4 +771,4 @@ export default function StaffTab({
       </div>
     </div>
   );
-}   
+}
