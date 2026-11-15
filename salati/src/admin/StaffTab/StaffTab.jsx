@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../../lib/supabaseClient';
 import styles from './StaffTab.module.css';
 import { IconPlus, IconCheck } from '../Icons';
@@ -37,6 +38,35 @@ export default function StaffTab({
   const [newMemberPassword, setNewMemberPassword] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
 
+  // حالة كرت الإشعار في منتصف الشاشة
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    type: 'success', // 'success' | 'error'
+    title: '',
+    message: ''
+  });
+
+  const showFeedback = (message, type = 'success', customTitle = '') => {
+    setFeedbackModal({
+      open: true,
+      type,
+      title:
+        customTitle ||
+        (type === 'success'
+          ? isAr
+            ? 'تمت العملية بنجاح!'
+            : 'Opération réussie !'
+          : isAr
+          ? 'تنبيه'
+          : 'Attention'),
+      message
+    });
+  };
+
+  const closeFeedback = () => {
+    setFeedbackModal((prev) => ({ ...prev, open: false }));
+  };
+
   const togglePermission = (key) => {
     setPermissions((prev) => ({ ...prev, [key]: !prev[key] }));
   };
@@ -71,10 +101,11 @@ export default function StaffTab({
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        alert(
+        showFeedback(
           isAr
-            ? 'تحذير: قاعدة البيانات رفضت حفظ الصلاحيات! نفّذ أمر SQL الخاص بجدول hall_staff في Supabase.'
-            : 'Erreur : mise à jour refusée par Supabase.'
+            ? 'قاعدة البيانات رفضت حفظ الصلاحيات! تأكد من صلاحيات جدول hall_staff في Supabase.'
+            : 'Mise à jour refusée par Supabase.',
+          'error'
         );
         return;
       }
@@ -85,13 +116,19 @@ export default function StaffTab({
         )
       );
       setEditingMemberId(null);
-      alert(isAr ? 'تم حفظ صلاحيات الموظف في قاعدة البيانات بنجاح!' : 'Permissions enregistrées !');
+      showFeedback(
+        isAr
+          ? 'تم حفظ صلاحيات الموظف في قاعدة البيانات بنجاح!'
+          : 'Permissions enregistrées avec succès !',
+        'success'
+      );
     } catch (err) {
       console.error('خطأ في تحديث صلاحيات الموظف:', err);
-      alert(
+      showFeedback(
         isAr
           ? 'فشل حفظ الصلاحيات: ' + err.message
-          : 'Erreur lors de la mise à jour : ' + err.message
+          : 'Erreur lors de la mise à jour : ' + err.message,
+        'error'
       );
     } finally {
       setSavingPerms(false);
@@ -107,10 +144,11 @@ export default function StaffTab({
   const handleSaveMemberPassword = async (member) => {
     if (savingPassword) return;
     if (!newMemberPassword.trim() || newMemberPassword.trim().length < 6) {
-      alert(
+      showFeedback(
         isAr
           ? 'يرجى إدخال كلمة مرور جديدة من 6 أحرف على الأقل.'
-          : 'Le mot de passe doit contenir au moins 6 caractères.'
+          : 'Le mot de passe doit contenir au moins 6 caractères.',
+        'error'
       );
       return;
     }
@@ -141,17 +179,19 @@ export default function StaffTab({
 
       setPasswordMemberId(null);
       setNewMemberPassword('');
-      alert(
+      showFeedback(
         isAr
           ? `تم تغيير كلمة مرور الموظف "${member.full_name}" بنجاح!`
-          : `Mot de passe de "${member.full_name}" mis à jour avec succès !`
+          : `Mot de passe de "${member.full_name}" mis à jour avec succès !`,
+        'success'
       );
     } catch (err) {
       console.error('خطأ في تغيير كلمة مرور الموظف:', err);
-      alert(
+      showFeedback(
         isAr
           ? 'فشل تغيير كلمة المرور: ' + err.message
-          : 'Erreur lors du changement de mot de passe : ' + err.message
+          : 'Erreur lors du changement de mot de passe : ' + err.message,
+        'error'
       );
     } finally {
       setSavingPassword(false);
@@ -163,10 +203,11 @@ export default function StaffTab({
     if (!fullName.trim() || !email.trim() || !password.trim() || creating) return;
 
     if (!hallId) {
-      alert(
+      showFeedback(
         isAr
           ? 'يرجى حفظ إعدادات الصالة أولاً قبل إضافة الموظفين.'
-          : 'Veuillez enregistrer les paramètres de la salle d’abord.'
+          : 'Veuillez enregistrer les paramètres de la salle d’abord.',
+        'error'
       );
       return;
     }
@@ -175,7 +216,6 @@ export default function StaffTab({
     try {
       const cleanEmail = email.trim().toLowerCase();
 
-      // 1. إنشاء الحساب أو تحديث كلمة المرور وتأكيد البريد تلقائياً إذا كان مسجلاً مسبقاً
       const { data: createdUserId, error: rpcError } = await supabase.rpc(
         'upsert_staff_auth_account',
         {
@@ -187,7 +227,6 @@ export default function StaffTab({
 
       if (rpcError) throw rpcError;
 
-      // 2. التحقق إن كان الموظف موجوداً مسبقاً في جدول hall_staff لنفس الصالة لتحديثه بدلاً من تكراره
       const existingMember = staffMembers.find(
         (m) => m.email?.toLowerCase() === cleanEmail
       );
@@ -243,17 +282,19 @@ export default function StaffTab({
       setPassword('');
       setPermissions({ orders: true, calendar: true, inspection: false, site: false });
 
-      alert(
+      showFeedback(
         isAr
           ? 'تم تفعيل حساب الموظف وتحديث كلمة مروره بنجاح! يمكنه الدخول الآن فوراً.'
-          : 'Compte employé activé et mot de passe mis à jour avec succès !'
+          : 'Compte employé activé et mot de passe mis à jour avec succès !',
+        'success'
       );
     } catch (err) {
       console.error('خطأ في إضافة الموظف:', err);
-      alert(
+      showFeedback(
         isAr
           ? 'حدث خطأ أثناء إضافة الموظف: ' + err.message
-          : 'Erreur : ' + err.message
+          : 'Erreur : ' + err.message,
+        'error'
       );
     } finally {
       setCreating(false);
@@ -273,8 +314,23 @@ export default function StaffTab({
       setStaffMembers((prev) =>
         prev.map((m) => (m.id === member.id ? { ...m, is_active: nextStatus } : m))
       );
+
+      showFeedback(
+        nextStatus
+          ? isAr
+            ? `تم تفعيل حساب الموظف "${member.full_name}" بنجاح.`
+            : `Compte de "${member.full_name}" activé.`
+          : isAr
+          ? `تم إيقاف حساب الموظف "${member.full_name}" مؤقتاً.`
+          : `Compte de "${member.full_name}" suspendu.`,
+        'success'
+      );
     } catch (err) {
       console.error('خطأ في تحديث حالة الموظف:', err);
+      showFeedback(
+        isAr ? 'فشل تحديث حالة الموظف: ' + err.message : 'Erreur : ' + err.message,
+        'error'
+      );
     }
   };
 
@@ -299,12 +355,19 @@ export default function StaffTab({
       if (error) throw error;
 
       setStaffMembers((prev) => prev.filter((m) => m.id !== member.id));
+      showFeedback(
+        isAr
+          ? `تم حذف الموظف "${member.full_name}" نهائياً.`
+          : `Employé "${member.full_name}" supprimé.`,
+        'success'
+      );
     } catch (err) {
       console.error('خطأ في حذف الموظف:', err);
-      alert(
+      showFeedback(
         isAr
           ? 'حدث خطأ أثناء الحذف النهائي: ' + err.message
-          : 'Erreur lors de la suppression : ' + err.message
+          : 'Erreur lors de la suppression : ' + err.message,
+        'error'
       );
     }
   };
@@ -476,14 +539,18 @@ export default function StaffTab({
           </div>
         ) : (
           <div className={styles.staffCardsGrid}>
-            {staffMembers.map((member) => {
+            {staffMembers.map((member, index) => {
               const confirmedCount = getConfirmedCountByStaff(member.full_name);
               const perms = member.permissions || {};
               const isEditingThisCard = editingMemberId === member.id;
               const isChangingPassThisCard = passwordMemberId === member.id;
 
               return (
-                <div key={member.id} className={styles.staffCard}>
+                <div
+                  key={member.id}
+                  className={styles.staffCard}
+                  style={{ animationDelay: `${Math.min(index * 0.06, 0.4)}s` }}
+                >
                   <div className={styles.staffCardTop}>
                     <div className={styles.staffIdentity}>
                       <div className={styles.staffAvatar}>
@@ -524,42 +591,27 @@ export default function StaffTab({
 
                   {/* وضع تغيير كلمة المرور مباشرة من البطاقة */}
                   {isChangingPassThisCard && (
-                    <div
-                      style={{
-                        backgroundColor: '#f8fafc',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '14px',
-                        padding: '0.7rem',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.55rem'
-                      }}
-                    >
-                      <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155' }}>
-                        {isAr ? 'أدخل كلمة المرور الجديدة (6 أحرف على الأقل):' : 'Nouveau mot de passe (min 6 car.) :'}
+                    <div className={styles.inlineEditBox}>
+                      <span className={styles.inlineEditTitle}>
+                        {isAr
+                          ? 'أدخل كلمة المرور الجديدة (6 أحرف على الأقل):'
+                          : 'Nouveau mot de passe (min 6 car.) :'}
                       </span>
 
                       <input
                         type="text"
                         minLength={6}
+                        className={styles.inlinePassInput}
                         placeholder={isAr ? 'كلمة المرور الجديدة...' : 'Nouveau mot de passe...'}
                         value={newMemberPassword}
                         onChange={(e) => setNewMemberPassword(e.target.value)}
-                        style={{
-                          padding: '0.45rem 0.75rem',
-                          borderRadius: '999px',
-                          border: '1px solid #cbd5e1',
-                          fontSize: '0.84rem',
-                          outline: 'none'
-                        }}
                       />
 
-                      <div style={{ display: 'flex', gap: '0.45rem' }}>
+                      <div className={styles.inlineEditActions}>
                         <button
                           type="button"
                           disabled={savingPassword}
-                          className={styles.submitStaffBtn}
-                          style={{ padding: '0.38rem 0.85rem', fontSize: '0.78rem' }}
+                          className={styles.inlineSaveBtn}
                           onClick={() => handleSaveMemberPassword(member)}
                         >
                           <IconCheck />
@@ -576,8 +628,7 @@ export default function StaffTab({
 
                         <button
                           type="button"
-                          className={styles.toggleActiveBtn}
-                          style={{ flex: 'none', padding: '0.38rem 0.75rem', fontSize: '0.78rem' }}
+                          className={styles.inlineCancelBtn}
                           onClick={() => {
                             setPasswordMemberId(null);
                             setNewMemberPassword('');
@@ -591,27 +642,17 @@ export default function StaffTab({
 
                   {/* وضع تعديل الصلاحيات أو عرض الصلاحيات الحالية */}
                   {isEditingThisCard ? (
-                    <div
-                      style={{
-                        backgroundColor: '#f8fafc',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '14px',
-                        padding: '0.7rem',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.55rem'
-                      }}
-                    >
-                      <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155' }}>
+                    <div className={styles.inlineEditBox}>
+                      <span className={styles.inlineEditTitle}>
                         {isAr ? 'حدد الأقسام المسموحة:' : 'Sections autorisées :'}
                       </span>
 
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                      <div className={styles.inlineEditChips}>
                         <label
                           className={`${styles.permChip} ${
                             editingPerms.orders ? styles.permChipActive : ''
                           }`}
-                          style={{ padding: '0.3rem 0.65rem', fontSize: '0.76rem' }}
+                          style={{ padding: '0.32rem 0.68rem', fontSize: '0.76rem' }}
                         >
                           <input
                             type="checkbox"
@@ -625,7 +666,7 @@ export default function StaffTab({
                           className={`${styles.permChip} ${
                             editingPerms.calendar ? styles.permChipActive : ''
                           }`}
-                          style={{ padding: '0.3rem 0.65rem', fontSize: '0.76rem' }}
+                          style={{ padding: '0.32rem 0.68rem', fontSize: '0.76rem' }}
                         >
                           <input
                             type="checkbox"
@@ -639,7 +680,7 @@ export default function StaffTab({
                           className={`${styles.permChip} ${
                             editingPerms.inspection ? styles.permChipActive : ''
                           }`}
-                          style={{ padding: '0.3rem 0.65rem', fontSize: '0.76rem' }}
+                          style={{ padding: '0.32rem 0.68rem', fontSize: '0.76rem' }}
                         >
                           <input
                             type="checkbox"
@@ -653,7 +694,7 @@ export default function StaffTab({
                           className={`${styles.permChip} ${
                             editingPerms.site ? styles.permChipActive : ''
                           }`}
-                          style={{ padding: '0.3rem 0.65rem', fontSize: '0.76rem' }}
+                          style={{ padding: '0.32rem 0.68rem', fontSize: '0.76rem' }}
                         >
                           <input
                             type="checkbox"
@@ -664,12 +705,11 @@ export default function StaffTab({
                         </label>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '0.45rem', marginTop: '0.2rem' }}>
+                      <div className={styles.inlineEditActions}>
                         <button
                           type="button"
                           disabled={savingPerms}
-                          className={styles.submitStaffBtn}
-                          style={{ padding: '0.38rem 0.85rem', fontSize: '0.78rem' }}
+                          className={styles.inlineSaveBtn}
                           onClick={() => handleSaveCardPermissions(member.id)}
                         >
                           <IconCheck />
@@ -686,8 +726,7 @@ export default function StaffTab({
 
                         <button
                           type="button"
-                          className={styles.toggleActiveBtn}
-                          style={{ flex: 'none', padding: '0.38rem 0.75rem', fontSize: '0.78rem' }}
+                          className={styles.inlineCancelBtn}
                           onClick={() => setEditingMemberId(null)}
                         >
                           {isAr ? 'إلغاء' : 'Annuler'}
@@ -742,7 +781,9 @@ export default function StaffTab({
 
                     <button
                       type="button"
-                      className={styles.toggleActiveBtn}
+                      className={`${styles.toggleActiveBtn} ${
+                        member.is_active ? styles.pauseStaffBtn : styles.activateStaffBtn
+                      }`}
                       onClick={() => handleToggleStaffStatus(member)}
                     >
                       <IconCheck />{' '}
@@ -769,6 +810,38 @@ export default function StaffTab({
           </div>
         )}
       </div>
+
+      {/* كرت الإشعار الجميل في منتصف الشاشة بالكامل */}
+      {feedbackModal.open &&
+        createPortal(
+          <div className={styles.feedbackBackdrop} onClick={closeFeedback}>
+            <div
+              dir={isAr ? 'rtl' : 'ltr'}
+              className={styles.feedbackCard}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div
+                className={
+                  feedbackModal.type === 'success'
+                    ? styles.feedbackIconSuccess
+                    : styles.feedbackIconError
+                }
+              >
+                {feedbackModal.type === 'success' ? <IconCheck /> : '⚠️'}
+              </div>
+              <h3 className={styles.feedbackTitle}>{feedbackModal.title}</h3>
+              <p className={styles.feedbackMessage}>{feedbackModal.message}</p>
+              <button
+                type="button"
+                className={styles.feedbackCloseBtn}
+                onClick={closeFeedback}
+              >
+                {isAr ? 'موافق' : "D'accord"}
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

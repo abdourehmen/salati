@@ -9,6 +9,12 @@ const navigate = (to) => {
 };
 
 export default function Register() {
+  const params = new URLSearchParams(window.location.search);
+  const rawPlan = params.get('plan');
+  const selectedPlan = ['basic', 'pro', 'enterprise'].includes(rawPlan) ? rawPlan : 'basic';
+  const rawCycle = params.get('cycle');
+  const selectedCycle = ['monthly', 'semi_annual', 'annual'].includes(rawCycle) ? rawCycle : 'monthly';
+
   const [formData, setFormData] = useState({
     hallName: '',
     fullName: '',
@@ -63,6 +69,21 @@ export default function Register() {
       const user = authData.user;
 
       if (user) {
+        // جلب مدة الفترة التجريبية من إعدادات المنصة (الافتراضي 14 يوماً)
+        let trialDays = 14;
+        const { data: settingsData } = await supabase
+          .from('platform_settings')
+          .select('trial_days')
+          .eq('id', 1)
+          .maybeSingle();
+
+        if (settingsData?.trial_days) {
+          trialDays = Number(settingsData.trial_days) || 14;
+        }
+
+        const trialEnd = new Date();
+        trialEnd.setDate(trialEnd.getDate() + trialDays);
+
         // 2. إنشاء سجل القاعة في جدول halls مربوطاً بمعرّف المالك owner_id
         const generatedSlug = generateSlug(formData.hallName, user.id);
 
@@ -75,7 +96,13 @@ export default function Register() {
               slug: generatedSlug,
               phone: formData.phone.trim(),
               address: formData.wilaya,
-              capacity: 500
+              wilaya: formData.wilaya,
+              capacity: 500,
+              plan_tier: selectedPlan,
+              billing_cycle: selectedCycle,
+              is_active: true,
+              subscription_status: 'trial',
+              subscription_ends_at: trialEnd.toISOString()
             }
           ]);
 

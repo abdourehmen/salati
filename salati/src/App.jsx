@@ -9,6 +9,7 @@ import PublicHall from './pages/salle/PublicHall';
 import BookingSuccess from './pages/salle/BookingSuccess';
 import RateHall from './pages/salle/RateHall';
 import AdminDashboard from './admin/AdminDashboard';
+import SuperAdmin from './pages/platform/SuperAdmin';
 import HallsCatalog from './pages/platform/HallsCatalog';
 import Terms from './pages/platform/Terms';
 import Privacy from './pages/platform/Privacy';
@@ -49,6 +50,7 @@ export default function App() {
       case '/login': return <Login />;
       case '/dashboard': return <Dashboard />;
       case '/admin': return <AdminDashboard />;
+      case '/super-admin': return <SuperAdmin />;
       case '/halls': return <HallsCatalog />;
       case '/hall/demo': return <PublicHall />;
       case '/hall/success': return <BookingSuccess />;

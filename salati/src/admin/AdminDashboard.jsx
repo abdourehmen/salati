@@ -2,17 +2,18 @@ import { useState, useEffect } from 'react';
 import { supabase } from "../lib/supabaseClient";
 import styles from './AdminDashboard.module.css';
 
-// استدعاء الأقسام من مجلداتها المستقلة
+// استدعاء الأقسام من مجلداتها المستقلة[cite: 10]
 import OverviewTab from './OverviewTab/OverviewTab';
 import OrdersTab from './OrdersTab/OrdersTab';
 import CalendarTab from './CalendarTab/CalendarTab';
 import SiteSettingsTab from './SiteSettingsTab/SiteSettingsTab';
 import InspectionTab from './InspectionTab/InspectionTab';
 import StaffTab from './StaffTab/StaffTab';
-// استدعاء نافذة تفاصيل الطلبية
+import SubscriptionTab from './SubscriptionTab/SubscriptionTab';
+// استدعاء نافذة تفاصيل الطلبية[cite: 10]
 import OrderDetailsModal from './modals/OrderDetailsModal';
 
-// استدعاء الأيقونات
+// استدعاء الأيقونات[cite: 10]
 import {
   IconDashboard,
   IconInbox,
@@ -38,7 +39,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // حالات الموظفين والصلاحيات
+  // حالات الموظفين والصلاحيات[cite: 10]
   const [currentOperatorName, setCurrentOperatorName] = useState('مالك القاعة');
   const [isOwnerUser, setIsOwnerUser] = useState(true);
   const [staffPermissions, setStaffPermissions] = useState({
@@ -51,7 +52,7 @@ export default function AdminDashboard() {
   });
   const [staffMembers, setStaffMembers] = useState([]);
 
-  // النوافذ المنبثقة
+  // النوافذ المنبثقة[cite: 10]
   const [isAddBookingOpen, setIsAddBookingOpen] = useState(false);
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [selectedBookingForContract, setSelectedBookingForContract] = useState(null);
@@ -69,6 +70,7 @@ export default function AdminDashboard() {
   const [orderSearchQuery, setOrderSearchQuery] = useState('');
 
   const [hallData, setHallData] = useState(null);
+  const [platformSettings, setPlatformSettings] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const [siteForm, setSiteForm] = useState({
@@ -78,6 +80,7 @@ export default function AdminDashboard() {
     phone: '',
     visiting_hours: '',
     map_url: '',
+    google_review_url: '',
     description: ''
   });
 
@@ -123,6 +126,17 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
+      // جلب إعدادات المنصة والإعلان العام[cite: 10]
+      const { data: pSettings } = await supabase
+        .from('platform_settings')
+        .select('*')
+        .eq('id', 1)
+        .maybeSingle();
+
+      if (pSettings) {
+        setPlatformSettings(pSettings);
+      }
+
       const { data: authUser } = await supabase.auth.getUser();
       const currentUser = authUser?.user;
 
@@ -136,7 +150,7 @@ export default function AdminDashboard() {
         hall = userHall;
       }
 
-      // إذا لم يكن المستخدم هو المالك، نتحقق إن كان موظفاً مرتبطاً بصالة
+      // إذا لم يكن المستخدم هو المالك، نتحقق إن كان موظفاً مرتبطاً بصالة[cite: 10]
       if (!hall && currentUser?.email) {
         const { data: staffRecord } = await supabase
           .from('hall_staff')
@@ -163,6 +177,7 @@ export default function AdminDashboard() {
           phone: hall.phone || '',
           visiting_hours: hall.visiting_hours || '',
           map_url: hall.map_url || '',
+          google_review_url: hall.google_review_url || '',
           description: hall.description || ''
         });
         setShowWhatsapp(hall.show_whatsapp ?? true);
@@ -183,7 +198,7 @@ export default function AdminDashboard() {
 
         setPricingPackages(hall.pricing_packages || []);
 
-        // جلب فريق العمل والتحقق من صلاحيات الداخل الحالي
+        // جلب فريق العمل والتحقق من صلاحيات الداخل الحالي[cite: 10]
         const { data: staffRows } = await supabase
           .from('hall_staff')
           .select('*')
@@ -234,7 +249,7 @@ export default function AdminDashboard() {
           };
           setStaffPermissions(nextPerms);
 
-          // توجيه الموظف لأول قسم مسموح له فعلياً
+          // توجيه الموظف لأول قسم مسموح له فعلياً[cite: 10]
           const firstAllowedTab =
             (nextPerms.orders && 'orders') ||
             (nextPerms.calendar && 'calendar') ||
@@ -278,7 +293,7 @@ export default function AdminDashboard() {
           );
         }
       } else {
-        // حساب جديد بدون صالة مسجلة بعد: تهيئة بيانات نظيفة ومستقلة
+        // حساب جديد بدون صالة مسجلة بعد: تهيئة بيانات نظيفة ومستقلة[cite: 10]
         setHallData(null);
         setIsOwnerUser(true);
         setCurrentOperatorName('مالك القاعة');
@@ -298,6 +313,7 @@ export default function AdminDashboard() {
           phone: currentUser?.user_metadata?.phone || '',
           visiting_hours: '',
           map_url: '',
+          google_review_url: '',
           description: ''
         });
       }
@@ -601,6 +617,7 @@ export default function AdminDashboard() {
         phone: siteForm.phone || '',
         visiting_hours: siteForm.visiting_hours || '',
         map_url: siteForm.map_url || '',
+        google_review_url: (siteForm.google_review_url || '').trim(),
         description: siteForm.description || '',
         show_whatsapp: showWhatsapp,
         whatsapp_number: whatsappNumber || siteForm.phone || '',
@@ -624,6 +641,7 @@ export default function AdminDashboard() {
       );
     } catch (err) {
       console.error('خطأ في حفظ الإعدادات:', err);
+      alert(isAr ? 'فشل حفظ الإعدادات: ' + err.message : 'Erreur de sauvegarde : ' + err.message);
     }
   };
 
@@ -723,6 +741,7 @@ export default function AdminDashboard() {
     site: isAr ? 'الموقع الخاص بالصالة' : 'Site Web de la Salle',
     inspection: isAr ? 'معاينة الصالة قبل التسليم' : 'Inspection avant remise',
     staff: isAr ? 'العمال' : 'Équipe',
+    subscription: isAr ? 'الاشتراك والباقة' : 'Abonnement',
     newBookingBtn: isAr ? 'إضافة طلب جديد' : 'Nouvelle Demande',
     viewSiteBtn: isAr ? 'مشاهدة موقع الصالة' : 'Voir le site Web',
     logoutBtn: isAr ? 'تسجيل الخروج' : 'Déconnexion'
@@ -745,9 +764,145 @@ export default function AdminDashboard() {
     );
   }
 
+  // التحقق من إيقاف الصالة أو انتهاء صلاحية اشتراكها[cite: 10]
+  const isHallSuspended = hallData?.is_active === false || hallData?.subscription_status === 'suspended';
+  const isSubscriptionExpired =
+    hallData?.subscription_ends_at && new Date(hallData.subscription_ends_at) < new Date();
+
+  if (hallData && (isHallSuspended || isSubscriptionExpired)) {
+    const waSupportText = encodeURIComponent(
+      isAr
+        ? `مرحباً فريق Salati، أرغب في تجديد أو تفعيل اشتراك صالة: ${hallData.name}`
+        : `Bonjour Salati, je souhaite renouveler l'abonnement de la salle : ${hallData.name}`
+    );
+
+    return (
+      <div
+        dir={isAr ? 'rtl' : 'ltr'}
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#f8fafc',
+          padding: '1.5rem'
+        }}
+      >
+        <div
+          style={{
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '24px',
+            padding: '2.5rem 2rem',
+            maxWidth: '460px',
+            width: '100%',
+            textAlign: 'center',
+            boxShadow: '0 16px 36px rgba(15, 23, 42, 0.08)'
+          }}
+        >
+          <div
+            style={{
+              width: '60px',
+              height: '60px',
+              borderRadius: '18px',
+              background: '#fef2f2',
+              color: '#dc2626',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '1.75rem',
+              margin: '0 auto 1rem'
+            }}
+          >
+            ⏳
+          </div>
+          <h2 style={{ margin: '0 0 0.6rem', color: '#0f172a', fontWeight: 900 }}>
+            {isHallSuspended
+              ? isAr
+                ? 'تم إيقاف حساب الصالة مؤقتاً'
+                : 'Compte de la salle suspendu'
+              : isAr
+              ? 'انتهت مدة اشتراك الصالة'
+              : 'Abonnement de la salle expiré'}
+          </h2>
+          <p style={{ margin: '0 0 1.5rem', color: '#64748b', lineHeight: 1.6, fontSize: '0.95rem' }}>
+            {isAr
+              ? 'يرجى تجديد اشتراكك أو التواصل مع إدارة منصة Salati لإعادة تفعيل لوحة التحكم وصفحة صالتك فوراً.'
+              : 'Veuillez renouveler votre abonnement ou contacter le support Salati pour réactiver votre espace.'}
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <a
+              href={`https://wa.me/213550000000?text=${waSupportText}`}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                background: '#16a34a',
+                color: '#ffffff',
+                padding: '0.85rem 1.25rem',
+                borderRadius: '14px',
+                fontWeight: 800,
+                textDecoration: 'none'
+              }}
+            >
+              {isAr ? 'تواصل لتجديد الاشتراك عبر واتساب' : 'Contacter le support WhatsApp'}
+            </a>
+            <button
+              type="button"
+              onClick={handleLogout}
+              style={{
+                background: '#f1f5f9',
+                color: '#334155',
+                border: 'none',
+                padding: '0.75rem 1.25rem',
+                borderRadius: '14px',
+                fontWeight: 800,
+                cursor: 'pointer'
+              }}
+            >
+              {t.logoutBtn}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // حساب تفاصيل الباقة وتاريخ الانتهاء لعرضها لمالك الصالة[cite: 10]
+  const planLabels = {
+    basic: isAr ? 'الباقة الأساسية' : 'Offre Essentiel',
+    pro: isAr ? 'الباقة الاحترافية Pro' : 'Offre Pro',
+    enterprise: isAr ? 'باقة المؤسسات' : 'Offre Entreprise'
+  };
+  const currentPlanLabel = planLabels[hallData?.plan_tier || 'basic'] || planLabels.basic;
+  const isTrialStatus = hallData?.subscription_status === 'trial';
+
+  const subscriptionEndDateObj = hallData?.subscription_ends_at
+    ? new Date(hallData.subscription_ends_at)
+    : null;
+
+  const daysLeft = subscriptionEndDateObj
+    ? Math.max(0, Math.ceil((subscriptionEndDateObj - new Date()) / (1000 * 60 * 60 * 24)))
+    : null;
+
+  const formattedSubEndDate = subscriptionEndDateObj
+    ? subscriptionEndDateObj.toLocaleDateString(isAr ? 'ar-DZ' : 'fr-FR', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })
+    : null;
+
+  const showRenewalWarning = isOwnerUser && daysLeft !== null && daysLeft <= 5;
+
+  const activeAnnouncementText = platformSettings?.is_announcement_active
+    ? isAr
+      ? platformSettings.announcement_ar
+      : platformSettings.announcement_fr || platformSettings.announcement_ar
+    : '';
+
   return (
     <div className={styles.adminLayout}>
-      {/* القائمة الجانبية الموحدة */}
+      {/* القائمة الجانبية الموحدة[cite: 10] */}
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ''}`}>
         <div className={styles.sidebarHeader}>
           <a href="/" className={styles.brandLogo}>
@@ -769,6 +924,65 @@ export default function AdminDashboard() {
             </span>
           </div>
         </div>
+
+        {/* بطاقة الباقة وتاريخ الانتهاء (تظهر لمالك الصالة فقط)[cite: 10] */}
+        {hallData && isOwnerUser && (
+          <div
+            style={{
+              margin: '0 1rem 0.85rem 1rem',
+              padding: '0.75rem 0.9rem',
+              borderRadius: '14px',
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(148, 163, 184, 0.25)',
+              fontSize: '0.8rem'
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '0.4rem',
+                marginBottom: formattedSubEndDate ? '0.35rem' : 0
+              }}
+            >
+              <strong style={{ color: '#38bdf8', fontWeight: 800 }}>
+                💎 {currentPlanLabel}
+              </strong>
+              <span
+                style={{
+                  background: isTrialStatus ? '#fef3c7' : '#dcfce7',
+                  color: isTrialStatus ? '#b45309' : '#15803d',
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '999px',
+                  fontSize: '0.7rem',
+                  fontWeight: 800
+                }}
+              >
+                {isTrialStatus
+                  ? isAr
+                    ? 'تجريبي'
+                    : 'Essai'
+                  : isAr
+                  ? 'نشط'
+                  : 'Actif'}
+              </span>
+            </div>
+
+            {formattedSubEndDate && (
+              <div style={{ color: '#cbd5e1', fontSize: '0.76rem' }}>
+                {isAr ? 'ينتهي في:' : 'Expire le :'}{' '}
+                <strong style={{ color: '#ffffff' }}>{formattedSubEndDate}</strong>
+                {daysLeft !== null && (
+                  <span style={{ opacity: 0.85 }}>
+                    {' '}
+                    ({isAr ? `متبقي ${daysLeft} يوم` : `${daysLeft}j restants`})
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         <nav className={styles.sidebarNav}>
           {(isOwnerUser || staffPermissions.overview) && (
@@ -863,6 +1077,21 @@ export default function AdminDashboard() {
               <span className={styles.navLabel}>{t.staff}</span>
             </button>
           )}
+
+          {isOwnerUser && (
+            <button
+              className={`${styles.navItem} ${
+                activeTab === 'subscription' ? styles.navItemActive : ''
+              }`}
+              onClick={() => {
+                setActiveTab('subscription');
+                setSidebarOpen(false);
+              }}
+            >
+              <IconCheck />
+              <span className={styles.navLabel}>{t.subscription}</span>
+            </button>
+          )}
         </nav>
 
         <div className={styles.sidebarFooter}>
@@ -892,7 +1121,7 @@ export default function AdminDashboard() {
         <div className={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* المحتوى الرئيسي */}
+      {/* المحتوى الرئيسي[cite: 10] */}
       <div className={styles.mainWrapper}>
         <header className={styles.adminHeader}>
           <button className={styles.toggleMenuBtn} onClick={() => setSidebarOpen(true)}>
@@ -920,6 +1149,72 @@ export default function AdminDashboard() {
         </header>
 
         <main className={styles.adminContent}>
+          {activeAnnouncementText && (
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                border: '1px solid #93c5fd',
+                color: '#1e3a8a',
+                padding: '0.85rem 1.25rem',
+                borderRadius: '14px',
+                marginBottom: '1.25rem',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.65rem'
+              }}
+            >
+              <span>📢</span>
+              <span>{activeAnnouncementText}</span>
+            </div>
+          )}
+
+          {showRenewalWarning && (
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+                border: '1px solid #f59e0b',
+                color: '#92400e',
+                padding: '0.85rem 1.25rem',
+                borderRadius: '14px',
+                marginBottom: '1.25rem',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '0.75rem'
+              }}
+            >
+              <span>
+                ⏳{' '}
+                {isAr
+                  ? `تنبيه: اشتراكك في (${currentPlanLabel}) ينتهي بتاريخ ${formattedSubEndDate} (متبقي ${daysLeft} أيام).`
+                  : `Rappel : Votre abonnement (${currentPlanLabel}) expire le ${formattedSubEndDate} (${daysLeft}j restants).`}
+              </span>
+              <a
+                href={`https://wa.me/213550000000?text=${encodeURIComponent(
+                  isAr
+                    ? `مرحباً فريق Salati، أرغب في تجديد اشتراك صالة: ${hallData?.name || ''}`
+                    : `Bonjour Salati, je souhaite renouveler l'abonnement de : ${hallData?.name || ''}`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  background: '#d97706',
+                  color: '#ffffff',
+                  padding: '0.45rem 0.95rem',
+                  borderRadius: '10px',
+                  fontSize: '0.82rem',
+                  fontWeight: 800,
+                  textDecoration: 'none'
+                }}
+              >
+                {isAr ? 'تجديد الاشتراك الآن' : 'Renouveler maintenant'}
+              </a>
+            </div>
+          )}
+
           {activeTab === 'overview' && (isOwnerUser || staffPermissions.overview) && (
             <OverviewTab
               isAr={isAr}
@@ -973,6 +1268,7 @@ export default function AdminDashboard() {
           {activeTab === 'site' && (isOwnerUser || staffPermissions.site) && (
             <SiteSettingsTab
               isAr={isAr}
+              hallData={hallData}
               siteForm={siteForm}
               setSiteForm={setSiteForm}
               videoUrl={videoUrl}
@@ -1000,10 +1296,18 @@ export default function AdminDashboard() {
               bookings={bookings}
             />
           )}
+
+          {activeTab === 'subscription' && isOwnerUser && (
+            <SubscriptionTab
+              isAr={isAr}
+              hallData={hallData}
+              platformSettings={platformSettings}
+            />
+          )}
         </main>
       </div>
 
-      {/* نافذة تفاصيل الطلبية */}
+      {/* نافذة تفاصيل الطلبية[cite: 10] */}
       {selectedBookingForDetails && (
         <OrderDetailsModal
           booking={selectedBookingForDetails}
@@ -1015,7 +1319,7 @@ export default function AdminDashboard() {
         />
       )}
 
-      {/* نافذة تعديل/إضافة العربون */}
+      {/* نافذة تعديل/إضافة العربون[cite: 10] */}
       {isDepositModalOpen && selectedBookingForDeposit && (
         <div className={styles.modalBackdrop} onClick={() => setIsDepositModalOpen(false)}>
           <div
@@ -1063,7 +1367,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* نافذة إضافة طلب جديد */}
+      {/* نافذة إضافة طلب جديد[cite: 10] */}
       {isAddBookingOpen && (
         <div className={styles.modalBackdrop} onClick={() => setIsAddBookingOpen(false)}>
           <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
@@ -1147,7 +1451,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* نافذة العقد الرقمي */}
+      {/* نافذة العقد الرقمي[cite: 10] */}
       {isContractModalOpen && selectedBookingForContract && (
         <div className={styles.modalBackdrop} onClick={() => setIsContractModalOpen(false)}>
           <div
@@ -1205,7 +1509,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* نافذة الإشعار بالنجاح */}
+      {/* نافذة الإشعار بالنجاح[cite: 10] */}
       {isSuccessModalOpen && (
         <div className={styles.modalBackdrop} onClick={() => setIsSuccessModalOpen(false)}>
           <div

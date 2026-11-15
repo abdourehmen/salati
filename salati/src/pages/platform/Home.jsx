@@ -502,6 +502,8 @@ export default function Home() {
     return { price: monthly, period: t.perMonth };
   };
 
+  const cycleParam = billingCycle === 'semiAnnual' ? 'semi_annual' : billingCycle;
+
   return (
     <div className={styles.homeContainer}>
       {/* 1. Hero Section */}
@@ -732,6 +734,7 @@ export default function Home() {
           {/* الباقة 1 */}
           {(() => {
             const plan1 = getPriceAndPeriod(t.plan1PriceMonthly, t.plan1PriceSemiAnnual, t.plan1PriceAnnual);
+            const plan1Url = `/register?plan=basic&cycle=${cycleParam}`;
             return (
               <div className={`${styles.priceCard} ${styles.revealOnScroll} ${styles.fadeUp}`} style={{ transitionDelay: '0.1s' }}>
                 <div className={styles.cardHead}>
@@ -747,7 +750,7 @@ export default function Home() {
                     <li key={index}><IconCheck /> <span>{feat}</span></li>
                   ))}
                 </ul>
-                <a href="/register" onClick={(e) => navigateTo(e, '/register')} className={styles.priceCta}>{t.selectPlan}</a>
+                <a href={plan1Url} onClick={(e) => navigateTo(e, plan1Url)} className={styles.priceCta}>{t.selectPlan}</a>
                 <span className={styles.noRiskSub}>{t.noHiddenFees}</span>
               </div>
             );
@@ -756,6 +759,7 @@ export default function Home() {
           {/* الباقة 2 */}
           {(() => {
             const plan2 = getPriceAndPeriod(t.plan2PriceMonthly, t.plan2PriceSemiAnnual, t.plan2PriceAnnual);
+            const plan2Url = `/register?plan=pro&cycle=${cycleParam}`;
             return (
               <div className={`${styles.priceCard} ${styles.popularCard} ${styles.revealOnScroll} ${styles.fadeUp}`} style={{ transitionDelay: '0.25s' }}>
                 <div className={styles.popularBadge}>{t.popularBadge}</div>
@@ -772,7 +776,7 @@ export default function Home() {
                     <li key={index}><IconCheck /> <span>{feat}</span></li>
                   ))}
                 </ul>
-                <a href="/register" onClick={(e) => navigateTo(e, '/register')} className={`${styles.priceCta} ${styles.popularCta}`}>{t.selectPlan}</a>
+                <a href={plan2Url} onClick={(e) => navigateTo(e, plan2Url)} className={`${styles.priceCta} ${styles.popularCta}`}>{t.selectPlan}</a>
                 <span className={styles.noRiskSub}>{t.noHiddenFees}</span>
               </div>
             );
@@ -781,6 +785,7 @@ export default function Home() {
           {/* الباقة 3 */}
           {(() => {
             const plan3 = getPriceAndPeriod(t.plan3PriceMonthly, t.plan3PriceSemiAnnual, t.plan3PriceAnnual);
+            const plan3Url = `/register?plan=enterprise&cycle=${cycleParam}`;
             return (
               <div className={`${styles.priceCard} ${styles.revealOnScroll} ${styles.fadeUp}`} style={{ transitionDelay: '0.4s' }}>
                 <div className={styles.cardHead}>
@@ -796,7 +801,7 @@ export default function Home() {
                     <li key={index}><IconCheck /> <span>{feat}</span></li>
                   ))}
                 </ul>
-                <a href="/register" onClick={(e) => navigateTo(e, '/register')} className={styles.priceCta}>{t.selectPlan}</a>
+                <a href={plan3Url} onClick={(e) => navigateTo(e, plan3Url)} className={styles.priceCta}>{t.selectPlan}</a>
                 <span className={styles.noRiskSub}>{t.noHiddenFees}</span>
               </div>
             );
