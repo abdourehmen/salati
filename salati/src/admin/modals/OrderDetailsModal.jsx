@@ -16,7 +16,7 @@ export default function OrderDetailsModal({
     <div className={styles.modalBackdrop} onClick={onClose}>
       <div
         className={styles.modalBox}
-        style={{ maxWidth: '500px' }}
+        style={{ maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.modalHeader}>

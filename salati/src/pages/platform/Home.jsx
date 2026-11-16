@@ -205,22 +205,8 @@ const content = {
     plan2Features: [
       'كل مميزات الباقة الأساسية بالكامل',
       'نظام كود QR الذكي لزيادة تقييمات Google Maps',
-      'إمكانية تحديد أسعار المواعيد والمواسم (صيف/شتاء)',
-      'إرسال إشعارات وتأكيدات SMS للزبائن',
+   
       'دعم هاتف مباشر ذو أولوية فائقة'
-    ],
-
-    plan3Name: 'باقة المجمعات والمؤسسات',
-    plan3Desc: 'حل مخصص لأصحاب الصالات المتعددة والمجمعات الكبرى في الجزائر.',
-    plan3PriceMonthly: '12,000 دج',
-    plan3PriceSemiAnnual: '72,000 دج',
-    plan3PriceAnnual: '144,000 دج',
-    plan3Features: [
-      'إدارة شبكة صالات متعددة من لوحة واحدة',
-      'ربط دومين مخصص (www.salle-yourname.com)',
-      'تقارير مالية وتوقعات أرباح موثوقة',
-      'ربط مع أنظمة المحاسبة والطابعات',
-      'مدير حساب خاص لمتابعة وتدريب عُمالك'
     ],
 
     guarantee1: 'تفعيل فوري خلال 5 دقائق',
@@ -347,22 +333,9 @@ const content = {
     plan2Features: [
       'Toutes les fonctionnalités Essentiel incluses',
       'Générateur QR Code Avis Google Maps dédié',
-      'Tarification dynamique par saison (Été/Hiver)',
-      'Envoi de confirmations SMS aux clients',
+     
+      
       'Support téléphonique prioritaire VIP'
-    ],
-
-    plan3Name: 'Formule Multi-Salles (VIP)',
-    plan3Desc: 'Solution complète pour les propriétaires de plusieurs salles en Algérie.',
-    plan3PriceMonthly: '12 000 DA',
-    plan3PriceSemiAnnual: '72 000 DA',
-    plan3PriceAnnual: '144 000 DA',
-    plan3Features: [
-      'Gestion centralisée de plusieurs salles',
-      'Nom de domaine personnalisé (salle-exemple.dz)',
-      'Rapports financiers et prévisions de revenus',
-      'Intégration comptabilité et impression',
-      'Account Manager dédié pour votre équipe'
     ],
 
     guarantee1: 'Activation immédiate en 5 minutes',
@@ -374,7 +347,7 @@ const content = {
     faqs: [
       {
         q: 'Est-ce que salati prend une commission sur mes réservations ?',
-        a: 'Absolument pas ! Nous appliquons un système d’abonnement fixe sans aucune commission sur vos ventes. 100% de vos revenus restent à vous.'
+        a: 'Absolument pas ! Nous applons un système d’abonnement fixe sans aucune commission sur vos ventes. 100% de vos revenus restent à vous.'
       },
       {
         q: 'Faut-il installer un logiciel ou du matériel spécifique ?',
@@ -701,7 +674,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 5. قسم خطط الأسعار والاشتراكات */}
+      {/* 5. قسم خطط الأسعار والاشتراكات (باقتان فقط) */}
       <section id="pricing" className={styles.pricingSection}>
         <div className={`${styles.pricingHeader} ${styles.revealOnScroll} ${styles.fadeUp}`}>
           <h2 className={styles.pricingTitle}>{t.pricingTitle}</h2>
@@ -729,7 +702,14 @@ export default function Home() {
           </div>
         </div>
 
-        <div className={styles.pricingGrid}>
+        <div
+          className={styles.pricingGrid}
+          style={{
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            maxWidth: '860px',
+            margin: '0 auto'
+          }}
+        >
           
           {/* الباقة 1 */}
           {(() => {
@@ -777,31 +757,6 @@ export default function Home() {
                   ))}
                 </ul>
                 <a href={plan2Url} onClick={(e) => navigateTo(e, plan2Url)} className={`${styles.priceCta} ${styles.popularCta}`}>{t.selectPlan}</a>
-                <span className={styles.noRiskSub}>{t.noHiddenFees}</span>
-              </div>
-            );
-          })()}
-
-          {/* الباقة 3 */}
-          {(() => {
-            const plan3 = getPriceAndPeriod(t.plan3PriceMonthly, t.plan3PriceSemiAnnual, t.plan3PriceAnnual);
-            const plan3Url = `/register?plan=enterprise&cycle=${cycleParam}`;
-            return (
-              <div className={`${styles.priceCard} ${styles.revealOnScroll} ${styles.fadeUp}`} style={{ transitionDelay: '0.4s' }}>
-                <div className={styles.cardHead}>
-                  <h3>{t.plan3Name}</h3>
-                  <p>{t.plan3Desc}</p>
-                  <div className={styles.priceValue}>
-                    <strong>{plan3.price}</strong>
-                    <small>{plan3.period}</small>
-                  </div>
-                </div>
-                <ul className={styles.featureList}>
-                  {t.plan3Features.map((feat, index) => (
-                    <li key={index}><IconCheck /> <span>{feat}</span></li>
-                  ))}
-                </ul>
-                <a href={plan3Url} onClick={(e) => navigateTo(e, plan3Url)} className={styles.priceCta}>{t.selectPlan}</a>
                 <span className={styles.noRiskSub}>{t.noHiddenFees}</span>
               </div>
             );
