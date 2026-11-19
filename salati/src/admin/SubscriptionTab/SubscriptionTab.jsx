@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 import styles from './SubscriptionTab.module.css';
 
 export default function SubscriptionTab({ isAr = true, hallData, platformSettings }) {
@@ -8,10 +9,21 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
 
   const [selectedCycle, setSelectedCycle] = useState(currentBillingCycle);
 
+  // حالة نافذة الدفع (BaridiMob / USDT / Visa)
+  const [checkoutModal, setCheckoutModal] = useState(null); // { planKey, cycleKey, amountDzd, amountUsd }
+  const [paymentMethod, setPaymentMethod] = useState('baridimob'); // 'baridimob' | 'usdt' | 'visa'
+  const [transactionRef, setTransactionRef] = useState('');
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+  const [paymentFeedback, setPaymentFeedback] = useState({ type: '', text: '' });
+  const [copiedField, setCopiedField] = useState('');
+  const [paymentHistory, setPaymentHistory] = useState([]);
+
   const basicMonthly = Number(platformSettings?.basic_monthly_price || 3500);
   const proMonthly = Number(platformSettings?.pro_monthly_price || 6500);
   const discount6 = Number(platformSettings?.semi_annual_discount || 10);
   const discount12 = Number(platformSettings?.annual_discount || 20);
+  const dzdToUsdtRate = Number(platformSettings?.dzd_to_usdt_rate || 245);
 
   const calculatePrice = (monthlyBase, cycle) => {
     if (!monthlyBase) return 0;
@@ -22,6 +34,125 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
       return Math.round(monthlyBase * 12 * (1 - discount12 / 100));
     }
     return monthlyBase;
+  };
+
+  // جلب سجل مدفوعات الصالة السابقة
+  const fetchPayments = async () => {
+    if (!hallData?.id) return;
+    const { data } = await supabase
+      .from('subscription_payments')
+      .select('*')
+      .eq('hall_id', hallData.id)
+      .order('created_at', { ascending: false });
+
+    if (data) setPaymentHistory(data);
+  };
+
+  useEffect(() => {
+    fetchPayments();
+  }, [hallData?.id]);
+
+  const copyToClipboard = (text, key) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedField(key);
+    setTimeout(() => setCopiedField(''), 2000);
+  };
+
+  const openPaymentModal = (targetPlanKey, cycleKey) => {
+    const monthlyBase = targetPlanKey === 'pro' ? proMonthly : basicMonthly;
+    const amountDzd = calculatePrice(monthlyBase, cycleKey);
+    const amountUsd = Number((amountDzd / dzdToUsdtRate).toFixed(2));
+
+    setPaymentFeedback({ type: '', text: '' });
+    setTransactionRef('');
+    setReceiptFile(null);
+    setPaymentMethod('baridimob');
+    setCheckoutModal({
+      planKey: targetPlanKey,
+      cycleKey,
+      amountDzd,
+      amountUsd
+    });
+  };
+
+  const handleSubmitPayment = async (e) => {
+    e.preventDefault();
+    if (!hallData?.id || !checkoutModal) return;
+
+    if (!receiptFile && !transactionRef.trim()) {
+      setPaymentFeedback({
+        type: 'error',
+        text: isAr
+          ? 'يرجى إرفاق صورة وصل الدفع أو إدخال رقم العملية للمراجعة.'
+          : 'Veuillez joindre le reçu de paiement ou saisir la référence de transaction.'
+      });
+      return;
+    }
+
+    setSubmittingPayment(true);
+    setPaymentFeedback({ type: '', text: '' });
+
+    try {
+      let publicReceiptUrl = null;
+
+      if (receiptFile) {
+        const ext = receiptFile.name.split('.').pop() || 'jpg';
+        const filePath = `${hallData.id}/${Date.now()}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('payment-receipts')
+          .upload(filePath, receiptFile, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from('payment-receipts')
+          .getPublicUrl(filePath);
+
+        publicReceiptUrl = urlData?.publicUrl || null;
+      }
+
+      const { error: insertError } = await supabase
+        .from('subscription_payments')
+        .insert([
+          {
+            hall_id: hallData.id,
+            hall_name: hallData.name || '',
+            plan_tier: checkoutModal.planKey,
+            billing_cycle: checkoutModal.cycleKey,
+            amount_dzd: checkoutModal.amountDzd,
+            amount_usd: checkoutModal.amountUsd,
+            payment_method: paymentMethod,
+            transaction_ref: transactionRef.trim() || null,
+            receipt_url: publicReceiptUrl,
+            status: 'pending'
+          }
+        ]);
+
+      if (insertError) throw insertError;
+
+      setPaymentFeedback({
+        type: 'success',
+        text: isAr
+          ? '✅ تم إرسال إثبات الدفع بنجاح! سيتم التحقق وتفعيل اشتراك صالتك خلال دقائق.'
+          : '✅ Preuve de paiement envoyée ! Votre abonnement sera activé sous quelques minutes.'
+      });
+
+      await fetchPayments();
+      setTimeout(() => {
+        setCheckoutModal(null);
+      }, 1800);
+    } catch (err) {
+      setPaymentFeedback({
+        type: 'error',
+        text:
+          (isAr ? 'حدث خطأ أثناء إرسال الوصل: ' : 'Erreur lors de l’envoi : ') +
+          (err.message || '')
+      });
+    } finally {
+      setSubmittingPayment(false);
+    }
   };
 
   const planMeta = {
@@ -198,9 +329,30 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
   ];
 
   const isUrgent = daysLeft !== null && daysLeft <= 5;
+  const hasPendingPayment = paymentHistory.some((p) => p.status === 'pending');
 
   return (
     <div dir={isAr ? 'rtl' : 'ltr'} className={styles.wrapper}>
+      {/* تنبيه وجود طلب دفع قيد المراجعة */}
+      {hasPendingPayment && (
+        <div
+          style={{
+            background: '#fef3c7',
+            border: '1px solid #fcd34d',
+            color: '#92400e',
+            padding: '0.85rem 1.1rem',
+            borderRadius: '14px',
+            fontWeight: 800,
+            fontSize: '0.9rem',
+            marginBottom: '1rem'
+          }}
+        >
+          {isAr
+            ? '⏳ لديك طلب دفع قيد المراجعة حالياً — سيتم تفعيل اشتراكك فور تأكيد التحويل.'
+            : '⏳ Vous avez un paiement en cours de vérification — votre abonnement sera activé sous peu.'}
+        </div>
+      )}
+
       {/* رأس الصفحة */}
       <div className={styles.headerRow}>
         <div>
@@ -407,10 +559,10 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
             🛡️ {isAr ? 'طرق الدفع والتفعيل' : 'Paiement & Activation'}
           </span>
           <strong style={{ display: 'block', marginTop: '0.35rem', fontSize: '1rem', color: '#0f172a', fontWeight: 800 }}>
-            {isAr ? 'بريدي موب / CCP / تحويل بنكي' : 'BaridiMob / CCP / Virement'}
+            {isAr ? 'بريدي موب / CCP / USDT / Visa' : 'BaridiMob / CCP / USDT / Visa'}
           </strong>
           <small style={{ color: '#16a34a', fontSize: '0.78rem', fontWeight: 700 }}>
-            {isAr ? 'تفعيل فوري بعد إرسال الوصل' : 'Activation immédiate'}
+            {isAr ? 'تفعيل سريع بعد إرسال إثبات الدفع' : 'Activation rapide après justificatif'}
           </small>
         </div>
       </div>
@@ -568,12 +720,14 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
                   </ul>
                 </div>
 
-                <a
-                  href={buildWaLink(plan.key, selectedCycle)}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  type="button"
+                  onClick={() => openPaymentModal(plan.key, selectedCycle)}
                   className={styles.ctaButton}
                   style={{
+                    width: '100%',
+                    border: 'none',
+                    cursor: 'pointer',
                     background: isCurrent ? '#16a34a' : plan.popular ? '#0052cc' : '#0f172a'
                   }}
                 >
@@ -588,12 +742,455 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
                     : isAr
                     ? 'اختيار هذه الباقة'
                     : 'Choisir cette offre'}
-                </a>
+                </button>
               </div>
             );
           })}
         </div>
       </div>
+
+      {/* سجل طلبات الدفع السابقة */}
+      {paymentHistory.length > 0 && (
+        <div
+          style={{
+            marginTop: '1.5rem',
+            background: '#ffffff',
+            borderRadius: '20px',
+            padding: '1.35rem',
+            border: '1px solid #e2e8f0'
+          }}
+        >
+          <h4 style={{ margin: '0 0 1rem', fontSize: '1.05rem', fontWeight: 900, color: '#0f172a' }}>
+            {isAr ? 'سجل عمليات الدفع' : 'Historique des paiements'}
+          </h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+            {paymentHistory.map((item) => {
+              const badge =
+                item.status === 'approved'
+                  ? { bg: '#dcfce7', color: '#166534', label: isAr ? 'مقبول ومفعّل' : 'Approuvé' }
+                  : item.status === 'rejected'
+                  ? { bg: '#fee2e2', color: '#991b1b', label: isAr ? 'مرفوض' : 'Rejeté' }
+                  : { bg: '#fef3c7', color: '#92400e', label: isAr ? 'قيد المراجعة' : 'En attente' };
+
+              const methodLabel =
+                item.payment_method === 'usdt'
+                  ? 'USDT (Crypto)'
+                  : item.payment_method === 'visa'
+                  ? 'Visa / Mastercard'
+                  : 'BaridiMob / CCP';
+
+              return (
+                <div
+                  key={item.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '0.75rem',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '14px',
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0'
+                  }}
+                >
+                  <div>
+                    <strong style={{ color: '#0f172a', fontSize: '0.92rem' }}>
+                      {item.plan_tier === 'pro' ? 'Pro' : 'Essentiel'} •{' '}
+                      {cycleLabels[item.billing_cycle]?.title || item.billing_cycle}
+                    </strong>
+                    <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>
+                      {methodLabel} •{' '}
+                      {item.payment_method === 'usdt' || item.payment_method === 'visa'
+                        ? `$${item.amount_usd} (${Number(item.amount_dzd).toLocaleString()} دج)`
+                        : `${Number(item.amount_dzd).toLocaleString()} دج`}{' '}
+                      • {new Date(item.created_at).toLocaleDateString(isAr ? 'ar-DZ' : 'fr-FR')}
+                    </div>
+                  </div>
+
+                  <span
+                    style={{
+                      background: badge.bg,
+                      color: badge.color,
+                      padding: '0.28rem 0.75rem',
+                      borderRadius: '999px',
+                      fontSize: '0.78rem',
+                      fontWeight: 800
+                    }}
+                  >
+                    {badge.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* نافذة الدفع (BaridiMob / العملات الرقمية USDT / بطاقة Visa) */}
+      {checkoutModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+            zIndex: 9999
+          }}
+          onClick={() => !submittingPayment && setCheckoutModal(null)}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '24px',
+              width: '100%',
+              maxWidth: '520px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: '1.6rem',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* رأس النافذة */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900, color: '#0f172a' }}>
+                  {isAr ? 'إتمام الدفع وتفعيل الاشتراك' : 'Finaliser le paiement'}
+                </h3>
+                <p style={{ margin: '0.2rem 0 0', fontSize: '0.84rem', color: '#64748b' }}>
+                  {checkoutModal.planKey === 'pro' ? 'Offre Pro' : 'Offre Essentiel'} •{' '}
+                  {cycleLabels[checkoutModal.cycleKey]?.title}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => !submittingPayment && setCheckoutModal(null)}
+                style={{
+                  background: '#f1f5f9',
+                  border: 'none',
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  fontWeight: 800,
+                  color: '#475569'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* أزرار اختيار طريقة الدفع */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '0.5rem',
+                marginBottom: '1.15rem'
+              }}
+            >
+              {[
+                { id: 'baridimob', label: 'BaridiMob / CCP', icon: '🇩🇿' },
+                { id: 'usdt', label: 'USDT Crypto', icon: '🪙' },
+                { id: 'visa', label: 'Visa / Card', icon: '💳' }
+              ].map((m) => {
+                const active = paymentMethod === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setPaymentMethod(m.id)}
+                    style={{
+                      padding: '0.7rem 0.5rem',
+                      borderRadius: '14px',
+                      border: active ? '2px solid #0052cc' : '1px solid #e2e8f0',
+                      background: active ? '#eff6ff' : '#ffffff',
+                      color: active ? '#0052cc' : '#334155',
+                      fontWeight: 800,
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '0.25rem'
+                    }}
+                  >
+                    <span style={{ fontSize: '1.15rem' }}>{m.icon}</span>
+                    <span>{m.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* تفاصيل التحويل حسب الطريقة المختارة */}
+            <div
+              style={{
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '16px',
+                padding: '1rem',
+                marginBottom: '1.15rem'
+              }}
+            >
+              {paymentMethod === 'baridimob' && (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+                    <span style={{ fontSize: '0.84rem', color: '#64748b', fontWeight: 700 }}>
+                      {isAr ? 'المبلغ المطلوب تحويله:' : 'Montant à transférer :'}
+                    </span>
+                    <strong style={{ fontSize: '1.05rem', color: '#0052cc', fontWeight: 900 }}>
+                      {checkoutModal.amountDzd.toLocaleString()} {isAr ? 'دج' : 'DA'}
+                    </strong>
+                  </div>
+
+                  {platformSettings?.account_holder_name && (
+                    <div style={{ fontSize: '0.84rem', color: '#334155', marginBottom: '0.45rem' }}>
+                      <strong>{isAr ? 'اسم المستفيد:' : 'Bénéficiaire :'}</strong>{' '}
+                      {platformSettings.account_holder_name}
+                    </div>
+                  )}
+
+                  {platformSettings?.baridimob_rip && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      <div style={{ fontSize: '0.83rem', color: '#0f172a', wordBreak: 'break-all' }}>
+                        <strong>RIP (BaridiMob):</strong> {platformSettings.baridimob_rip}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(platformSettings.baridimob_rip, 'rip')}
+                        style={{
+                          background: '#e2e8f0',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '0.3rem 0.6rem',
+                          fontSize: '0.75rem',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          flexShrink: 0
+                        }}
+                      >
+                        {copiedField === 'rip' ? '✓' : isAr ? 'نسخ' : 'Copier'}
+                      </button>
+                    </div>
+                  )}
+
+                  {platformSettings?.ccp_account && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      <div style={{ fontSize: '0.83rem', color: '#0f172a' }}>
+                        <strong>CCP:</strong> {platformSettings.ccp_account}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(platformSettings.ccp_account, 'ccp')}
+                        style={{
+                          background: '#e2e8f0',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '0.3rem 0.6rem',
+                          fontSize: '0.75rem',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          flexShrink: 0
+                        }}
+                      >
+                        {copiedField === 'ccp' ? '✓' : isAr ? 'نسخ' : 'Copier'}
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {paymentMethod === 'usdt' && (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+                    <span style={{ fontSize: '0.84rem', color: '#64748b', fontWeight: 700 }}>
+                      {isAr ? 'المبلغ المطلوب (USDT):' : 'Montant (USDT) :'}
+                    </span>
+                    <strong style={{ fontSize: '1.05rem', color: '#16a34a', fontWeight: 900 }}>
+                      {checkoutModal.amountUsd} USDT
+                    </strong>
+                  </div>
+
+                  {platformSettings?.usdt_trc20_address && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      <div style={{ fontSize: '0.8rem', color: '#0f172a', wordBreak: 'break-all' }}>
+                        <strong>USDT (TRC20):</strong> {platformSettings.usdt_trc20_address}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(platformSettings.usdt_trc20_address, 'trc20')}
+                        style={{
+                          background: '#e2e8f0',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '0.3rem 0.6rem',
+                          fontSize: '0.75rem',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          flexShrink: 0
+                        }}
+                      >
+                        {copiedField === 'trc20' ? '✓' : isAr ? 'نسخ' : 'Copier'}
+                      </button>
+                    </div>
+                  )}
+
+                  {platformSettings?.usdt_bep20_address && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      <div style={{ fontSize: '0.8rem', color: '#0f172a', wordBreak: 'break-all' }}>
+                        <strong>USDT (BEP20):</strong> {platformSettings.usdt_bep20_address}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(platformSettings.usdt_bep20_address, 'bep20')}
+                        style={{
+                          background: '#e2e8f0',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '0.3rem 0.6rem',
+                          fontSize: '0.75rem',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          flexShrink: 0
+                        }}
+                      >
+                        {copiedField === 'bep20' ? '✓' : isAr ? 'نسخ' : 'Copier'}
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {paymentMethod === 'visa' && (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+                    <span style={{ fontSize: '0.84rem', color: '#64748b', fontWeight: 700 }}>
+                      {isAr ? 'المبلغ بالدولار (USD):' : 'Montant (USD) :'}
+                    </span>
+                    <strong style={{ fontSize: '1.05rem', color: '#0052cc', fontWeight: 900 }}>
+                      ${checkoutModal.amountUsd} USD
+                    </strong>
+                  </div>
+
+                  {platformSettings?.visa_payment_link ? (
+                    <a
+                      href={platformSettings.visa_payment_link}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: 'inline-block',
+                        marginTop: '0.35rem',
+                        background: '#0052cc',
+                        color: '#ffffff',
+                        padding: '0.55rem 1rem',
+                        borderRadius: '10px',
+                        fontSize: '0.84rem',
+                        fontWeight: 800,
+                        textDecoration: 'none'
+                      }}
+                    >
+                      {isAr ? '💳 افتح رابط الدفع بالبطاقة (Visa / RedotPay)' : '💳 Ouvrir le lien de paiement Visa'}
+                    </a>
+                  ) : (
+                    <p style={{ margin: 0, fontSize: '0.82rem', color: '#475569' }}>
+                      {isAr
+                        ? 'قم بإتمام التحويل عبر بطاقتك ثم أرفق صورة الوصل أو رقم العملية في الأسفل.'
+                        : 'Effectuez le paiement par carte puis joignez le reçu ci-dessous.'}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+
+            {paymentFeedback.text && (
+              <div
+                style={{
+                  background: paymentFeedback.type === 'success' ? '#dcfce7' : '#fee2e2',
+                  color: paymentFeedback.type === 'success' ? '#166534' : '#991b1b',
+                  padding: '0.75rem 0.9rem',
+                  borderRadius: '12px',
+                  fontSize: '0.84rem',
+                  fontWeight: 700,
+                  marginBottom: '1rem'
+                }}
+              >
+                {paymentFeedback.text}
+              </div>
+            )}
+
+            {/* نموذج رفع الوصل ورقم العملية */}
+            <form onSubmit={handleSubmitPayment} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 800, color: '#1e293b', marginBottom: '0.35rem' }}>
+                  {isAr ? 'صورة وصل الدفع (Screenshot / Reçu)' : 'Capture du reçu de paiement'}
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem',
+                    borderRadius: '12px',
+                    border: '1px dashed #94a3b8',
+                    background: '#f8fafc',
+                    fontSize: '0.84rem',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 800, color: '#1e293b', marginBottom: '0.35rem' }}>
+                  {isAr
+                    ? 'رقم العملية / معرّف التحويل (اختياري إذا أرفقت الصورة)'
+                    : 'Référence / TxID (optionnel avec capture)'}
+                </label>
+                <input
+                  type="text"
+                  value={transactionRef}
+                  onChange={(e) => setTransactionRef(e.target.value)}
+                  placeholder={isAr ? 'مثال: 0012345678 أو TxID' : 'Ex: 0012345678 ou TxID'}
+                  style={{
+                    width: '100%',
+                    padding: '0.7rem 0.9rem',
+                    borderRadius: '12px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.88rem',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={submittingPayment}
+                className={styles.ctaButton}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  cursor: submittingPayment ? 'not-allowed' : 'pointer',
+                  background: '#16a34a',
+                  marginTop: '0.25rem'
+                }}
+              >
+                {submittingPayment
+                  ? isAr
+                    ? '⏳ جاري رفع الوصل وإرسال الطلب...'
+                    : '⏳ Envoi en cours...'
+                  : isAr
+                  ? '✅ تأكيد الدفع وإرسال الوصل'
+                  : '✅ Confirmer le paiement'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

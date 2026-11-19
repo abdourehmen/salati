@@ -65,7 +65,8 @@ const translations = {
     monthlyRevenue: 'الإيراد الشهري المتوقع (دج)',
     // Tabs
     tabHalls: 'إدارة الصالات والباقات',
-    tabSettings: 'إعدادات المنصة والتنبيهات',
+    tabPayments: 'طلبات الدفع والوصلات',
+    tabSettings: 'إعدادات المنصة والدفع',
     // Filters
     searchPlaceholder: 'ابحث باسم الصالة، الولاية، الرابط، أو الهاتف...',
     filterAll: 'الكل',
@@ -99,16 +100,25 @@ const translations = {
     previewBtn: 'معاينة',
     whatsappBtn: 'واتساب',
     noHallsFound: 'لا توجد صالات مطابقة لمعايير البحث الحالية.',
+    // Payments
+    paymentsHeading: 'مراجعة إثباتات الدفع وتفعيل الاشتراكات',
+    paymentsSubheading: 'تحقق من وصلات BaridiMob و USDT وبطاقات Visa وفعّل اشتراك الصالة بضغطة واحدة.',
+    noPaymentsFound: 'لا توجد طلبات دفع مسجلة حتى الآن.',
+    approvePaymentBtn: 'تأكيد وتفعيل الاشتراك',
+    rejectPaymentBtn: 'رفض',
+    viewReceiptBtn: 'عرض الوصل',
+    paymentApprovedToast: 'تم تأكيد الدفع وتفعيل اشتراك الصالة تلقائياً.',
+    paymentRejectedToast: 'تم رفض طلب الدفع.',
     // Settings
-    settingsHeading: 'التحكم العام في المنصة',
-    settingsSubheading: 'تعديل شروط التجربة المجانية وبث التنبيهات الفورية لجميع أصحاب الصالات.',
+    settingsHeading: 'التحكم العام في المنصة وحسابات الدفع',
+    settingsSubheading: 'تعديل شروط التجربة المجانية، حسابات استقبال الأموال (BaridiMob / USDT / Visa)، والتنبيهات.',
     trialDaysLabel: 'مدة الفترة التجريبية المجانية (بالأيام)',
     announcementActiveLabel: 'تفعيل شريط التنبيه العام داخل لوحات تحكم الصالات',
     announcementArLabel: 'نص التنبيه (باللغة العربية)',
     announcementFrLabel: 'نص التنبيه (باللغة الفرنسية)',
     saveSettingsBtn: 'حفظ وتطبيق التعديلات',
     savingBtn: 'جاري الحفظ...',
-    settingsSaved: 'تم حفظ إعدادات المنصة وتحديثها بنجاح.',
+    settingsSaved: 'تم حفظ إعدادات المنصة وحسابات الدفع بنجاح.',
     actionSuccess: 'تم تحديث بيانات واشتراك الصالة بنجاح.'
   },
   fr: {
@@ -127,7 +137,8 @@ const translations = {
     totalBookings: 'Total Réservations',
     monthlyRevenue: 'Revenu Mensuel Estimé (DZD)',
     tabHalls: 'Salles & Offres',
-    tabSettings: 'Paramètres & Annonces',
+    tabPayments: 'Paiements & Reçus',
+    tabSettings: 'Paramètres & Paiement',
     searchPlaceholder: 'Rechercher par salle, wilaya, lien ou téléphone...',
     filterAll: 'Toutes',
     filterActive: 'Actives',
@@ -156,15 +167,23 @@ const translations = {
     previewBtn: 'Voir',
     whatsappBtn: 'WhatsApp',
     noHallsFound: 'Aucune salle ne correspond à votre recherche.',
-    settingsHeading: 'Configuration Globale',
-    settingsSubheading: 'Gérez la période d’essai et diffusez des annonces en temps réel.',
+    paymentsHeading: 'Vérification des paiements & reçus',
+    paymentsSubheading: 'Validez les reçus BaridiMob, USDT et Visa pour activer automatiquement les abonnements.',
+    noPaymentsFound: 'Aucune demande de paiement enregistrée.',
+    approvePaymentBtn: 'Valider & Activer',
+    rejectPaymentBtn: 'Rejeter',
+    viewReceiptBtn: 'Voir reçu',
+    paymentApprovedToast: 'Paiement validé et abonnement activé automatiquement.',
+    paymentRejectedToast: 'Paiement rejeté.',
+    settingsHeading: 'Configuration Globale & Comptes de Paiement',
+    settingsSubheading: 'Gérez la période d’essai, vos coordonnées BaridiMob / USDT / Visa et les annonces.',
     trialDaysLabel: 'Durée de l’essai gratuit par défaut (jours)',
     announcementActiveLabel: 'Activer la bannière d’annonce globale pour les salles',
     announcementArLabel: 'Message de l’annonce (Arabe)',
     announcementFrLabel: 'Message de l’annonce (Français)',
     saveSettingsBtn: 'Enregistrer les modifications',
     savingBtn: 'Enregistrement...',
-    settingsSaved: 'Paramètres mis à jour avec succès.',
+    settingsSaved: 'Paramètres et comptes de paiement enregistrés.',
     actionSuccess: 'Offre et statut de la salle mis à jour.'
   }
 };
@@ -175,6 +194,10 @@ export default function SuperAdmin() {
   const [activeTab, setActiveTab] = useState('halls');
 
   const [halls, setHalls] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [processingPaymentId, setProcessingPaymentId] = useState(null);
+  const [previewReceiptUrl, setPreviewReceiptUrl] = useState(null);
+
   const [bookingsCountByHall, setBookingsCountByHall] = useState({});
   const [totalBookings, setTotalBookings] = useState(0);
 
@@ -185,7 +208,14 @@ export default function SuperAdmin() {
     trial_days: 14,
     announcement_ar: '',
     announcement_fr: '',
-    is_announcement_active: false
+    is_announcement_active: false,
+    account_holder_name: 'Abdourehmen Balhous',
+    baridimob_rip: '00799999002394975117',
+    ccp_account: '',
+    usdt_trc20_address: 'TPPwo3Gk4dyFTQVGzZHM6ZyVrvREUJEUvm',
+    usdt_bep20_address: '0xb83d4952ded88b0f3a6279f89f612c141ab9fe11',
+    visa_payment_link: '',
+    dzd_to_usdt_rate: 245
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
@@ -225,6 +255,13 @@ export default function SuperAdmin() {
 
     if (hallsData) setHalls(hallsData);
 
+    const { data: paymentsData } = await supabase
+      .from('subscription_payments')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (paymentsData) setPayments(paymentsData);
+
     const { data: bookingsData } = await supabase
       .from('bookings')
       .select('id, hall_id');
@@ -249,8 +286,107 @@ export default function SuperAdmin() {
         trial_days: settingsData.trial_days ?? 14,
         announcement_ar: settingsData.announcement_ar || '',
         announcement_fr: settingsData.announcement_fr || '',
-        is_announcement_active: Boolean(settingsData.is_announcement_active)
+        is_announcement_active: Boolean(settingsData.is_announcement_active),
+        account_holder_name: settingsData.account_holder_name || 'Abdourehmen Balhous',
+        baridimob_rip: settingsData.baridimob_rip || '00799999002394975117',
+        ccp_account: settingsData.ccp_account || '',
+        usdt_trc20_address: settingsData.usdt_trc20_address || 'TPPwo3Gk4dyFTQVGzZHM6ZyVrvREUJEUvm',
+        usdt_bep20_address: settingsData.usdt_bep20_address || '0xb83d4952ded88b0f3a6279f89f612c141ab9fe11',
+        visa_payment_link: settingsData.visa_payment_link || '',
+        dzd_to_usdt_rate: settingsData.dzd_to_usdt_rate ?? 245
       });
+    }
+  };
+
+  const handleApprovePayment = async (payment) => {
+    setProcessingPaymentId(payment.id);
+    try {
+      const targetHall = halls.find((h) => h.id === payment.hall_id);
+      const daysToAdd =
+        payment.billing_cycle === 'annual'
+          ? 365
+          : payment.billing_cycle === 'semi_annual'
+          ? 180
+          : 30;
+
+      const currentEnd =
+        targetHall?.subscription_ends_at &&
+        targetHall?.subscription_status === 'active' &&
+        new Date(targetHall.subscription_ends_at) > new Date()
+          ? new Date(targetHall.subscription_ends_at)
+          : new Date();
+
+      currentEnd.setDate(currentEnd.getDate() + daysToAdd);
+      const newExpiryIso = currentEnd.toISOString();
+
+      // 1. تحديث حالة الدفع إلى مقبول
+      const { error: payErr } = await supabase
+        .from('subscription_payments')
+        .update({
+          status: 'approved',
+          reviewed_at: new Date().toISOString()
+        })
+        .eq('id', payment.id);
+
+      if (payErr) throw payErr;
+
+      // 2. تفعيل وتمديد اشتراك الصالة تلقائياً
+      const { error: hallErr } = await supabase
+        .from('halls')
+        .update({
+          plan_tier: payment.plan_tier || 'basic',
+          billing_cycle: payment.billing_cycle || 'monthly',
+          subscription_status: 'active',
+          is_active: true,
+          subscription_ends_at: newExpiryIso
+        })
+        .eq('id', payment.hall_id);
+
+      if (hallErr) throw hallErr;
+
+      setPayments((prev) =>
+        prev.map((p) => (p.id === payment.id ? { ...p, status: 'approved' } : p))
+      );
+      setHalls((prev) =>
+        prev.map((h) =>
+          h.id === payment.hall_id
+            ? {
+                ...h,
+                plan_tier: payment.plan_tier || 'basic',
+                billing_cycle: payment.billing_cycle || 'monthly',
+                subscription_status: 'active',
+                is_active: true,
+                subscription_ends_at: newExpiryIso
+              }
+            : h
+        )
+      );
+
+      showToast((translations[lang] || translations.ar).paymentApprovedToast);
+    } finally {
+      setProcessingPaymentId(null);
+    }
+  };
+
+  const handleRejectPayment = async (payment) => {
+    setProcessingPaymentId(payment.id);
+    try {
+      const { error } = await supabase
+        .from('subscription_payments')
+        .update({
+          status: 'rejected',
+          reviewed_at: new Date().toISOString()
+        })
+        .eq('id', payment.id);
+
+      if (!error) {
+        setPayments((prev) =>
+          prev.map((p) => (p.id === payment.id ? { ...p, status: 'rejected' } : p))
+        );
+        showToast((translations[lang] || translations.ar).paymentRejectedToast);
+      }
+    } finally {
+      setProcessingPaymentId(null);
     }
   };
 
@@ -338,6 +474,13 @@ export default function SuperAdmin() {
         announcement_ar: settings.announcement_ar,
         announcement_fr: settings.announcement_fr,
         is_announcement_active: settings.is_announcement_active,
+        account_holder_name: settings.account_holder_name.trim(),
+        baridimob_rip: settings.baridimob_rip.trim(),
+        ccp_account: settings.ccp_account.trim(),
+        usdt_trc20_address: settings.usdt_trc20_address.trim(),
+        usdt_bep20_address: settings.usdt_bep20_address.trim(),
+        visa_payment_link: settings.visa_payment_link.trim(),
+        dzd_to_usdt_rate: Number(settings.dzd_to_usdt_rate) || 245,
         updated_at: new Date().toISOString()
       });
 
@@ -387,6 +530,7 @@ export default function SuperAdmin() {
   const activeCount = activeHallsList.length;
   const trialCount = halls.filter((h) => h.is_active !== false && (h.subscription_status === 'trial' || !h.subscription_status)).length;
   const suspendedCount = halls.filter((h) => h.is_active === false || h.subscription_status === 'suspended' || h.subscription_status === 'expired').length;
+  const pendingPaymentsCount = payments.filter((p) => p.status === 'pending').length;
 
   const estimatedMonthlyRevenue = activeHallsList.reduce((sum, hall) => {
     const tier = hall.plan_tier || 'basic';
@@ -504,6 +648,28 @@ export default function SuperAdmin() {
             onClick={() => setActiveTab('halls')}
           >
             {t.tabHalls}
+          </button>
+          <button
+            type="button"
+            className={`${styles.tabBtn} ${activeTab === 'payments' ? styles.tabActive : ''}`}
+            onClick={() => setActiveTab('payments')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
+          >
+            <span>{t.tabPayments}</span>
+            {pendingPaymentsCount > 0 && (
+              <span
+                style={{
+                  background: '#ef4444',
+                  color: '#ffffff',
+                  borderRadius: '999px',
+                  padding: '0.1rem 0.5rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 800
+                }}
+              >
+                {pendingPaymentsCount}
+              </span>
+            )}
           </button>
           <button
             type="button"
@@ -685,6 +851,145 @@ export default function SuperAdmin() {
           </div>
         )}
 
+        {activeTab === 'payments' && (
+          <div key="tab-payments" className={`${styles.panel} ${styles.tabContentAnimate}`}>
+            <div className={styles.settingsHeader}>
+              <h2>{t.paymentsHeading}</h2>
+              <p>{t.paymentsSubheading}</p>
+            </div>
+
+            <div className={styles.tableWrapper}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>{lang === 'ar' ? 'الصالة' : 'Salle'}</th>
+                    <th>{lang === 'ar' ? 'الباقة والمدة' : 'Offre & Durée'}</th>
+                    <th>{lang === 'ar' ? 'طريقة الدفع والمبلغ' : 'Méthode & Montant'}</th>
+                    <th>{lang === 'ar' ? 'رقم العملية / الوصل' : 'Référence / Reçu'}</th>
+                    <th>{lang === 'ar' ? 'التاريخ' : 'Date'}</th>
+                    <th>{lang === 'ar' ? 'الحالة' : 'Statut'}</th>
+                    <th>{lang === 'ar' ? 'الإجراء' : 'Action'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payments.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className={styles.emptyCell}>{t.noPaymentsFound}</td>
+                    </tr>
+                  ) : (
+                    payments.map((pay) => {
+                      const isPending = pay.status === 'pending';
+                      const badgeCls =
+                        pay.status === 'approved'
+                          ? styles.badgeGreen
+                          : pay.status === 'rejected'
+                          ? styles.badgeRed
+                          : styles.badgeBlue;
+
+                      const statusText =
+                        pay.status === 'approved'
+                          ? lang === 'ar'
+                            ? 'مقبول'
+                            : 'Validé'
+                          : pay.status === 'rejected'
+                          ? lang === 'ar'
+                            ? 'مرفوض'
+                            : 'Rejeté'
+                          : lang === 'ar'
+                          ? 'قيد المراجعة'
+                          : 'En attente';
+
+                      return (
+                        <tr key={pay.id}>
+                          <td>
+                            <div className={styles.hallName}>{pay.hall_name || '—'}</div>
+                          </td>
+                          <td>
+                            <div>
+                              <strong>{pay.plan_tier === 'pro' ? 'Pro' : 'Essentiel'}</strong> •{' '}
+                              {pay.billing_cycle === 'annual'
+                                ? lang === 'ar'
+                                  ? 'سنوي'
+                                  : 'Annuel'
+                                : pay.billing_cycle === 'semi_annual'
+                                ? lang === 'ar'
+                                  ? '6 أشهر'
+                                  : '6 mois'
+                                : lang === 'ar'
+                                ? 'شهري'
+                                : 'Mensuel'}
+                            </div>
+                          </td>
+                          <td>
+                            <div style={{ fontWeight: 800 }}>
+                              {pay.payment_method === 'usdt'
+                                ? 'USDT Crypto'
+                                : pay.payment_method === 'visa'
+                                ? 'Visa / Card'
+                                : 'BaridiMob / CCP'}
+                            </div>
+                            <div style={{ fontSize: '0.82rem', color: '#475569' }}>
+                              {Number(pay.amount_dzd).toLocaleString()} دج
+                              {pay.amount_usd ? ` ($${pay.amount_usd})` : ''}
+                            </div>
+                          </td>
+                          <td>
+                            {pay.transaction_ref && (
+                              <div style={{ fontSize: '0.8rem', marginBottom: '0.3rem', wordBreak: 'break-all' }}>
+                                {pay.transaction_ref}
+                              </div>
+                            )}
+                            {pay.receipt_url && (
+                              <button
+                                type="button"
+                                className={styles.actionBtnNeutral}
+                                onClick={() => setPreviewReceiptUrl(pay.receipt_url)}
+                              >
+                                📎 {t.viewReceiptBtn}
+                              </button>
+                            )}
+                          </td>
+                          <td className={styles.dateCell}>{formatDate(pay.created_at)}</td>
+                          <td>
+                            <span className={`${styles.statusBadge} ${badgeCls}`}>
+                              <span className={styles.statusDot} />
+                              {statusText}
+                            </span>
+                          </td>
+                          <td>
+                            {isPending ? (
+                              <div className={styles.actionsCell}>
+                                <button
+                                  type="button"
+                                  className={styles.actionBtnGreen}
+                                  disabled={processingPaymentId === pay.id}
+                                  onClick={() => handleApprovePayment(pay)}
+                                >
+                                  ✓ {t.approvePaymentBtn}
+                                </button>
+                                <button
+                                  type="button"
+                                  className={styles.actionBtnRed}
+                                  disabled={processingPaymentId === pay.id}
+                                  onClick={() => handleRejectPayment(pay)}
+                                >
+                                  ✕ {t.rejectPaymentBtn}
+                                </button>
+                              </div>
+                            ) : (
+                              <span>—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'settings' && (
           <form key="tab-settings" onSubmit={handleSaveSettings} className={`${styles.panel} ${styles.tabContentAnimate}`}>
             <div className={styles.settingsHeader}>
@@ -702,6 +1007,97 @@ export default function SuperAdmin() {
                   max="365"
                   value={settings.trial_days}
                   onChange={(e) => setSettings({ ...settings, trial_days: e.target.value })}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label htmlFor="holderName">
+                  {lang === 'ar' ? 'اسم المستفيد (BaridiMob / CCP)' : 'Nom du bénéficiaire'}
+                </label>
+                <input
+                  id="holderName"
+                  type="text"
+                  value={settings.account_holder_name}
+                  onChange={(e) => setSettings({ ...settings, account_holder_name: e.target.value })}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label htmlFor="baridiRip">
+                  {lang === 'ar' ? 'رقم RIP بريدي موب (BaridiMob)' : 'Numéro RIP BaridiMob'}
+                </label>
+                <input
+                  id="baridiRip"
+                  type="text"
+                  dir="ltr"
+                  value={settings.baridimob_rip}
+                  onChange={(e) => setSettings({ ...settings, baridimob_rip: e.target.value })}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label htmlFor="ccpAccount">
+                  {lang === 'ar' ? 'رقم الحساب البريدي CCP (اختياري)' : 'Compte CCP (Optionnel)'}
+                </label>
+                <input
+                  id="ccpAccount"
+                  type="text"
+                  dir="ltr"
+                  value={settings.ccp_account}
+                  onChange={(e) => setSettings({ ...settings, ccp_account: e.target.value })}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label htmlFor="usdtTrc20">
+                  {lang === 'ar' ? 'عنوان محفظة USDT (شبكة Tron TRC20)' : 'Adresse USDT (TRC20)'}
+                </label>
+                <input
+                  id="usdtTrc20"
+                  type="text"
+                  dir="ltr"
+                  value={settings.usdt_trc20_address}
+                  onChange={(e) => setSettings({ ...settings, usdt_trc20_address: e.target.value })}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label htmlFor="usdtBep20">
+                  {lang === 'ar' ? 'عنوان محفظة USDT (شبكة BNB Smart Chain BEP20 / ERC20)' : 'Adresse USDT (BEP20 / ERC20)'}
+                </label>
+                <input
+                  id="usdtBep20"
+                  type="text"
+                  dir="ltr"
+                  value={settings.usdt_bep20_address}
+                  onChange={(e) => setSettings({ ...settings, usdt_bep20_address: e.target.value })}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label htmlFor="visaLink">
+                  {lang === 'ar' ? 'رابط الدفع ببطاقة Visa / RedotPay (اختياري)' : 'Lien de paiement Visa / RedotPay (Optionnel)'}
+                </label>
+                <input
+                  id="visaLink"
+                  type="url"
+                  dir="ltr"
+                  placeholder="https://..."
+                  value={settings.visa_payment_link}
+                  onChange={(e) => setSettings({ ...settings, visa_payment_link: e.target.value })}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label htmlFor="usdtRate">
+                  {lang === 'ar' ? 'سعر صرف 1 USDT بالدينار الجزائري (DZD)' : 'Taux de change 1 USDT en DZD'}
+                </label>
+                <input
+                  id="usdtRate"
+                  type="number"
+                  min="1"
+                  value={settings.dzd_to_usdt_rate}
+                  onChange={(e) => setSettings({ ...settings, dzd_to_usdt_rate: e.target.value })}
                 />
               </div>
 
@@ -745,6 +1141,50 @@ export default function SuperAdmin() {
           </form>
         )}
       </div>
+
+      {/* نافذة معاينة صورة وصل الدفع */}
+      {previewReceiptUrl && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.75)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+            zIndex: 9999
+          }}
+          onClick={() => setPreviewReceiptUrl(null)}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '18px',
+              padding: '1rem',
+              maxWidth: '520px',
+              width: '100%',
+              textAlign: 'center'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={previewReceiptUrl}
+              alt="Receipt"
+              style={{ maxWidth: '100%', maxHeight: '72vh', borderRadius: '12px' }}
+            />
+            <div style={{ marginTop: '0.85rem' }}>
+              <button
+                type="button"
+                className={styles.primaryBtn}
+                onClick={() => setPreviewReceiptUrl(null)}
+              >
+                {lang === 'ar' ? 'إغلاق' : 'Fermer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
