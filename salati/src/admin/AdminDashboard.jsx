@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from "../lib/supabaseClient";
 import styles from './AdminDashboard.module.css';
 
-// استدعاء الأقسام من مجلداتها المستقلة[cite: 10]
+// استدعاء الأقسام من مجلداتها المستقلة
 import OverviewTab from './OverviewTab/OverviewTab';
 import OrdersTab from './OrdersTab/OrdersTab';
 import CalendarTab from './CalendarTab/CalendarTab';
@@ -10,10 +10,10 @@ import SiteSettingsTab from './SiteSettingsTab/SiteSettingsTab';
 import InspectionTab from './InspectionTab/InspectionTab';
 import StaffTab from './StaffTab/StaffTab';
 import SubscriptionTab from './SubscriptionTab/SubscriptionTab';
-// استدعاء نافذة تفاصيل الطلبية[cite: 10]
+// استدعاء نافذة تفاصيل الطلبية
 import OrderDetailsModal from './modals/OrderDetailsModal';
 
-// استدعاء الأيقونات[cite: 10]
+// استدعاء الأيقونات
 import {
   IconDashboard,
   IconInbox,
@@ -39,8 +39,12 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // حالات الموظفين والصلاحيات[cite: 10]
-  const [currentOperatorName, setCurrentOperatorName] = useState('مالك القاعة');
+  const isAr = lang === 'ar';
+  const localeStr = isAr ? 'ar-DZ' : 'fr-FR';
+  const currencyLabel = isAr ? 'دج' : 'DA';
+
+  // حالات الموظفين والصلاحيات
+  const [currentOperatorName, setCurrentOperatorName] = useState('');
   const [isOwnerUser, setIsOwnerUser] = useState(true);
   const [staffPermissions, setStaffPermissions] = useState({
     overview: true,
@@ -52,7 +56,7 @@ export default function AdminDashboard() {
   });
   const [staffMembers, setStaffMembers] = useState([]);
 
-  // النوافذ المنبثقة[cite: 10]
+  // النوافذ المنبثقة
   const [isAddBookingOpen, setIsAddBookingOpen] = useState(false);
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [selectedBookingForContract, setSelectedBookingForContract] = useState(null);
@@ -90,12 +94,12 @@ export default function AdminDashboard() {
   const [videoUrl, setVideoUrl] = useState('');
   const [amenities, setAmenities] = useState([]);
   const [pricingPackages, setPricingPackages] = useState([]);
-  const [bookings, setBookings] = useState([]);
+  const [rawBookings, setRawBookings] = useState([]);
 
   const [spaces] = useState([
-    { id: 'sp-1', name: 'القاعة الكبرى (النساء)', capacity: 400 },
-    { id: 'sp-2', name: 'قاعة الرجال الفرعية', capacity: 200 },
-    { id: 'sp-3', name: 'الفضاء الخارجي والحديقة', capacity: 150 }
+    { id: 'sp-1', nameAr: 'القاعة الكبرى (النساء)', nameFr: 'Grande Salle (Femmes)', capacity: 400 },
+    { id: 'sp-2', nameAr: 'قاعة الرجال الفرعية', nameFr: 'Salle Annexe (Hommes)', capacity: 200 },
+    { id: 'sp-3', nameAr: 'الفضاء الخارجي والحديقة', nameFr: 'Espace Extérieur & Jardin', capacity: 150 }
   ]);
 
   const [newBooking, setNewBooking] = useState({
@@ -114,6 +118,26 @@ export default function AdminDashboard() {
     { id: 1, name: 'مالك القاعة (أنت)', role: 'owner', phone: '', email: '' }
   ]);
 
+  const operatorDisplayName = isOwnerUser
+    ? isAr
+      ? 'مالك القاعة'
+      : 'Propriétaire de la salle'
+    : currentOperatorName || (isAr ? 'موظف الصالة' : 'Employé');
+
+  // تنسيق الطلبيات ديناميكياً حسب اللغة الحالية (عربي / فرنسي)
+  const bookings = rawBookings.map((b) => {
+    const numAmount = parseNumber(b.rawAmount);
+    const numDeposit = parseNumber(b.rawDeposit);
+    return {
+      ...b,
+      spaceName: isAr ? b.spaceNameAr || 'القاعة الكبرى' : b.spaceNameFr || 'Grande Salle',
+      amount: `${numAmount.toLocaleString(localeStr)} ${currencyLabel}`,
+      rawAmount: numAmount,
+      deposit: `${numDeposit.toLocaleString(localeStr)} ${currencyLabel}`,
+      rawDeposit: numDeposit
+    };
+  });
+
   useEffect(() => {
     fetchDashboardData();
     const observer = new MutationObserver(() => {
@@ -126,7 +150,7 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      // جلب إعدادات المنصة والإعلان العام[cite: 10]
+      // جلب إعدادات المنصة والإعلان العام
       const { data: pSettings } = await supabase
         .from('platform_settings')
         .select('*')
@@ -150,7 +174,7 @@ export default function AdminDashboard() {
         hall = userHall;
       }
 
-      // إذا لم يكن المستخدم هو المالك، نتحقق إن كان موظفاً مرتبطاً بصالة[cite: 10]
+      // إذا لم يكن المستخدم هو المالك، نتحقق إن كان موظفاً مرتبطاً بصالة
       if (!hall && currentUser?.email) {
         const { data: staffRecord } = await supabase
           .from('hall_staff')
@@ -198,7 +222,7 @@ export default function AdminDashboard() {
 
         setPricingPackages(hall.pricing_packages || []);
 
-        // جلب فريق العمل والتحقق من صلاحيات الداخل الحالي[cite: 10]
+        // جلب فريق العمل والتحقق من صلاحيات الداخل الحالي
         const { data: staffRows } = await supabase
           .from('hall_staff')
           .select('*')
@@ -249,7 +273,7 @@ export default function AdminDashboard() {
           };
           setStaffPermissions(nextPerms);
 
-          // توجيه الموظف لأول قسم مسموح له فعلياً[cite: 10]
+          // توجيه الموظف لأول قسم مسموح له فعلياً
           const firstAllowedTab =
             (nextPerms.orders && 'orders') ||
             (nextPerms.calendar && 'calendar') ||
@@ -259,7 +283,7 @@ export default function AdminDashboard() {
           setActiveTab(firstAllowedTab);
         } else {
           setIsOwnerUser(true);
-          setCurrentOperatorName('مالك القاعة');
+          setCurrentOperatorName('');
         }
 
         const { data: bookingsData } = await supabase
@@ -269,35 +293,30 @@ export default function AdminDashboard() {
           .order('event_date', { ascending: true });
 
         if (bookingsData) {
-          setBookings(
-            bookingsData.map((b) => {
-              const numAmount = parseNumber(b.amount);
-              const numDeposit = parseNumber(b.deposit);
-              return {
-                id: b.id,
-                client: b.client_name,
-                phone: b.client_phone,
-                date: b.event_date,
-                timeSlot: b.time_slot || 'evening',
-                spaceName: 'القاعة الكبرى',
-                type: b.event_type || 'عرس',
-                status: b.status || 'provisional',
-                amount: `${numAmount.toLocaleString()} دج`,
-                rawAmount: numAmount,
-                deposit: `${numDeposit.toLocaleString()} دج`,
-                rawDeposit: numDeposit,
-                contractSigned: b.status === 'confirmed',
-                confirmedBy: b.confirmed_by || ''
-              };
-            })
+          setRawBookings(
+            bookingsData.map((b) => ({
+              id: b.id,
+              client: b.client_name,
+              phone: b.client_phone,
+              date: b.event_date,
+              timeSlot: b.time_slot || 'evening',
+              spaceNameAr: 'القاعة الكبرى',
+              spaceNameFr: 'Grande Salle',
+              type: b.event_type || 'عرس',
+              status: b.status || 'provisional',
+              rawAmount: parseNumber(b.amount),
+              rawDeposit: parseNumber(b.deposit),
+              contractSigned: b.status === 'confirmed',
+              confirmedBy: b.confirmed_by || ''
+            }))
           );
         }
       } else {
-        // حساب جديد بدون صالة مسجلة بعد: تهيئة بيانات نظيفة ومستقلة[cite: 10]
+        // حساب جديد بدون صالة مسجلة بعد: تهيئة بيانات نظيفة ومستقلة
         setHallData(null);
         setIsOwnerUser(true);
-        setCurrentOperatorName('مالك القاعة');
-        setBookings([]);
+        setCurrentOperatorName('');
+        setRawBookings([]);
         setStaffMembers([]);
         const defaultName = currentUser?.user_metadata?.hall_name || '';
         const autoSlug = defaultName
@@ -323,8 +342,6 @@ export default function AdminDashboard() {
       setLoading(false);
     }
   };
-
-  const isAr = lang === 'ar';
 
   const toggleLanguage = () => {
     const nextLang = isAr ? 'fr' : 'ar';
@@ -381,13 +398,12 @@ export default function AdminDashboard() {
 
       if (error) throw error;
 
-      setBookings(
-        bookings.map((b) =>
+      setRawBookings((prev) =>
+        prev.map((b) =>
           b.id === selectedBookingForDeposit.id
             ? {
                 ...b,
-                rawDeposit: numericDeposit,
-                deposit: `${numericDeposit.toLocaleString()} دج`
+                rawDeposit: numericDeposit
               }
             : b
         )
@@ -429,11 +445,11 @@ export default function AdminDashboard() {
         return;
       }
 
-      setBookings((prev) => prev.filter((b) => b.id !== bookingId));
+      setRawBookings((prev) => prev.filter((b) => b.id !== bookingId));
       showSuccessModal(isAr ? 'تم حذف الطلب نهائياً!' : 'Demande supprimée !');
     } catch (err) {
       console.error('خطأ في حذف الطلب:', err);
-      alert(isAr ? 'حدث خطأ أثناء الحذف: ' + err.message : 'Erreur: ' + err.message);
+      alert(isAr ? 'حدث خطأ أثناء الحذف: ' + err.message : 'Erreur : ' + err.message);
     }
   };
 
@@ -478,26 +494,23 @@ export default function AdminDashboard() {
         }
 
         if (data && data.length > 0) {
-          const numAmount = parseNumber(data[0].amount);
-          const numDeposit = parseNumber(data[0].deposit);
           const created = {
             id: data[0].id,
             client: clientName,
             phone: newBooking.phone || '',
             date: newBooking.date,
             timeSlot: newBooking.timeSlot,
-            spaceName: selectedSpace ? selectedSpace.name : 'القاعة الرئيسية',
+            spaceNameAr: selectedSpace ? selectedSpace.nameAr : 'القاعة الرئيسية',
+            spaceNameFr: selectedSpace ? selectedSpace.nameFr : 'Grande Salle',
             type: data[0].event_type || newBooking.type,
             status: newBooking.status || 'provisional',
-            amount: `${numAmount.toLocaleString()} دج`,
-            rawAmount: numAmount,
-            deposit: `${numDeposit.toLocaleString()} دج`,
-            rawDeposit: numDeposit,
+            rawAmount: parseNumber(data[0].amount),
+            rawDeposit: parseNumber(data[0].deposit),
             contractSigned: newBooking.status === 'confirmed',
             confirmedBy: ''
           };
-          setBookings([created, ...bookings]);
-          showSuccessModal(isAr ? 'تم إضافة الطلب بنجاح!' : 'Demande ajoutée avec succès!');
+          setRawBookings((prev) => [created, ...prev]);
+          showSuccessModal(isAr ? 'تم إضافة الطلب بنجاح!' : 'Demande ajoutée avec succès !');
         }
       }
     } catch (err) {
@@ -525,7 +538,7 @@ export default function AdminDashboard() {
       if (newStatus === 'confirmed' && target) {
         const { data, error } = await supabase
           .from('bookings')
-          .update({ status: 'confirmed', confirmed_by: currentOperatorName })
+          .update({ status: 'confirmed', confirmed_by: operatorDisplayName })
           .eq('id', bookingId)
           .select();
 
@@ -555,14 +568,14 @@ export default function AdminDashboard() {
           await supabase.from('bookings').update({ status: 'cancelled' }).in('id', conflictingIds);
         }
 
-        setBookings((prev) =>
+        setRawBookings((prev) =>
           prev.map((b) => {
             if (b.id === bookingId) {
               return {
                 ...b,
                 status: 'confirmed',
                 contractSigned: true,
-                confirmedBy: currentOperatorName
+                confirmedBy: operatorDisplayName
               };
             }
             if (conflictingIds.includes(b.id)) return { ...b, status: 'cancelled' };
@@ -571,7 +584,7 @@ export default function AdminDashboard() {
         );
 
         showSuccessModal(
-          isAr ? 'تم تأكيد الحجز ونقله إلى الحجوزات المؤكدة!' : 'Réservation confirmée!'
+          isAr ? 'تم تأكيد الحجز ونقله إلى الحجوزات المؤكدة!' : 'Réservation confirmée !'
         );
       } else {
         const { data, error } = await supabase
@@ -583,18 +596,18 @@ export default function AdminDashboard() {
         if (error) throw error;
         if (!data || data.length === 0) return;
 
-        setBookings((prev) =>
+        setRawBookings((prev) =>
           prev.map((b) =>
             b.id === bookingId
               ? { ...b, status: newStatus, contractSigned: newStatus === 'confirmed' }
               : b
           )
         );
-        showSuccessModal(isAr ? 'تم تحديث حالة الحجز!' : 'Statut mis à jour!');
+        showSuccessModal(isAr ? 'تم تحديث حالة الحجز!' : 'Statut mis à jour !');
       }
     } catch (err) {
       console.error('خطأ في تغيير الحالة:', err);
-      alert(isAr ? 'حدث خطأ أثناء التحديث: ' + err.message : 'Erreur: ' + err.message);
+      alert(isAr ? 'حدث خطأ أثناء التحديث: ' + err.message : 'Erreur : ' + err.message);
     }
   };
 
@@ -637,7 +650,7 @@ export default function AdminDashboard() {
       if (data) setHallData(data);
 
       showSuccessModal(
-        isAr ? 'تم حفظ التعديلات ونشر موقع الصالة بنجاح!' : 'Salle enregistrée avec succès!'
+        isAr ? 'تم حفظ التعديلات ونشر موقع الصالة بنجاح!' : 'Salle enregistrée avec succès !'
       );
     } catch (err) {
       console.error('خطأ في حفظ الإعدادات:', err);
@@ -655,17 +668,17 @@ export default function AdminDashboard() {
     try {
       await supabase
         .from('bookings')
-        .update({ status: 'confirmed', confirmed_by: currentOperatorName })
+        .update({ status: 'confirmed', confirmed_by: operatorDisplayName })
         .eq('id', selectedBookingForContract.id);
 
-      setBookings(
-        bookings.map((b) =>
+      setRawBookings((prev) =>
+        prev.map((b) =>
           b.id === selectedBookingForContract.id
             ? {
                 ...b,
                 contractSigned: true,
                 status: 'confirmed',
-                confirmedBy: currentOperatorName
+                confirmedBy: operatorDisplayName
               }
             : b
         )
@@ -747,24 +760,45 @@ export default function AdminDashboard() {
     logoutBtn: isAr ? 'تسجيل الخروج' : 'Déconnexion'
   };
 
+  // Shimmer Skeleton أثناء تحميل لوحة التحكم بالكامل
   if (loading) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh',
-          fontWeight: 'bold',
-          color: '#0052cc'
-        }}
-      >
-        {isAr ? 'جاري تحميل لوحة تحكم الصالة...' : 'Chargement du tableau de bord...'}
+      <div dir={isAr ? 'rtl' : 'ltr'} className={styles.adminLayout} aria-busy="true">
+        <aside className={styles.sidebar}>
+          <div className={styles.sidebarHeader}>
+            <div className={`${styles.skeletonBase} ${styles.skeletonLogo}`} />
+          </div>
+          <div className={`${styles.skeletonBase} ${styles.skeletonHallCard}`} />
+          <div className={styles.sidebarNav}>
+            {[0, 1, 2, 3, 4, 5].map((idx) => (
+              <div key={idx} className={`${styles.skeletonBase} ${styles.skeletonNavItem}`} />
+            ))}
+          </div>
+        </aside>
+
+        <div className={styles.mainWrapper}>
+          <header className={styles.adminHeader}>
+            <div className={`${styles.skeletonBase} ${styles.skeletonHeaderTitle}`} />
+            <div className={styles.headerActions}>
+              <div className={`${styles.skeletonBase} ${styles.skeletonHeaderBtnSm}`} />
+              <div className={`${styles.skeletonBase} ${styles.skeletonHeaderBtnLg}`} />
+            </div>
+          </header>
+
+          <main className={styles.adminContent}>
+            <div className={styles.kpiGrid}>
+              {[0, 1, 2, 3].map((idx) => (
+                <div key={idx} className={`${styles.skeletonBase} ${styles.skeletonKpiCard}`} />
+              ))}
+            </div>
+            <div className={`${styles.skeletonBase} ${styles.skeletonMainPanel}`} />
+          </main>
+        </div>
       </div>
     );
   }
 
-  // التحقق من إيقاف الصالة أو انتهاء صلاحية اشتراكها[cite: 10]
+  // التحقق من إيقاف الصالة أو انتهاء صلاحية اشتراكها
   const isHallSuspended = hallData?.is_active === false || hallData?.subscription_status === 'suspended';
   const isSubscriptionExpired =
     hallData?.subscription_ends_at && new Date(hallData.subscription_ends_at) < new Date();
@@ -777,46 +811,10 @@ export default function AdminDashboard() {
     );
 
     return (
-      <div
-        dir={isAr ? 'rtl' : 'ltr'}
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#f8fafc',
-          padding: '1.5rem'
-        }}
-      >
-        <div
-          style={{
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '24px',
-            padding: '2.5rem 2rem',
-            maxWidth: '460px',
-            width: '100%',
-            textAlign: 'center',
-            boxShadow: '0 16px 36px rgba(15, 23, 42, 0.08)'
-          }}
-        >
-          <div
-            style={{
-              width: '60px',
-              height: '60px',
-              borderRadius: '18px',
-              background: '#fef2f2',
-              color: '#dc2626',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.75rem',
-              margin: '0 auto 1rem'
-            }}
-          >
-            ⏳
-          </div>
-          <h2 style={{ margin: '0 0 0.6rem', color: '#0f172a', fontWeight: 900 }}>
+      <div dir={isAr ? 'rtl' : 'ltr'} className={styles.suspendedScreen}>
+        <div className={styles.suspendedCard}>
+          <div className={styles.suspendedIconBox}>⏳</div>
+          <h2 className={styles.suspendedTitle}>
             {isHallSuspended
               ? isAr
                 ? 'تم إيقاف حساب الصالة مؤقتاً'
@@ -825,39 +823,24 @@ export default function AdminDashboard() {
               ? 'انتهت مدة اشتراك الصالة'
               : 'Abonnement de la salle expiré'}
           </h2>
-          <p style={{ margin: '0 0 1.5rem', color: '#64748b', lineHeight: 1.6, fontSize: '0.95rem' }}>
+          <p className={styles.suspendedDesc}>
             {isAr
               ? 'يرجى تجديد اشتراكك أو التواصل مع إدارة منصة Salati لإعادة تفعيل لوحة التحكم وصفحة صالتك فوراً.'
               : 'Veuillez renouveler votre abonnement ou contacter le support Salati pour réactiver votre espace.'}
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div className={styles.suspendedActions}>
             <a
               href={`https://wa.me/213550000000?text=${waSupportText}`}
               target="_blank"
               rel="noreferrer"
-              style={{
-                background: '#16a34a',
-                color: '#ffffff',
-                padding: '0.85rem 1.25rem',
-                borderRadius: '14px',
-                fontWeight: 800,
-                textDecoration: 'none'
-              }}
+              className={styles.suspendedWaBtn}
             >
               {isAr ? 'تواصل لتجديد الاشتراك عبر واتساب' : 'Contacter le support WhatsApp'}
             </a>
             <button
               type="button"
               onClick={handleLogout}
-              style={{
-                background: '#f1f5f9',
-                color: '#334155',
-                border: 'none',
-                padding: '0.75rem 1.25rem',
-                borderRadius: '14px',
-                fontWeight: 800,
-                cursor: 'pointer'
-              }}
+              className={styles.suspendedLogoutBtn}
             >
               {t.logoutBtn}
             </button>
@@ -867,9 +850,9 @@ export default function AdminDashboard() {
     );
   }
 
-  // حساب تفاصيل الباقة وتاريخ الانتهاء لعرضها لمالك الصالة[cite: 10]
+  // حساب تفاصيل الباقة وتاريخ الانتهاء لعرضها لمالك الصالة
   const planLabels = {
-    basic: isAr ? 'الباقة الأساسية' : 'Offre Essentiel',
+    basic: isAr ? 'الباقة الأساسية' : 'Offre Essentielle',
     pro: isAr ? 'الباقة الاحترافية Pro' : 'Offre Pro',
     enterprise: isAr ? 'باقة المؤسسات' : 'Offre Entreprise'
   };
@@ -885,7 +868,7 @@ export default function AdminDashboard() {
     : null;
 
   const formattedSubEndDate = subscriptionEndDateObj
-    ? subscriptionEndDateObj.toLocaleDateString(isAr ? 'ar-DZ' : 'fr-FR', {
+    ? subscriptionEndDateObj.toLocaleDateString(localeStr, {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
@@ -900,15 +883,31 @@ export default function AdminDashboard() {
       : platformSettings.announcement_fr || platformSettings.announcement_ar
     : '';
 
+  const remainingDaysText =
+    daysLeft !== null
+      ? isAr
+        ? daysLeft === 1
+          ? 'متبقي يوم واحد'
+          : daysLeft === 2
+          ? 'متبقي يومان'
+          : `متبقي ${daysLeft} أيام`
+        : `${daysLeft} ${daysLeft <= 1 ? 'jour restant' : 'jours restants'}`
+      : '';
+
   return (
-    <div className={styles.adminLayout}>
-      {/* القائمة الجانبية الموحدة[cite: 10] */}
+    <div dir={isAr ? 'rtl' : 'ltr'} className={styles.adminLayout}>
+      {/* القائمة الجانبية الموحدة */}
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ''}`}>
         <div className={styles.sidebarHeader}>
           <a href="/" className={styles.brandLogo}>
             Salati<span>.admin</span>
           </a>
-          <button className={styles.closeSidebarBtn} onClick={() => setSidebarOpen(false)}>
+          <button
+            type="button"
+            aria-label={isAr ? 'إغلاق القائمة' : 'Fermer le menu'}
+            className={styles.closeSidebarBtn}
+            onClick={() => setSidebarOpen(false)}
+          >
             ✕
           </button>
         </div>
@@ -920,43 +919,26 @@ export default function AdminDashboard() {
             <span>
               {isOwnerUser
                 ? hallData?.address || (isAr ? 'الجزائر' : 'Algérie')
-                : currentOperatorName}
+                : operatorDisplayName}
             </span>
           </div>
         </div>
 
-        {/* بطاقة الباقة وتاريخ الانتهاء (تظهر لمالك الصالة فقط)[cite: 10] */}
+        {/* بطاقة الباقة وتاريخ الانتهاء (تظهر لمالك الصالة فقط) */}
         {hallData && isOwnerUser && (
-          <div
-            style={{
-              margin: '0 1rem 0.85rem 1rem',
-              padding: '0.75rem 0.9rem',
-              borderRadius: '14px',
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(148, 163, 184, 0.25)',
-              fontSize: '0.8rem'
-            }}
-          >
+          <div className={styles.sidebarPlanBox}>
             <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: '0.4rem',
-                marginBottom: formattedSubEndDate ? '0.35rem' : 0
-              }}
+              className={styles.sidebarPlanTop}
+              style={{ marginBottom: formattedSubEndDate ? '0.35rem' : 0 }}
             >
-              <strong style={{ color: '#38bdf8', fontWeight: 800 }}>
+              <strong className={styles.sidebarPlanName}>
                 💎 {currentPlanLabel}
               </strong>
               <span
+                className={styles.sidebarPlanBadge}
                 style={{
                   background: isTrialStatus ? '#fef3c7' : '#dcfce7',
-                  color: isTrialStatus ? '#b45309' : '#15803d',
-                  padding: '0.15rem 0.5rem',
-                  borderRadius: '999px',
-                  fontSize: '0.7rem',
-                  fontWeight: 800
+                  color: isTrialStatus ? '#b45309' : '#15803d'
                 }}
               >
                 {isTrialStatus
@@ -970,14 +952,11 @@ export default function AdminDashboard() {
             </div>
 
             {formattedSubEndDate && (
-              <div style={{ color: '#cbd5e1', fontSize: '0.76rem' }}>
+              <div className={styles.sidebarPlanExpiry}>
                 {isAr ? 'ينتهي في:' : 'Expire le :'}{' '}
-                <strong style={{ color: '#ffffff' }}>{formattedSubEndDate}</strong>
+                <strong>{formattedSubEndDate}</strong>
                 {daysLeft !== null && (
-                  <span style={{ opacity: 0.85 }}>
-                    {' '}
-                    ({isAr ? `متبقي ${daysLeft} يوم` : `${daysLeft}j restants`})
-                  </span>
+                  <span style={{ opacity: 0.85 }}> ({remainingDaysText})</span>
                 )}
               </div>
             )}
@@ -987,6 +966,7 @@ export default function AdminDashboard() {
         <nav className={styles.sidebarNav}>
           {(isOwnerUser || staffPermissions.overview) && (
             <button
+              type="button"
               className={`${styles.navItem} ${
                 activeTab === 'overview' ? styles.navItemActive : ''
               }`}
@@ -1002,6 +982,7 @@ export default function AdminDashboard() {
 
           {(isOwnerUser || staffPermissions.orders) && (
             <button
+              type="button"
               className={`${styles.navItem} ${
                 activeTab === 'orders' ? styles.navItemActive : ''
               }`}
@@ -1013,13 +994,16 @@ export default function AdminDashboard() {
               <IconInbox />
               <span className={styles.navLabel}>{t.orders}</span>
               {unconfirmedOrders.length > 0 && (
-                <span className={styles.unconfirmedBadgeCount}>{unconfirmedOrders.length}</span>
+                <span className={styles.unconfirmedBadgeCount}>
+                  {unconfirmedOrders.length.toLocaleString(localeStr)}
+                </span>
               )}
             </button>
           )}
 
           {(isOwnerUser || staffPermissions.calendar) && (
             <button
+              type="button"
               className={`${styles.navItem} ${
                 activeTab === 'calendar' ? styles.navItemActive : ''
               }`}
@@ -1035,6 +1019,7 @@ export default function AdminDashboard() {
 
           {(isOwnerUser || staffPermissions.site) && (
             <button
+              type="button"
               className={`${styles.navItem} ${
                 activeTab === 'site' ? styles.navItemActive : ''
               }`}
@@ -1050,6 +1035,7 @@ export default function AdminDashboard() {
 
           {(isOwnerUser || staffPermissions.inspection) && (
             <button
+              type="button"
               className={`${styles.navItem} ${
                 activeTab === 'inspection' ? styles.navItemActive : ''
               }`}
@@ -1065,6 +1051,7 @@ export default function AdminDashboard() {
 
           {isOwnerUser && (
             <button
+              type="button"
               className={`${styles.navItem} ${
                 activeTab === 'staff' ? styles.navItemActive : ''
               }`}
@@ -1080,6 +1067,7 @@ export default function AdminDashboard() {
 
           {isOwnerUser && (
             <button
+              type="button"
               className={`${styles.navItem} ${
                 activeTab === 'subscription' ? styles.navItemActive : ''
               }`}
@@ -1110,7 +1098,7 @@ export default function AdminDashboard() {
             <span>{t.viewSiteBtn}</span>
           </a>
 
-          <button onClick={handleLogout} className={styles.logoutBtn}>
+          <button type="button" onClick={handleLogout} className={styles.logoutBtn}>
             <IconLogout />
             <span>{t.logoutBtn}</span>
           </button>
@@ -1121,76 +1109,56 @@ export default function AdminDashboard() {
         <div className={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* المحتوى الرئيسي[cite: 10] */}
+      {/* المحتوى الرئيسي */}
       <div className={styles.mainWrapper}>
         <header className={styles.adminHeader}>
-          <button className={styles.toggleMenuBtn} onClick={() => setSidebarOpen(true)}>
-            <IconMenu />
-          </button>
+          <div className={styles.headerStartGroup}>
+            <button
+              type="button"
+              aria-label={isAr ? 'فتح القائمة' : 'Ouvrir le menu'}
+              className={styles.toggleMenuBtn}
+              onClick={() => setSidebarOpen(true)}
+            >
+              <IconMenu />
+            </button>
 
-          <h1 className={styles.headerTitle}>
-            {isAr ? 'لوحة إدارة القاعة' : 'Gestion de la Salle'}
-          </h1>
+            <h1 className={styles.headerTitle}>
+              {isAr ? 'لوحة إدارة القاعة' : 'Administration de la Salle'}
+            </h1>
+          </div>
 
           <div className={styles.headerActions}>
-            <button className={styles.langBtn} onClick={toggleLanguage}>
+            <button type="button" className={styles.langBtn} onClick={toggleLanguage}>
               <IconGlobe />
               <span>{isAr ? 'FR' : 'AR'}</span>
             </button>
 
             <button
+              type="button"
               className={styles.addBookingBtn}
               onClick={() => setIsAddBookingOpen(true)}
             >
               <IconPlus />
-              <span>{t.newBookingBtn}</span>
+              <span className={styles.addBookingBtnLabel}>{t.newBookingBtn}</span>
             </button>
           </div>
         </header>
 
         <main className={styles.adminContent}>
           {activeAnnouncementText && (
-            <div
-              style={{
-                background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-                border: '1px solid #93c5fd',
-                color: '#1e3a8a',
-                padding: '0.85rem 1.25rem',
-                borderRadius: '14px',
-                marginBottom: '1.25rem',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.65rem'
-              }}
-            >
+            <div className={styles.announcementBanner}>
               <span>📢</span>
               <span>{activeAnnouncementText}</span>
             </div>
           )}
 
           {showRenewalWarning && (
-            <div
-              style={{
-                background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
-                border: '1px solid #f59e0b',
-                color: '#92400e',
-                padding: '0.85rem 1.25rem',
-                borderRadius: '14px',
-                marginBottom: '1.25rem',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '0.75rem'
-              }}
-            >
+            <div className={styles.renewalWarningBanner}>
               <span>
                 ⏳{' '}
                 {isAr
-                  ? `تنبيه: اشتراكك في (${currentPlanLabel}) ينتهي بتاريخ ${formattedSubEndDate} (متبقي ${daysLeft} أيام).`
-                  : `Rappel : Votre abonnement (${currentPlanLabel}) expire le ${formattedSubEndDate} (${daysLeft}j restants).`}
+                  ? `تنبيه: اشتراكك في (${currentPlanLabel}) ينتهي بتاريخ ${formattedSubEndDate} (${remainingDaysText}).`
+                  : `Rappel : Votre abonnement (${currentPlanLabel}) expire le ${formattedSubEndDate} (${remainingDaysText}).`}
               </span>
               <a
                 href={`https://wa.me/213550000000?text=${encodeURIComponent(
@@ -1200,114 +1168,119 @@ export default function AdminDashboard() {
                 )}`}
                 target="_blank"
                 rel="noreferrer"
-                style={{
-                  background: '#d97706',
-                  color: '#ffffff',
-                  padding: '0.45rem 0.95rem',
-                  borderRadius: '10px',
-                  fontSize: '0.82rem',
-                  fontWeight: 800,
-                  textDecoration: 'none'
-                }}
+                className={styles.renewalWarningBtn}
               >
                 {isAr ? 'تجديد الاشتراك الآن' : 'Renouveler maintenant'}
               </a>
             </div>
           )}
 
-          {activeTab === 'overview' && (isOwnerUser || staffPermissions.overview) && (
-            <OverviewTab
-              isAr={isAr}
-              bookings={bookings}
-              unconfirmedOrders={unconfirmedOrders}
-              confirmedBookings={confirmedBookings}
-              staffList={staffList}
-              setActiveTab={setActiveTab}
-              parseNumber={parseNumber}
-              getTimeSlotLabel={getTimeSlotLabel}
-              handleOpenDepositModal={handleOpenDepositModal}
-              handleDeleteBooking={handleDeleteBooking}
-              handleOpenDetails={(item) => setSelectedBookingForDetails(item)}
-            />
-          )}
+          <div key={activeTab} className={styles.tabPaneAnim}>
+            {activeTab === 'overview' && (isOwnerUser || staffPermissions.overview) && (
+              <OverviewTab
+                isAr={isAr}
+                isLoading={loading}
+                bookings={bookings}
+                unconfirmedOrders={unconfirmedOrders}
+                confirmedBookings={confirmedBookings}
+                staffList={staffList}
+                setActiveTab={setActiveTab}
+                parseNumber={parseNumber}
+                getTimeSlotLabel={getTimeSlotLabel}
+                handleOpenDepositModal={handleOpenDepositModal}
+                handleDeleteBooking={handleDeleteBooking}
+                handleOpenDetails={(item) => setSelectedBookingForDetails(item)}
+              />
+            )}
 
-          {activeTab === 'orders' && (isOwnerUser || staffPermissions.orders) && (
-            <OrdersTab
-              bookings={bookings}
-              filteredOrders={filteredOrders}
-              unconfirmedOrders={unconfirmedOrders}
-              confirmedBookings={confirmedBookings}
-              orderFilterTab={orderFilterTab}
-              setOrderFilterTab={setOrderFilterTab}
-              orderSearchQuery={orderSearchQuery}
-              setOrderSearchQuery={setOrderSearchQuery}
-              isAr={isAr}
-              isBookingConflicted={isBookingConflicted}
-              parseNumber={parseNumber}
-              getTimeSlotLabel={getTimeSlotLabel}
-              handleOpenDepositModal={handleOpenDepositModal}
-              handleDeleteBooking={handleDeleteBooking}
-              handleOpenDetails={(item) => setSelectedBookingForDetails(item)}
-            />
-          )}
+            {activeTab === 'orders' && (isOwnerUser || staffPermissions.orders) && (
+              <OrdersTab
+                bookings={bookings}
+                filteredOrders={filteredOrders}
+                unconfirmedOrders={unconfirmedOrders}
+                confirmedBookings={confirmedBookings}
+                orderFilterTab={orderFilterTab}
+                setOrderFilterTab={setOrderFilterTab}
+                orderSearchQuery={orderSearchQuery}
+                setOrderSearchQuery={setOrderSearchQuery}
+                isAr={isAr}
+                isLoading={loading}
+                isBookingConflicted={isBookingConflicted}
+                parseNumber={parseNumber}
+                getTimeSlotLabel={getTimeSlotLabel}
+                handleOpenDepositModal={handleOpenDepositModal}
+                handleDeleteBooking={handleDeleteBooking}
+                handleOpenDetails={(item) => setSelectedBookingForDetails(item)}
+              />
+            )}
 
-          {activeTab === 'calendar' && (isOwnerUser || staffPermissions.calendar) && (
-            <CalendarTab
-              isAr={isAr}
-              calendarMonthLabel={calendarMonthLabel}
-              changeCalendarMonth={changeCalendarMonth}
-              getCalendarDays={getCalendarDays}
-              bookings={bookings}
-              setIsAddBookingOpen={setIsAddBookingOpen}
-              newBooking={newBooking}
-              setNewBooking={setNewBooking}
-              t={t}
-            />
-          )}
+            {activeTab === 'calendar' && (isOwnerUser || staffPermissions.calendar) && (
+              <CalendarTab
+                isAr={isAr}
+                isLoading={loading}
+                calendarMonthLabel={calendarMonthLabel}
+                changeCalendarMonth={changeCalendarMonth}
+                getCalendarDays={getCalendarDays}
+                bookings={bookings}
+                setIsAddBookingOpen={setIsAddBookingOpen}
+                newBooking={newBooking}
+                setNewBooking={setNewBooking}
+                t={t}
+              />
+            )}
 
-          {activeTab === 'site' && (isOwnerUser || staffPermissions.site) && (
-            <SiteSettingsTab
-              isAr={isAr}
-              hallData={hallData}
-              siteForm={siteForm}
-              setSiteForm={setSiteForm}
-              videoUrl={videoUrl}
-              setVideoUrl={setVideoUrl}
-              galleryImages={galleryImages}
-              setGalleryImages={setGalleryImages}
-              amenities={amenities}
-              setAmenities={setAmenities}
-              pricingPackages={pricingPackages}
-              setPricingPackages={setPricingPackages}
-              handleSaveSiteSettings={handleSaveSiteSettings}
-            />
-          )}
+            {activeTab === 'site' && (isOwnerUser || staffPermissions.site) && (
+              <SiteSettingsTab
+                isAr={isAr}
+                isLoading={loading}
+                hallData={hallData}
+                siteForm={siteForm}
+                setSiteForm={setSiteForm}
+                videoUrl={videoUrl}
+                setVideoUrl={setVideoUrl}
+                galleryImages={galleryImages}
+                setGalleryImages={setGalleryImages}
+                amenities={amenities}
+                setAmenities={setAmenities}
+                pricingPackages={pricingPackages}
+                setPricingPackages={setPricingPackages}
+                handleSaveSiteSettings={handleSaveSiteSettings}
+              />
+            )}
 
-          {activeTab === 'inspection' && (isOwnerUser || staffPermissions.inspection) && (
-            <InspectionTab isAr={isAr} bookings={bookings} hallId={hallData?.id} />
-          )}
+            {activeTab === 'inspection' && (isOwnerUser || staffPermissions.inspection) && (
+              <InspectionTab
+                isAr={isAr}
+                isLoading={loading}
+                bookings={bookings}
+                hallId={hallData?.id}
+              />
+            )}
 
-          {activeTab === 'staff' && isOwnerUser && (
-            <StaffTab
-              isAr={isAr}
-              hallId={hallData?.id}
-              staffMembers={staffMembers}
-              setStaffMembers={setStaffMembers}
-              bookings={bookings}
-            />
-          )}
+            {activeTab === 'staff' && isOwnerUser && (
+              <StaffTab
+                isAr={isAr}
+                isLoading={loading}
+                hallId={hallData?.id}
+                staffMembers={staffMembers}
+                setStaffMembers={setStaffMembers}
+                bookings={bookings}
+              />
+            )}
 
-          {activeTab === 'subscription' && isOwnerUser && (
-            <SubscriptionTab
-              isAr={isAr}
-              hallData={hallData}
-              platformSettings={platformSettings}
-            />
-          )}
+            {activeTab === 'subscription' && isOwnerUser && (
+              <SubscriptionTab
+                isAr={isAr}
+                isLoading={loading}
+                hallData={hallData}
+                platformSettings={platformSettings}
+              />
+            )}
+          </div>
         </main>
       </div>
 
-      {/* نافذة تفاصيل الطلبية[cite: 10] */}
+      {/* نافذة تفاصيل الطلبية */}
       {selectedBookingForDetails && (
         <OrderDetailsModal
           booking={selectedBookingForDetails}
@@ -1319,9 +1292,13 @@ export default function AdminDashboard() {
         />
       )}
 
-      {/* نافذة تعديل/إضافة العربون[cite: 10] */}
+      {/* نافذة تعديل/إضافة العربون */}
       {isDepositModalOpen && selectedBookingForDeposit && (
-        <div className={styles.modalBackdrop} onClick={() => setIsDepositModalOpen(false)}>
+        <div
+          dir={isAr ? 'rtl' : 'ltr'}
+          className={styles.modalBackdrop}
+          onClick={() => setIsDepositModalOpen(false)}
+        >
           <div
             className={styles.modalBox}
             style={{ maxWidth: '440px' }}
@@ -1330,6 +1307,7 @@ export default function AdminDashboard() {
             <div className={styles.modalHeader}>
               <h3>💰 {isAr ? 'إضافة / تعديل العربون المدفوع' : "Saisir l'acompte"}</h3>
               <button
+                type="button"
                 className={styles.modalCloseBtn}
                 onClick={() => setIsDepositModalOpen(false)}
               >
@@ -1342,6 +1320,7 @@ export default function AdminDashboard() {
                 <label>{isAr ? 'مبلغ العربون المستلم (دج)' : "Montant de l'acompte (DA)"}</label>
                 <input
                   type="number"
+                  dir="ltr"
                   required
                   autoFocus
                   placeholder="20000"
@@ -1367,13 +1346,18 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* نافذة إضافة طلب جديد[cite: 10] */}
+      {/* نافذة إضافة طلب جديد */}
       {isAddBookingOpen && (
-        <div className={styles.modalBackdrop} onClick={() => setIsAddBookingOpen(false)}>
+        <div
+          dir={isAr ? 'rtl' : 'ltr'}
+          className={styles.modalBackdrop}
+          onClick={() => setIsAddBookingOpen(false)}
+        >
           <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h3>{t.newBookingBtn}</h3>
               <button
+                type="button"
                 className={styles.modalCloseBtn}
                 onClick={() => setIsAddBookingOpen(false)}
               >
@@ -1397,15 +1381,17 @@ export default function AdminDashboard() {
                   <label>{isAr ? 'رقم الهاتف' : 'Téléphone'}</label>
                   <input
                     type="tel"
+                    dir="ltr"
                     required
                     value={newBooking.phone}
                     onChange={(e) => setNewBooking({ ...newBooking, phone: e.target.value })}
                   />
                 </div>
                 <div className={styles.inputGroup}>
-                  <label>{isAr ? 'التاريخ المطلوب' : 'Date'}</label>
+                  <label>{isAr ? 'التاريخ المطلوب' : 'Date souhaitée'}</label>
                   <input
                     type="date"
+                    dir="ltr"
                     required
                     value={newBooking.date}
                     onChange={(e) => setNewBooking({ ...newBooking, date: e.target.value })}
@@ -1418,6 +1404,7 @@ export default function AdminDashboard() {
                   <label>{isAr ? 'السعر الكلي للقاعة (دج)' : 'Prix Total (DA)'}</label>
                   <input
                     type="number"
+                    dir="ltr"
                     placeholder="50000"
                     value={newBooking.amount}
                     onChange={(e) => setNewBooking({ ...newBooking, amount: e.target.value })}
@@ -1427,6 +1414,7 @@ export default function AdminDashboard() {
                   <label>{isAr ? 'العربون المدفوع (دج)' : 'Acompte (DA)'}</label>
                   <input
                     type="number"
+                    dir="ltr"
                     placeholder="20000"
                     value={newBooking.deposit}
                     onChange={(e) => setNewBooking({ ...newBooking, deposit: e.target.value })}
@@ -1451,9 +1439,13 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* نافذة العقد الرقمي[cite: 10] */}
+      {/* نافذة العقد الرقمي */}
       {isContractModalOpen && selectedBookingForContract && (
-        <div className={styles.modalBackdrop} onClick={() => setIsContractModalOpen(false)}>
+        <div
+          dir={isAr ? 'rtl' : 'ltr'}
+          className={styles.modalBackdrop}
+          onClick={() => setIsContractModalOpen(false)}
+        >
           <div
             className={styles.modalBox}
             style={{ maxWidth: '580px' }}
@@ -1466,6 +1458,7 @@ export default function AdminDashboard() {
                   : `Contrat #${String(selectedBookingForContract.id).slice(0, 8)}`}
               </h3>
               <button
+                type="button"
                 className={styles.modalCloseBtn}
                 onClick={() => setIsContractModalOpen(false)}
               >
@@ -1476,15 +1469,16 @@ export default function AdminDashboard() {
               <h4>{isAr ? 'عقد حجز قاعة أفراح ومناسبات' : 'Contrat de Réservation'}</h4>
               <p>
                 <strong>{isAr ? 'العميل:' : 'Client :'}</strong>{' '}
-                {selectedBookingForContract.client} ({selectedBookingForContract.phone})
+                {selectedBookingForContract.client} (
+                <span dir="ltr">{selectedBookingForContract.phone}</span>)
               </p>
               <p>
                 <strong>{isAr ? 'التاريخ:' : 'Date :'}</strong>{' '}
-                {selectedBookingForContract.date}
+                <span dir="ltr">{selectedBookingForContract.date}</span>
               </p>
               <p>
                 <strong>{isAr ? 'المبلغ الإجمالي:' : 'Montant :'}</strong>{' '}
-                {selectedBookingForContract.amount}
+                <span dir="ltr">{selectedBookingForContract.amount}</span>
               </p>
             </div>
             <div className={styles.modalActions}>
@@ -1509,26 +1503,19 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* نافذة الإشعار بالنجاح[cite: 10] */}
+      {/* نافذة الإشعار بالنجاح */}
       {isSuccessModalOpen && (
-        <div className={styles.modalBackdrop} onClick={() => setIsSuccessModalOpen(false)}>
+        <div
+          dir={isAr ? 'rtl' : 'ltr'}
+          className={styles.modalBackdrop}
+          onClick={() => setIsSuccessModalOpen(false)}
+        >
           <div
             className={styles.modalBox}
             style={{ maxWidth: '400px', textAlign: 'center', padding: '2rem 1.5rem' }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div
-              style={{
-                width: '56px',
-                height: '56px',
-                background: '#ecfdf5',
-                color: '#059669',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 1rem auto'
-              }}
-            >
+            <div className={styles.successIconCircle}>
               <IconCheck />
             </div>
             <h3 style={{ margin: '0 0 0.5rem 0', color: '#0f172a' }}>

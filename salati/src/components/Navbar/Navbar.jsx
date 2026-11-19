@@ -87,6 +87,7 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const langDropdownRef = useRef(null);
 
   useEffect(() => {
@@ -105,42 +106,46 @@ export default function Navbar() {
   /* التحقق من وجود صالة مسجلة أو سجل موظف نشط قبل إظهار زر لوحة التحكم */
   useEffect(() => {
     const checkDashboardAccess = async (session) => {
-      if (!session?.user) {
-        setIsLoggedIn(false);
-        return;
-      }
+      try {
+        if (!session?.user) {
+          setIsLoggedIn(false);
+          return;
+        }
 
-      const userId = session.user.id;
-      const userEmail = session.user.email?.trim().toLowerCase();
+        const userId = session.user.id;
+        const userEmail = session.user.email?.trim().toLowerCase();
 
-      // 1. فحص هل المستخدم يملك صالة مسجلة بالفعل
-      const { data: existingHall } = await supabase
-        .from('halls')
-        .select('id')
-        .eq('owner_id', userId)
-        .maybeSingle();
-
-      if (existingHall) {
-        setIsLoggedIn(true);
-        return;
-      }
-
-      // 2. فحص هل المستخدم موظف نشط في صالة
-      if (userEmail) {
-        const { data: staffRecord } = await supabase
-          .from('hall_staff')
-          .select('is_active')
-          .ilike('email', userEmail)
+        // 1. فحص هل المستخدم يملك صالة مسجلة بالفعل
+        const { data: existingHall } = await supabase
+          .from('halls')
+          .select('id')
+          .eq('owner_id', userId)
           .maybeSingle();
 
-        if (staffRecord && staffRecord.is_active !== false) {
+        if (existingHall) {
           setIsLoggedIn(true);
           return;
         }
-      }
 
-      // 3. مستخدم سجل بـ Google لكنه لم يكمل إنشاء صالته بعد
-      setIsLoggedIn(false);
+        // 2. فحص هل المستخدم موظف نشط في صالة
+        if (userEmail) {
+          const { data: staffRecord } = await supabase
+            .from('hall_staff')
+            .select('is_active')
+            .ilike('email', userEmail)
+            .maybeSingle();
+
+          if (staffRecord && staffRecord.is_active !== false) {
+            setIsLoggedIn(true);
+            return;
+          }
+        }
+
+        // 3. مستخدم سجل بـ Google لكنه لم يكمل إنشاء صالته بعد
+        setIsLoggedIn(false);
+      } finally {
+        setIsCheckingAuth(false);
+      }
     };
 
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -181,6 +186,9 @@ export default function Navbar() {
     } else {
       document.body.style.overflow = '';
     }
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [mobileMenuOpen]);
 
   const changeLanguage = (newLang) => {
@@ -233,7 +241,7 @@ export default function Navbar() {
         {/* الروابط لسطح المكتب والقائمة المنزلقة للجوال */}
         <div className={`${styles.navLinks} ${mobileMenuOpen ? styles.navLinksOpen : ''}`}>
           <div className={styles.mobileNavHeaderTitle}>
-            {isAr ? 'التنقل السريع' : 'Navigation'}
+            {isAr ? 'التنقل السريع' : 'Navigation rapide'}
           </div>
 
           <a href="/" onClick={(e) => navigateTo(e, '/')} className={styles.navLink}>
@@ -263,17 +271,19 @@ export default function Navbar() {
 
           {/* أزرار الإجراءات في أسفل قائمة الجوال */}
           <div className={styles.mobileNavActions}>
-            {isLoggedIn ? (
+            {isCheckingAuth ? (
+              <div className={styles.authSkeletonMobile} aria-hidden="true" />
+            ) : isLoggedIn ? (
               <a href="/admin" onClick={(e) => navigateTo(e, '/admin')} className={styles.registerBtn}>
                 {isAr ? 'لوحة التحكم' : 'Tableau de bord'}
               </a>
             ) : (
               <>
                 <a href="/login" onClick={(e) => navigateTo(e, '/login')} className={styles.loginBtn}>
-                  {isAr ? 'دخول الحساب' : 'Connexion'}
+                  {isAr ? 'دخول الحساب' : 'Se connecter'}
                 </a>
                 <a href="/register" onClick={(e) => navigateTo(e, '/register')} className={styles.registerBtn}>
-                  {isAr ? 'ابدأ تجربة مجانية' : 'Essai Gratuit'}
+                  {isAr ? 'ابدأ تجربة مجانية' : 'Démarrer l’essai gratuit'}
                 </a>
               </>
             )}
@@ -319,7 +329,9 @@ export default function Navbar() {
           </div>
 
           <div className={styles.desktopNavActions}>
-            {isLoggedIn ? (
+            {isCheckingAuth ? (
+              <div className={styles.authSkeletonDesktop} aria-hidden="true" />
+            ) : isLoggedIn ? (
               <a href="/admin" onClick={(e) => navigateTo(e, '/admin')} className={styles.registerBtn}>
                 {isAr ? 'لوحة التحكم' : 'Tableau de bord'}
               </a>
@@ -339,7 +351,8 @@ export default function Navbar() {
           <button 
             className={styles.hamburgerBtn}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle Menu"
+            aria-label={isAr ? 'فتح أو إغلاق القائمة' : 'Ouvrir ou fermer le menu'}
+            aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? <IconClose /> : <IconMenu />}
           </button>

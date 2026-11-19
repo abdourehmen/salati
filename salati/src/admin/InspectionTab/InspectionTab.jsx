@@ -75,22 +75,27 @@ export default function InspectionTab({ isAr = true, bookings = [], hallId = nul
         data.map((item) => ({
           id: item.id,
           url: item.image_url,
-          note: item.note || (isAr ? 'حالة الصالة جاهزة للتسليم' : 'Salle prête'),
+          note: item.note || (isAr ? 'حالة الصالة جاهزة للتسليم' : 'Salle prête pour la remise'),
           bookingLabel:
             item.booking_label || (isAr ? 'معاينة عامة' : 'Inspection générale'),
-          timestamp: new Date(item.created_at).toLocaleDateString(
-            isAr ? 'ar-DZ' : 'fr-FR',
-            {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            }
-          )
+          rawCreatedAt: item.created_at
         }))
       );
     }
+  };
+
+  const formatTimestamp = (isoDate) => {
+    if (!isoDate) return '';
+    return new Date(isoDate).toLocaleDateString(
+      isAr ? 'ar-DZ' : 'fr-FR',
+      {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }
+    );
   };
 
   const handleFileSelect = (e) => {
@@ -126,7 +131,7 @@ export default function InspectionTab({ isAr = true, bookings = [], hallId = nul
 
       const noteText =
         photoNoteInput.trim() ||
-        (isAr ? 'حالة الصالة جاهزة للتسليم' : 'Salle prête');
+        (isAr ? 'حالة الصالة جاهزة للتسليم' : 'Salle prête pour la remise');
 
       const rowsToInsert = [];
 
@@ -171,16 +176,7 @@ export default function InspectionTab({ isAr = true, bookings = [], hallId = nul
             url: item.image_url,
             note: item.note,
             bookingLabel: item.booking_label,
-            timestamp: new Date(item.created_at).toLocaleDateString(
-              isAr ? 'ar-DZ' : 'fr-FR',
-              {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              }
-            )
+            rawCreatedAt: item.created_at
           }));
           setInspectionPhotos((prev) => [...formattedNew, ...prev]);
         }
@@ -221,7 +217,11 @@ export default function InspectionTab({ isAr = true, bookings = [], hallId = nul
       setInspectionPhotos((prev) => prev.filter((p) => p.id !== photo.id));
     } catch (err) {
       console.error('خطأ في حذف صورة المعاينة:', err);
-      alert(isAr ? 'فشل حذف الصورة: ' + err.message : 'Erreur : ' + err.message);
+      alert(
+        isAr
+          ? 'فشل حذف الصورة: ' + err.message
+          : 'Erreur lors de la suppression : ' + err.message
+      );
     }
   };
 
@@ -260,7 +260,7 @@ export default function InspectionTab({ isAr = true, bookings = [], hallId = nul
             <option value="">
               {isAr
                 ? '-- اختر الحجز / المناسبة (اختياري) --'
-                : '-- Choisir une réservation --'}
+                : '-- Choisir une réservation (optionnel) --'}
             </option>
             {bookings
               .filter((b) => b.status !== 'cancelled')
@@ -283,8 +283,7 @@ export default function InspectionTab({ isAr = true, bookings = [], hallId = nul
           <input
             type="text"
             readOnly
-            className={styles.pillInput}
-            style={{ cursor: 'pointer' }}
+            className={`${styles.pillInput} ${styles.filePickerInput}`}
             onClick={() => !uploading && fileInputRef.current?.click()}
             placeholder={
               isAr
@@ -306,7 +305,9 @@ export default function InspectionTab({ isAr = true, bookings = [], hallId = nul
             type="text"
             className={styles.pillInput}
             placeholder={
-              isAr ? 'ملاحظة (مثال: القاعة الكبرى نظيفة)...' : 'Note...'
+              isAr
+                ? 'ملاحظة (مثال: القاعة الكبرى نظيفة)...'
+                : 'Note (ex : Grande salle propre)...'
             }
             value={photoNoteInput}
             onChange={(e) => setPhotoNoteInput(e.target.value)}
@@ -330,12 +331,19 @@ export default function InspectionTab({ isAr = true, bookings = [], hallId = nul
           </button>
         </form>
 
-        {/* الإطار السفلي لعرض الصور المضافة بشكل صغير */}
+        {/* الإطار السفلي لعرض الصور المضافة أو Shimmer Skeleton */}
         {loadingPhotos ? (
-          <div className={styles.emptyInspectionArea}>
-            <p style={{ color: '#0052cc', fontWeight: 700 }}>
-              {isAr ? 'جاري تحميل صور المعاينة...' : 'Chargement des photos...'}
-            </p>
+          <div className={styles.compactGalleryGrid} aria-busy="true">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <div key={idx} className={styles.compactPhotoCard}>
+                <div className={`${styles.skeletonBase} ${styles.skeletonPhotoThumb}`} />
+                <div className={styles.compactCardBody}>
+                  <div className={`${styles.skeletonBase} ${styles.skeletonTag}`} />
+                  <div className={`${styles.skeletonBase} ${styles.skeletonNoteLine}`} />
+                  <div className={`${styles.skeletonBase} ${styles.skeletonTimeLine}`} />
+                </div>
+              </div>
+            ))}
           </div>
         ) : inspectionPhotos.length === 0 ? (
           <div className={styles.emptyInspectionArea}>
@@ -352,81 +360,37 @@ export default function InspectionTab({ isAr = true, bookings = [], hallId = nul
             </p>
           </div>
         ) : (
-          <div
-            style={{
-              border: '1.5px dashed #cbd5e1',
-              borderRadius: '20px',
-              backgroundColor: '#f8fafc',
-              padding: '1.15rem',
-              minHeight: '260px',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(145px, 1fr))',
-              gap: '0.75rem',
-              alignContent: 'start'
-            }}
-          >
+          <div className={styles.compactGalleryGrid}>
             {inspectionPhotos.map((photo) => (
               <div
                 key={photo.id}
-                className={styles.inspectionPhotoCard}
-                style={{
-                  borderRadius: '14px',
-                  overflow: 'hidden',
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e2e8f0'
-                }}
+                className={`${styles.inspectionPhotoCard} ${styles.compactPhotoCard}`}
               >
-                <div
-                  className={styles.photoImageWrap}
-                  style={{ height: '100px', position: 'relative' }}
-                >
+                <div className={styles.compactPhotoImageWrap}>
                   <img
                     src={photo.url}
                     alt={photo.note}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      display: 'block'
-                    }}
+                    loading="lazy"
                   />
                   <button
                     type="button"
-                    className={styles.deleteEntryBtn}
-                    style={{
-                      width: '22px',
-                      height: '22px',
-                      fontSize: '0.72rem',
-                      top: '6px',
-                      left: '6px'
-                    }}
+                    className={styles.compactDeleteBtn}
                     onClick={() => handleDeleteInspectionPhoto(photo)}
+                    aria-label={isAr ? 'حذف الصورة' : 'Supprimer la photo'}
                   >
                     ✕
                   </button>
                 </div>
 
-                <div
-                  className={styles.photoCardBody}
-                  style={{ padding: '0.5rem', gap: '0.2rem' }}
-                >
-                  <span
-                    className={styles.bookingTag}
-                    style={{ fontSize: '0.68rem', padding: '0.15rem 0.45rem' }}
-                  >
+                <div className={styles.compactCardBody}>
+                  <span className={styles.compactBookingTag}>
                     {photo.bookingLabel}
                   </span>
-                  <strong
-                    className={styles.photoNoteText}
-                    style={{ fontSize: '0.78rem', lineHeight: '1.35' }}
-                  >
+                  <strong className={styles.compactPhotoNote}>
                     {photo.note}
                   </strong>
-                  <small
-                    className={styles.photoTimeText}
-                    style={{ fontSize: '0.66rem' }}
-                  >
-                    <IconCheck /> {photo.timestamp}
+                  <small className={styles.compactPhotoTime}>
+                    <IconCheck /> {formatTimestamp(photo.rawCreatedAt)}
                   </small>
                 </div>
               </div>

@@ -162,9 +162,21 @@ export default function HallShowcase() {
     timeSlot: 'evening',
     eventType: 'عرس'
   });
-const currentPath = window.location.pathname;
+
+  const currentPath = window.location.pathname;
   const rawSlug = currentPath.split('/v/')[1];
   const hallSlug = rawSlug ? decodeURIComponent(rawSlug.split('?')[0].split('#')[0]) : null;
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setLang(document.documentElement.lang || 'ar');
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['lang']
+    });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     fetchHallData();
@@ -273,7 +285,7 @@ const currentPath = window.location.pathname;
 
   useEffect(() => {
     if (hallImages.length <= 1) return;
-    const timer = setInterval(() => { nextImage(); }, 3000);
+    const timer = setInterval(() => { nextImage(); }, 3500);
     return () => clearInterval(timer);
   }, [hallImages.length, currentImgIndex]);
 
@@ -283,8 +295,13 @@ const currentPath = window.location.pathname;
   const handleTouchEnd = () => {
     if (!touchStartX.current || !touchEndX.current) return;
     const distance = touchStartX.current - touchEndX.current;
-    if (distance > 40) nextImage();
-    else if (distance < -40) prevImage();
+    if (Math.abs(distance) > 40) {
+      if (isAr) {
+        distance < 0 ? nextImage() : prevImage();
+      } else {
+        distance > 0 ? nextImage() : prevImage();
+      }
+    }
     touchStartX.current = null;
     touchEndX.current = null;
   };
@@ -495,19 +512,58 @@ const currentPath = window.location.pathname;
       }, 2500);
     } catch (err) {
       console.error('فشل إرسال الطلب:', err);
-      alert(isAr ? 'حدث خطأ في الإرسال: ' + err.message : 'Erreur: ' + err.message);
+      alert(isAr ? 'حدث خطأ في الإرسال: ' + err.message : 'Erreur lors de l\'envoi : ' + err.message);
       setBookingStatus(null);
       isSubmittingRef.current = false;
     }
   };
 
+  /* Shimmer Skeleton أثناء تحميل بيانات الصالة */
   if (loading) {
-    return <div className={styles.loadingWrapper}>{isAr ? 'جاري تحميل موقع الصالة...' : 'Chargement de la salle...'}</div>;
+    return (
+      <div className={styles.showcaseLayout} aria-busy="true">
+        <header className={styles.topHeader}>
+          <div className={styles.headerContainer}>
+            <div className={styles.venueLogo}>
+              <div className={`${styles.skeletonBase} ${styles.skeletonLogoBadge}`} />
+              <div className={`${styles.skeletonBase} ${styles.skeletonLogoTitle}`} />
+            </div>
+            <div className={styles.headerRightGroup}>
+              <div className={`${styles.skeletonBase} ${styles.skeletonHeaderBtn}`} />
+              <div className={`${styles.skeletonBase} ${styles.skeletonLangBtn}`} />
+            </div>
+          </div>
+        </header>
+
+        <main className={styles.mainContainer}>
+          <section className={styles.heroCarouselSection}>
+            <div className={`${styles.skeletonBase} ${styles.skeletonHeroCarousel}`} />
+          </section>
+
+          <section className={styles.middleTwoColumnsSection}>
+            <div className={styles.columnFeatures}>
+              <div className={`${styles.skeletonBase} ${styles.skeletonSectionTitle}`} />
+              <div className={styles.skeletonAmenitiesGrid}>
+                <div className={`${styles.skeletonBase} ${styles.skeletonAmenityPill}`} />
+                <div className={`${styles.skeletonBase} ${styles.skeletonAmenityPill}`} />
+                <div className={`${styles.skeletonBase} ${styles.skeletonAmenityPill}`} />
+                <div className={`${styles.skeletonBase} ${styles.skeletonAmenityPill}`} />
+              </div>
+            </div>
+
+            <div className={styles.columnLocation}>
+              <div className={`${styles.skeletonBase} ${styles.skeletonSectionTitle}`} />
+              <div className={`${styles.skeletonBase} ${styles.skeletonMapBox}`} />
+            </div>
+          </section>
+        </main>
+      </div>
+    );
   }
 
   const hallName = hall?.name || (isAr ? 'قاعتي' : 'Ma Salle');
   const hallDescription = hall?.description || '';
-  const hallAddress = hall?.address || (hall?.visiting_hours ? `${isAr ? 'أوقات المعاينة' : 'Visites'}: ${hall.visiting_hours}` : '');
+  const hallAddress = hall?.address || (hall?.visiting_hours ? `${isAr ? 'أوقات المعاينة' : 'Heures de visite'} : ${hall.visiting_hours}` : '');
   const phone = hall?.phone || '';
   const mapUrl = hall?.map_url || '';
   const videoUrl = hall?.video_url || '';
@@ -519,10 +575,11 @@ const currentPath = window.location.pathname;
   const rawWhatsAppPhone = hall?.whatsapp_number || phone || '';
   const cleanedPhone = rawWhatsAppPhone.replace(/\D/g, '');
   const formattedPhone = cleanedPhone.startsWith('0') ? `213${cleanedPhone.substring(1)}` : cleanedPhone;
-  const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(isAr ? `مرحباً، أريد الاستفسار عن حجز ${hallName}` : `Bonjour, je souhaite me renseigner sur la salle ${hallName}`)}`;
+  const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(isAr ? `مرحباً، أريد الاستفسار عن حجز ${hallName}` : `Bonjour, je souhaite me renseigner sur la réservation de la salle ${hallName}`)}`;
 
   const currencyUnit = isAr ? 'دج' : 'DA';
   const hasNoContent = hallImages.length === 0 && !hallDescription && amenitiesList.length === 0 && !mapUrl && pricingPackages.length === 0;
+  const hasSectionLinks = Boolean(hallDescription || amenitiesList.length > 0 || mapUrl || pricingPackages.length > 0);
 
   // حالة الفترات للتاريخ المختار حالياً لتعطيل المحجوز منها في القائمة
   const selectedDayAvailability = getDaySlotAvailability(bookingForm.eventDate, bookedDates);
@@ -532,32 +589,37 @@ const currentPath = window.location.pathname;
       
       <header className={styles.topHeader}>
         <div className={styles.headerContainer}>
-          <div className={styles.venueLogo}>
+          <div className={styles.venueLogo} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <div className={styles.logoBadge}>🏰</div>
             <strong>{hallName}</strong>
           </div>
 
           <nav className={styles.navLinks}>
             {hallDescription && (
-              <button onClick={() => scrollToSection('about')}>{isAr ? 'وصف الصالة' : 'Présentation'}</button>
+              <button type="button" onClick={() => scrollToSection('about')}>{isAr ? 'وصف الصالة' : 'Présentation'}</button>
             )}
             {amenitiesList.length > 0 && (
-              <button onClick={() => scrollToSection('features')}>{isAr ? 'مميزات القاعة' : 'Commodités'}</button>
+              <button type="button" onClick={() => scrollToSection('features')}>{isAr ? 'مميزات القاعة' : 'Commodités'}</button>
             )}
             {mapUrl && (
-              <button onClick={() => scrollToSection('location')}>{isAr ? 'مكان القاعة' : 'Localisation'}</button>
+              <button type="button" onClick={() => scrollToSection('location')}>{isAr ? 'مكان القاعة' : 'Localisation'}</button>
             )}
             {pricingPackages.length > 0 && (
-              <button onClick={() => scrollToSection('pricing')}>{isAr ? 'جدول الأسعار' : 'Tarifs'}</button>
+              <button type="button" onClick={() => scrollToSection('pricing')}>{isAr ? 'جدول الأسعار' : 'Tarifs'}</button>
             )}
           </nav>
 
           <div className={styles.headerRightGroup}>
-            <button className={styles.headerCtaBtn} onClick={() => handleOpenBookingModal(null)}>
+            <button type="button" className={styles.headerCtaBtn} onClick={() => handleOpenBookingModal(null)}>
               <span>{isAr ? 'طلب حجز' : 'Réservation'}</span>
             </button>
 
-            <button className={styles.langBtn} onClick={toggleLanguage}>
+            <button
+              type="button"
+              className={styles.langBtn}
+              onClick={toggleLanguage}
+              title={isAr ? 'Changer en Français' : 'التبديل إلى العربية'}
+            >
               <IconGlobe />
               <span>{isAr ? 'FR' : 'AR'}</span>
             </button>
@@ -565,18 +627,36 @@ const currentPath = window.location.pathname;
         </div>
       </header>
 
+      {/* شريط التنقل السريع للهواتف والأجهزة اللوحية */}
+      {hasSectionLinks && (
+        <div className={styles.mobileQuickNav}>
+          {hallDescription && (
+            <button type="button" onClick={() => scrollToSection('about')}>{isAr ? 'وصف الصالة' : 'Présentation'}</button>
+          )}
+          {amenitiesList.length > 0 && (
+            <button type="button" onClick={() => scrollToSection('features')}>{isAr ? 'مميزات القاعة' : 'Commodités'}</button>
+          )}
+          {mapUrl && (
+            <button type="button" onClick={() => scrollToSection('location')}>{isAr ? 'مكان القاعة' : 'Localisation'}</button>
+          )}
+          {pricingPackages.length > 0 && (
+            <button type="button" onClick={() => scrollToSection('pricing')}>{isAr ? 'جدول الأسعار' : 'Tarifs'}</button>
+          )}
+        </div>
+      )}
+
       <main className={styles.mainContainer}>
         
         {hasNoContent && (
-          <div style={{ padding: '4rem 2rem', textAlign: 'center', color: '#64748b' }}>
+          <div className={`${styles.emptyStateBox} ${styles.animateFadeUp}`}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏰</div>
-            <h2 style={{ color: '#1e293b', marginBottom: '0.5rem' }}>{isAr ? 'مرحباً بك في صفحة القاعة' : 'Bienvenue sur la page de la salle'}</h2>
-            <p>{isAr ? 'لم يقم المالك بإضافة الصور والأسعار بعد. يمكنك إضافتها الآن من لوحة التحكم.' : 'Le propriétaire n\'a pas encore ajouté de détails.'}</p>
+            <h2>{isAr ? 'مرحباً بك في صفحة القاعة' : 'Bienvenue sur la page de la salle'}</h2>
+            <p>{isAr ? 'لم يقم المالك بإضافة الصور والأسعار بعد. يمكنك إضافتها الآن من لوحة التحكم.' : 'Le propriétaire n\'a pas encore ajouté de photos ni de tarifs.'}</p>
           </div>
         )}
 
         {hallImages.length > 0 && (
-          <section className={styles.heroCarouselSection}>
+          <section className={`${styles.heroCarouselSection} ${styles.animateFadeUp}`}>
             <div 
               className={styles.carouselCard}
               onTouchStart={handleTouchStart}
@@ -584,7 +664,7 @@ const currentPath = window.location.pathname;
               onTouchEnd={handleTouchEnd}
             >
               {videoUrl && (
-                <button className={styles.videoOverlayBtn} onClick={() => setIsVideoModalOpen(true)}>
+                <button type="button" className={styles.videoOverlayBtn} onClick={() => setIsVideoModalOpen(true)}>
                   <IconVideo />
                   <span>{isAr ? 'مشاهدة فيديو الصالة' : 'Voir la vidéo'}</span>
                 </button>
@@ -602,11 +682,21 @@ const currentPath = window.location.pathname;
 
               {hallImages.length > 1 && (
                 <>
-                  <button className={`${styles.navBtn} ${styles.prevBtn}`} onClick={prevImage} aria-label={isAr ? "السابقة" : "Précédent"}>
-                    <IconChevronRight />
+                  <button
+                    type="button"
+                    className={`${styles.navBtn} ${styles.prevBtn}`}
+                    onClick={prevImage}
+                    aria-label={isAr ? 'الصورة السابقة' : 'Image précédente'}
+                  >
+                    {isAr ? <IconChevronRight /> : <IconChevronLeft />}
                   </button>
-                  <button className={`${styles.navBtn} ${styles.nextBtn}`} onClick={nextImage} aria-label={isAr ? "التالية" : "Suivant"}>
-                    <IconChevronLeft />
+                  <button
+                    type="button"
+                    className={`${styles.navBtn} ${styles.nextBtn}`}
+                    onClick={nextImage}
+                    aria-label={isAr ? 'الصورة التالية' : 'Image suivante'}
+                  >
+                    {isAr ? <IconChevronLeft /> : <IconChevronRight />}
                   </button>
 
                   <div className={styles.dotsContainer}>
@@ -626,12 +716,12 @@ const currentPath = window.location.pathname;
 
         {/* 🎯 قسم وصف الصالة */}
         {hallDescription && (
-          <section id="about" className={styles.pricingSection}>
+          <section id="about" className={`${styles.pricingSection} ${styles.animateFadeUp}`}>
             <div className={styles.columnFeatures} style={{ width: '100%' }}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.columnTitle}>{isAr ? 'وصف الصالة' : 'À propos de la salle'}</h2>
               </div>
-              <p style={{ margin: 0, color: '#475569', lineHeight: '1.85', fontSize: '0.98rem', whiteSpace: 'pre-line' }}>
+              <p className={styles.descriptionText}>
                 {hallDescription}
               </p>
             </div>
@@ -639,7 +729,7 @@ const currentPath = window.location.pathname;
         )}
 
         {(amenitiesList.length > 0 || mapUrl) && (
-          <section className={styles.middleTwoColumnsSection}>
+          <section className={`${styles.middleTwoColumnsSection} ${styles.animateFadeUp}`}>
             
             {amenitiesList.length > 0 && (
               <div id="features" className={styles.columnFeatures} style={{ flex: !mapUrl ? '1 1 100%' : undefined }}>
@@ -678,7 +768,7 @@ const currentPath = window.location.pathname;
                 {mapEmbedUrl && (
                   <div className={styles.mapFrameWrapper}>
                     <iframe
-                      title="Google Maps Location"
+                      title={isAr ? 'موقع القاعة على الخريطة' : 'Localisation sur Google Maps'}
                       src={mapEmbedUrl}
                       width="100%"
                       height="100%"
@@ -701,7 +791,7 @@ const currentPath = window.location.pathname;
 
         {/* 🎯 جدول الأسعار المربوط بتمرير الباقة والسعر */}
         {pricingPackages.length > 0 && (
-          <section id="pricing" className={styles.pricingSection}>
+          <section id="pricing" className={`${styles.pricingSection} ${styles.animateFadeUp}`}>
             <div className={styles.pricingCardContainer}>
               {pricingPackages.map((pkg, idx) => (
                 <div key={idx} className={styles.pricingRow}>
@@ -710,6 +800,7 @@ const currentPath = window.location.pathname;
                     <span className={styles.priceTag}>{pkg.price} {currencyUnit}</span>
                   </div>
                   <button 
+                    type="button"
                     className={styles.rowBookBtn} 
                     onClick={() => handleOpenBookingModal(pkg)}
                   >
@@ -729,7 +820,8 @@ const currentPath = window.location.pathname;
           target="_blank"
           rel="noreferrer"
           className={styles.whatsappFloatBtn}
-          title={isAr ? "تواصل معنا مباشرة عبر واتساب" : "Contactez-nous sur WhatsApp"}
+          title={isAr ? 'تواصل معنا مباشرة عبر واتساب' : 'Contactez-nous sur WhatsApp'}
+          aria-label={isAr ? 'تواصل عبر واتساب' : 'Contacter sur WhatsApp'}
         >
           <span className={styles.whatsappPulseEffect} />
           <IconWhatsApp />
@@ -741,10 +833,17 @@ const currentPath = window.location.pathname;
           <div className={styles.videoModalBox} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h3>{isAr ? 'جولة فيديو في القاعة' : 'Vidéo de présentation de la salle'}</h3>
-              <button className={styles.modalCloseBtn} onClick={() => setIsVideoModalOpen(false)}>✕</button>
+              <button
+                type="button"
+                className={styles.modalCloseBtn}
+                onClick={() => setIsVideoModalOpen(false)}
+                aria-label={isAr ? 'إغلاق' : 'Fermer'}
+              >
+                ✕
+              </button>
             </div>
             <div className={styles.videoFrameWrapper}>
-              <iframe src={videoEmbedUrl} title="فيديو الصالة" allowFullScreen></iframe>
+              <iframe src={videoEmbedUrl} title={isAr ? 'فيديو الصالة' : 'Vidéo de la salle'} allowFullScreen></iframe>
             </div>
           </div>
         </div>
@@ -757,13 +856,20 @@ const currentPath = window.location.pathname;
               <div>
                 <h3>{isAr ? 'إرسال طلب حجز أونلاين' : 'Demande de réservation en ligne'}</h3>
               </div>
-              <button className={styles.modalCloseBtn} onClick={() => { setIsBookingModalOpen(false); setSelectedPackage(null); }}>✕</button>
+              <button
+                type="button"
+                className={styles.modalCloseBtn}
+                onClick={() => { setIsBookingModalOpen(false); setSelectedPackage(null); }}
+                aria-label={isAr ? 'إغلاق' : 'Fermer'}
+              >
+                ✕
+              </button>
             </div>
 
             {bookingStatus === 'submitted' ? (
               <div className={styles.successMessageBox}>
-                <h4>{isAr ? 'تم إرسال الطلب بنجاح!' : 'Demande envoyée avec succès!'}</h4>
-                <p>{isAr ? 'سيتصل بك مالك القاعة لتأكيد الحجز.' : 'Le propriétaire vous contactera pour confirmation.'}</p>
+                <h4>{isAr ? 'تم إرسال الطلب بنجاح!' : 'Demande envoyée avec succès !'}</h4>
+                <p>{isAr ? 'سيتصل بك مالك القاعة لتأكيد الحجز.' : 'Le propriétaire de la salle vous contactera pour confirmer la réservation.'}</p>
               </div>
             ) : (
               <form onSubmit={handleBookingSubmit} className={styles.modalForm}>
@@ -774,7 +880,7 @@ const currentPath = window.location.pathname;
                     <input
                       type="text"
                       required
-                      placeholder={isAr ? "محمد" : "Ex: Mohamed"}
+                      placeholder={isAr ? 'محمد' : 'Ex : Mohamed'}
                       value={bookingForm.firstName}
                       onChange={(e) => setBookingForm({ ...bookingForm, firstName: e.target.value })}
                     />
@@ -784,7 +890,7 @@ const currentPath = window.location.pathname;
                     <input
                       type="text"
                       required
-                      placeholder={isAr ? "العماري" : "Ex: Amari"}
+                      placeholder={isAr ? 'العماري' : 'Ex : Amari'}
                       value={bookingForm.lastName}
                       onChange={(e) => setBookingForm({ ...bookingForm, lastName: e.target.value })}
                     />
@@ -796,6 +902,7 @@ const currentPath = window.location.pathname;
                     <label>{isAr ? 'رقم الهاتف' : 'Téléphone'}</label>
                     <input
                       type="tel"
+                      dir="ltr"
                       required
                       placeholder="0550 00 00 00"
                       value={bookingForm.phone}
@@ -837,7 +944,7 @@ const currentPath = window.location.pathname;
                       }}
                       minDate={new Date()}
                       dateFormat="yyyy-MM-dd"
-                      placeholderText={isAr ? "اختر التاريخ" : "Sélectionner la date"}
+                      placeholderText={isAr ? 'اختر التاريخ' : 'Sélectionner la date'}
                       className={styles.selectInput}
                       required
                     />
@@ -860,17 +967,17 @@ const currentPath = window.location.pathname;
                     <option value="evening" disabled={selectedDayAvailability.eveningTaken}>
                       {isAr
                         ? `فترة المساء / العشاء (18:00 - 23:00)${selectedDayAvailability.eveningTaken ? ' (محجوزة)' : ''}`
-                        : `Soirée${selectedDayAvailability.eveningTaken ? ' (Réservé)' : ''}`}
+                        : `Soirée (18h00 - 23h00)${selectedDayAvailability.eveningTaken ? ' (Réservé)' : ''}`}
                     </option>
                     <option value="afternoon" disabled={selectedDayAvailability.afternoonTaken}>
                       {isAr
                         ? `فترة الظهيرة (12:00 - 17:00)${selectedDayAvailability.afternoonTaken ? ' (محجوزة)' : ''}`
-                        : `Après-midi${selectedDayAvailability.afternoonTaken ? ' (Réservé)' : ''}`}
+                        : `Après-midi (12h00 - 17h00)${selectedDayAvailability.afternoonTaken ? ' (Réservé)' : ''}`}
                     </option>
                     <option value="full_day" disabled={selectedDayAvailability.fullDayTaken}>
                       {isAr
                         ? `يوم كامل (الظهيرة + المساء)${selectedDayAvailability.fullDayTaken ? ' (غير متاح)' : ''}`
-                        : `Journée entière${selectedDayAvailability.fullDayTaken ? ' (Indisponible)' : ''}`}
+                        : `Journée entière (Après-midi + Soirée)${selectedDayAvailability.fullDayTaken ? ' (Indisponible)' : ''}`}
                     </option>
                   </select>
                 </div>
@@ -894,7 +1001,7 @@ const currentPath = window.location.pathname;
                         }
                       }}
                     >
-                      <option value="">{isAr ? '-- اختر باقة السعر (اختياري) --' : '-- Choisir une formule --'}</option>
+                      <option value="">{isAr ? '-- اختر باقة السعر (اختياري) --' : '-- Choisir une formule (optionnel) --'}</option>
                       {pricingPackages.map((pkg, idx) => {
                         const pkgDisabled = isPackageUnavailable(pkg, bookingForm.eventDate);
                         return (

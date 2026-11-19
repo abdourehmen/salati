@@ -2,15 +2,107 @@
   min-height: 100vh;
   background-color: #f8fafc;
   color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.loadingWrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 80vh;
-  font-weight: 800;
-  color: #0052cc;
+/* =========================================
+   Shimmer Skeleton & أنميشن الظهور السلس
+   ========================================= */
+@keyframes shimmerWave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animateFadeUp {
+  animation: fadeSlideUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.skeletonBase {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmerWave 1.45s infinite linear;
+  border-radius: 12px;
+}
+
+.skeletonLogoBadge {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+}
+
+.skeletonLogoTitle {
+  width: 130px;
+  height: 22px;
+  border-radius: 8px;
+}
+
+.skeletonHeaderBtn {
+  width: 110px;
+  height: 38px;
+  border-radius: 50px;
+}
+
+.skeletonLangBtn {
+  width: 68px;
+  height: 36px;
+  border-radius: 50px;
+}
+
+.skeletonHeroCarousel {
+  width: 100%;
+  height: 480px;
+  border-radius: 24px;
+}
+
+.skeletonSectionTitle {
+  width: 55%;
+  height: 24px;
+  margin-bottom: 1.25rem;
+  border-radius: 8px;
+}
+
+.skeletonAmenitiesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.skeletonAmenityPill {
+  height: 46px;
+  border-radius: 8px;
+}
+
+.skeletonMapBox {
+  width: 100%;
+  height: 270px;
+  border-radius: 10px;
 }
 
 /* =========================================
@@ -41,19 +133,11 @@
   gap: 1rem;
 }
 
-:global(html[dir="rtl"]) .headerContainer {
-  flex-direction: row;
-}
-
-:global(html[dir="ltr"]) .headerContainer {
-  flex-direction: row;
-}
-
 .venueLogo {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  flex-shrink: 0;
+  min-width: 0;
   cursor: pointer;
 }
 
@@ -67,6 +151,7 @@
   align-items: center;
   justify-content: center;
   font-size: 1.3rem;
+  flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0, 82, 204, 0.08);
 }
 
@@ -75,6 +160,8 @@
   font-weight: 800;
   color: #0f172a;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   line-height: 1.3;
 }
 
@@ -155,6 +242,11 @@
   box-shadow: 0 6px 18px rgba(0, 82, 204, 0.35);
 }
 
+/* شريط التنقل السريع للجوال والأجهزة اللوحية */
+.mobileQuickNav {
+  display: none;
+}
+
 /* =========================================
    تنسيقات المحتوى والسلايدر
    ========================================= */
@@ -162,6 +254,28 @@
   max-width: 1150px;
   margin: 2rem auto 3rem auto;
   padding: 0 1.5rem;
+}
+
+.emptyStateBox {
+  padding: 4rem 1.5rem;
+  text-align: center;
+  color: #64748b;
+  background-color: #ffffff;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.emptyStateBox h2 {
+  color: #1e293b;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.emptyStateBox p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
 }
 
 .heroCarouselSection {
@@ -232,11 +346,13 @@
   background-size: cover;
   background-position: center;
   opacity: 0;
-  transition: opacity 0.5s ease-in-out;
+  transform: scale(1.02);
+  transition: opacity 0.6s ease-in-out, transform 0.8s ease-out;
 }
 
 .slideActive {
   opacity: 1;
+  transform: scale(1);
 }
 
 .navBtn {
@@ -246,7 +362,7 @@
   width: 46px;
   height: 46px;
   border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.85);
+  background-color: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.9);
   color: #0f172a;
@@ -265,12 +381,24 @@
   transform: translateY(-50%) scale(1.08);
 }
 
-.prevBtn {
+:global(html[dir="rtl"]) .prevBtn {
   right: 18px;
+  left: auto;
 }
 
-.nextBtn {
+:global(html[dir="rtl"]) .nextBtn {
   left: 18px;
+  right: auto;
+}
+
+:global(html[dir="ltr"]) .prevBtn {
+  left: 18px;
+  right: auto;
+}
+
+:global(html[dir="ltr"]) .nextBtn {
+  right: 18px;
+  left: auto;
 }
 
 .dotsContainer {
@@ -282,7 +410,7 @@
   align-items: center;
   gap: 0.5rem;
   z-index: 20;
-  background-color: rgba(15, 23, 42, 0.4);
+  background-color: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(8px);
   padding: 0.4rem 0.8rem;
   border-radius: 50px;
@@ -304,8 +432,24 @@
 }
 
 /* =========================================
-   تنسيق قسم الخصائص والموقع الاحترافي (حواف صغيرة)
+   تنسيق قسم الخصائص والموقع الاحترافي
    ========================================= */
+.descriptionText {
+  margin: 0;
+  color: #475569;
+  line-height: 1.85;
+  font-size: 0.98rem;
+  white-space: pre-line;
+}
+
+:global(html[dir="rtl"]) .descriptionText {
+  text-align: right;
+}
+
+:global(html[dir="ltr"]) .descriptionText {
+  text-align: left;
+}
+
 .middleTwoColumnsSection {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -317,7 +461,7 @@
 .columnFeatures, .columnLocation {
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 1.5rem;
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
   display: flex;
@@ -335,6 +479,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.65rem;
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid #f1f5f9;
@@ -355,6 +501,7 @@
   padding: 0.35rem 0.85rem;
   border-radius: 50px;
   border: 1px solid #dbeafe;
+  white-space: nowrap;
 }
 
 /* شبكة عرض المميزات بشكل متناسق ومحدد */
@@ -370,7 +517,7 @@
   gap: 0.75rem;
   background-color: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 0.75rem 0.95rem;
   transition: all 0.2s ease;
 }
@@ -401,14 +548,13 @@
   font-weight: 700;
   font-size: 0.9rem;
   color: #1e293b;
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.35;
+  display: block;
+  overflow-wrap: break-word;
 }
 
 .featureIconBox {
-  display: none; /* إخفاء الأيقونة الزائدة في اليسار لتبسيط العرض */
+  display: none;
 }
 
 .addressMeta {
@@ -425,7 +571,7 @@
   width: 100%;
   flex: 1;
   min-height: 270px;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
   border: 1px solid #cbd5e1;
   margin-bottom: 1rem;
@@ -450,8 +596,8 @@
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   border: none;
   color: #ffffff;
-  padding: 0.75rem 1.25rem;
-  border-radius: 8px;
+  padding: 0.8rem 1.25rem;
+  border-radius: 10px;
   font-weight: 800;
   font-size: 0.9rem;
   text-decoration: none;
@@ -490,7 +636,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.1rem 1.6rem;
+  padding: 1.15rem 1.6rem;
   border-bottom: 1px solid #f1f5f9;
   transition: all 0.2s ease;
   gap: 1.5rem;
@@ -523,13 +669,17 @@
   text-align: left;
 }
 
+:global(html[dir="rtl"]) .packageTitle {
+  text-align: right;
+}
+
 .priceTag {
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   font-weight: 800;
   color: #0052cc;
   white-space: nowrap;
   background-color: #eff6ff;
-  padding: 0.35rem 0.85rem;
+  padding: 0.38rem 0.9rem;
   border-radius: 50px;
   border: 1px solid #dbeafe;
 }
@@ -538,7 +688,7 @@
   background: linear-gradient(135deg, #0052cc 0%, #0043a8 100%);
   color: #ffffff;
   border: none;
-  padding: 0.55rem 1.35rem;
+  padding: 0.58rem 1.45rem;
   border-radius: 50px;
   font-weight: 800;
   font-size: 0.875rem;
@@ -564,7 +714,7 @@
    ========================================= */
 .whatsappFloatBtn {
   position: fixed;
-  bottom: 28px;
+  bottom: 24px;
   width: 58px;
   height: 58px;
   background-color: #25d366;
@@ -580,12 +730,12 @@
 }
 
 :global(html[dir="rtl"]) .whatsappFloatBtn {
-  left: 28px;
+  left: 24px;
   right: auto;
 }
 
 :global(html[dir="ltr"]) .whatsappFloatBtn {
-  right: 28px;
+  right: 24px;
   left: auto;
 }
 
@@ -625,17 +775,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.25rem;
+  padding: 1rem;
+  overflow-y: auto;
 }
 
 .modalBox {
   background-color: #ffffff;
-  border-radius: 28px;
+  border-radius: 26px;
   width: 100%;
   max-width: 540px;
-  padding: 2.25rem;
-  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.2);
+  max-height: 92dvh;
+  overflow-y: auto;
+  padding: 2rem;
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.22);
   border: 1px solid #e2e8f0;
+  animation: modalScaleIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .videoModalBox {
@@ -644,6 +798,8 @@
   width: 100%;
   max-width: 720px;
   padding: 1.5rem;
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.25);
+  animation: modalScaleIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .videoFrameWrapper {
@@ -653,6 +809,7 @@
   overflow: hidden;
   border-radius: 16px;
   margin-top: 1rem;
+  background-color: #0f172a;
 }
 
 .videoFrameWrapper iframe {
@@ -668,13 +825,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.75rem;
   margin-bottom: 1.25rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid #f1f5f9;
 }
 
 .modalHeader h3 {
-  font-size: 1.25rem;
+  font-size: 1.22rem;
   font-weight: 800;
   color: #0f172a;
   margin: 0;
@@ -683,12 +841,13 @@
 .modalCloseBtn {
   background: #f1f5f9;
   border: none;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   color: #64748b;
   cursor: pointer;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -703,19 +862,20 @@
 .modalForm {
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
+  gap: 1rem;
 }
 
 .formRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 0.9rem;
 }
 
 .inputGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.4rem;
+  min-width: 0;
 }
 
 .inputGroup label {
@@ -725,7 +885,9 @@
 }
 
 .inputGroup input {
-  padding: 0.8rem 1.1rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.78rem 1.05rem;
   border-radius: 50px;
   border: 1px solid #cbd5e1;
   background-color: #f8fafc;
@@ -742,7 +904,9 @@
 }
 
 .selectInput {
-  padding: 0.8rem 1.1rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.78rem 1.05rem;
   border-radius: 50px;
   border: 1px solid #cbd5e1;
   background-color: #f8fafc;
@@ -752,18 +916,20 @@
   color: #0f172a;
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%3c475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
   background-size: 1.1em;
   transition: all 0.2s ease;
 }
 
 :global(html[dir="rtl"]) .selectInput {
-  background-position: left 1.1rem center;
+  background-position: left 1.05rem center;
+  padding-left: 2.3rem;
 }
 
 :global(html[dir="ltr"]) .selectInput {
-  background-position: right 1.1rem center;
+  background-position: right 1.05rem center;
+  padding-right: 2.3rem;
 }
 
 .selectInput:focus {
@@ -772,33 +938,45 @@
   box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.12);
 }
 
+.dateErrorBox {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
 .submitBookingBtn {
   background: linear-gradient(135deg, #0052cc 0%, #0043a8 100%);
   color: #ffffff;
   border: none;
-  padding: 0.9rem;
+  padding: 0.92rem;
   border-radius: 50px;
   font-weight: 800;
   font-size: 1rem;
   cursor: pointer;
-  margin-top: 0.5rem;
+  margin-top: 0.35rem;
   box-shadow: 0 6px 18px rgba(0, 82, 204, 0.28);
   transition: all 0.2s ease;
 }
 
-.submitBookingBtn:hover {
+.submitBookingBtn:hover:not(:disabled) {
   background: linear-gradient(135deg, #0043a8 0%, #003380 100%);
   transform: translateY(-1px);
   box-shadow: 0 8px 22px rgba(0, 82, 204, 0.35);
 }
 
-.submitBookingBtn:active {
-  transform: translateY(0);
+.submitBookingBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .successMessageBox {
   text-align: center;
-  padding: 1.5rem 1rem;
+  padding: 1.75rem 1rem;
 }
 
 .successMessageBox h4 {
@@ -811,44 +989,188 @@
 .successMessageBox p {
   color: #64748b;
   font-size: 0.95rem;
+  line-height: 1.6;
   margin: 0;
 }
 
+/* =========================================
+   تجاوب الأجهزة اللوحية والهواتف
+   ========================================= */
 @media (max-width: 900px) {
-  .navLinks { display: none; }
-  .middleTwoColumnsSection { grid-template-columns: 1fr; }
+  .navLinks {
+    display: none;
+  }
+
+  .mobileQuickNav {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    background-color: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .mobileQuickNav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobileQuickNav button {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 0.42rem 0.95rem;
+    border-radius: 50px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .mobileQuickNav button:active,
+  .mobileQuickNav button:hover {
+    background-color: #eff6ff;
+    border-color: #bfdbfe;
+    color: #0052cc;
+  }
+
+  .middleTwoColumnsSection {
+    grid-template-columns: 1fr;
+  }
+
+  .carouselCard,
+  .skeletonHeroCarousel {
+    height: 380px;
+  }
 }
 
 @media (max-width: 640px) {
-  .formRow { grid-template-columns: 1fr; }
-  .carouselCard { height: 320px; }
-  .modalBox { padding: 1.5rem; }
+  .topHeader {
+    height: 68px;
+  }
+
+  .headerContainer {
+    padding: 0 0.9rem;
+    gap: 0.5rem;
+  }
+
+  .logoBadge {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+  }
+
+  .venueLogo strong {
+    font-size: 0.98rem;
+  }
+
+  .headerCtaBtn {
+    padding: 0.5rem 1rem;
+    font-size: 0.82rem;
+  }
+
+  .langBtn {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  .mainContainer {
+    margin: 1.25rem auto 4.5rem auto;
+    padding: 0 0.9rem;
+  }
+
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+
+  .carouselCard,
+  .skeletonHeroCarousel {
+    height: 270px;
+    border-radius: 18px;
+  }
+
+  .navBtn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .videoOverlayBtn {
+    top: 12px;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.78rem;
+  }
+
+  :global(html[dir="rtl"]) .videoOverlayBtn {
+    left: 12px;
+  }
+
+  :global(html[dir="ltr"]) .videoOverlayBtn {
+    right: 12px;
+  }
+
+  .columnFeatures,
+  .columnLocation {
+    padding: 1.15rem;
+  }
+
+  .modalBox {
+    padding: 1.35rem;
+    border-radius: 20px;
+  }
+
   .pricingRow {
     flex-direction: column;
     align-items: stretch;
     gap: 0.85rem;
-    padding: 1rem 1.2rem;
+    padding: 1rem 1.15rem;
   }
+
   .pricingMeta {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.4rem;
   }
+
   .priceTag {
     align-self: flex-start;
   }
+
   .rowBookBtn {
     width: 100%;
     text-align: center;
-    padding: 0.7rem;
+    padding: 0.75rem;
   }
+
   .amenitiesGridList {
     grid-template-columns: 1fr;
   }
+
+  .whatsappFloatBtn {
+    width: 52px;
+    height: 52px;
+    bottom: 18px;
+  }
+
+  :global(html[dir="rtl"]) .whatsappFloatBtn {
+    left: 16px;
+  }
+
+  :global(html[dir="ltr"]) .whatsappFloatBtn {
+    right: 16px;
+  }
 }
+
 /* =========================================
    تنسيقات تقويم react-datepicker للأيام المحجوزة
    ========================================= */
+:global(.react-datepicker-wrapper) {
+  width: 100%;
+}
+
 :global(.react-datepicker) {
   font-family: inherit;
   border-radius: 16px;

@@ -6,6 +6,7 @@ import { IconPlus, IconCheck } from '../Icons';
 
 export default function StaffTab({
   isAr = true,
+  isLoading = false,
   hallId,
   staffMembers = [],
   setStaffMembers,
@@ -23,6 +24,8 @@ export default function StaffTab({
   });
   const [creating, setCreating] = useState(false);
 
+  const localeStr = isAr ? 'ar-DZ' : 'fr-FR';
+
   // حالات تعديل الصلاحيات مباشرة من البطاقة
   const [editingMemberId, setEditingMemberId] = useState(null);
   const [editingPerms, setEditingPerms] = useState({
@@ -37,6 +40,10 @@ export default function StaffTab({
   const [passwordMemberId, setPasswordMemberId] = useState(null);
   const [newMemberPassword, setNewMemberPassword] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
+
+  // حالة نافذة تأكيد الحذف المخصصة في منتصف الشاشة
+  const [memberToDelete, setMemberToDelete] = useState(null);
+  const [deletingMember, setDeletingMember] = useState(false);
 
   // حالة كرت الإشعار في منتصف الشاشة
   const [feedbackModal, setFeedbackModal] = useState({
@@ -334,41 +341,40 @@ export default function StaffTab({
     }
   };
 
-  const handleDeleteStaff = async (member) => {
-    if (
-      !window.confirm(
-        isAr
-          ? `هل أنت متأكد من حذف الموظف "${member.full_name}" وحسابه نهائياً؟`
-          : `Supprimer définitivement l'employé "${member.full_name}" et son compte ?`
-      )
-    ) {
-      return;
-    }
+  const handleConfirmDeleteStaff = async () => {
+    if (!memberToDelete || deletingMember) return;
+    setDeletingMember(true);
 
     try {
       const { error } = await supabase.rpc('delete_staff_account', {
-        p_staff_id: member.id,
-        p_user_id: member.user_id || null,
-        p_email: member.email || null
+        p_staff_id: memberToDelete.id,
+        p_user_id: memberToDelete.user_id || null,
+        p_email: memberToDelete.email || null
       });
 
       if (error) throw error;
 
-      setStaffMembers((prev) => prev.filter((m) => m.id !== member.id));
+      const deletedName = memberToDelete.full_name;
+      setStaffMembers((prev) => prev.filter((m) => m.id !== memberToDelete.id));
+      setMemberToDelete(null);
+
       showFeedback(
         isAr
-          ? `تم حذف الموظف "${member.full_name}" نهائياً.`
-          : `Employé "${member.full_name}" supprimé.`,
+          ? `تم حذف الموظف "${deletedName}" نهائياً.`
+          : `Employé "${deletedName}" supprimé.`,
         'success'
       );
     } catch (err) {
       console.error('خطأ في حذف الموظف:', err);
+      setMemberToDelete(null);
       showFeedback(
         isAr
           ? 'حدث خطأ أثناء الحذف النهائي: ' + err.message
           : 'Erreur lors de la suppression : ' + err.message,
         'error'
       );
+    } finally {
+      setDeletingMember(false);
     }
   };
 
@@ -411,6 +417,7 @@ export default function StaffTab({
               <label>{isAr ? 'رقم الهاتف' : 'Téléphone'}</label>
               <input
                 type="tel"
+                dir="ltr"
                 placeholder="0550 00 00 00"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -421,6 +428,7 @@ export default function StaffTab({
               <label>{isAr ? 'البريد الإلكتروني (للدخول)' : 'Email de connexion'}</label>
               <input
                 type="email"
+                dir="ltr"
                 required
                 placeholder="staff@salati.dz"
                 value={email}
@@ -432,6 +440,7 @@ export default function StaffTab({
               <label>{isAr ? 'كلمة المرور' : 'Mot de passe'}</label>
               <input
                 type="text"
+                dir="ltr"
                 required
                 minLength={6}
                 placeholder={isAr ? '6 أحرف على الأقل' : 'Min 6 caractères'}
@@ -529,7 +538,33 @@ export default function StaffTab({
           </span>
         </div>
 
-        {staffMembers.length === 0 ? (
+        {isLoading ? (
+          <div className={styles.staffCardsGrid} aria-busy="true">
+            {[0, 1, 2].map((idx) => (
+              <div key={idx} className={styles.staffCard}>
+                <div className={styles.staffCardTop}>
+                  <div className={styles.staffIdentity}>
+                    <div className={`${styles.skeletonBase} ${styles.skeletonAvatar}`} />
+                    <div className={styles.staffMeta} style={{ flex: 1, gap: '0.45rem' }}>
+                      <div className={`${styles.skeletonBase} ${styles.skeletonName}`} />
+                      <div className={`${styles.skeletonBase} ${styles.skeletonEmail}`} />
+                    </div>
+                  </div>
+                  <div className={`${styles.skeletonBase} ${styles.skeletonBadge}`} />
+                </div>
+                <div className={`${styles.skeletonBase} ${styles.skeletonRow}`} />
+                <div className={styles.staffPermsBadges}>
+                  <div className={`${styles.skeletonBase} ${styles.skeletonChip}`} />
+                  <div className={`${styles.skeletonBase} ${styles.skeletonChip}`} />
+                </div>
+                <div className={styles.staffCardActions}>
+                  <div className={`${styles.skeletonBase} ${styles.skeletonAction}`} />
+                  <div className={`${styles.skeletonBase} ${styles.skeletonAction}`} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : staffMembers.length === 0 ? (
           <div className={styles.emptyStateBox}>
             <p style={{ margin: 0, fontWeight: 700 }}>
               {isAr
@@ -585,7 +620,12 @@ export default function StaffTab({
                       {isAr ? 'الطلبيات المؤكدة بواسطته:' : 'Confirmations :'}
                     </span>
                     <strong style={{ color: '#0052cc', fontSize: '0.95rem' }}>
-                      {confirmedCount} {isAr ? 'طلبية' : 'demande(s)'}
+                      {confirmedCount.toLocaleString(localeStr)}{' '}
+                      {isAr
+                        ? 'طلبية'
+                        : confirmedCount <= 1
+                        ? 'demande'
+                        : 'demandes'}
                     </strong>
                   </div>
 
@@ -600,6 +640,7 @@ export default function StaffTab({
 
                       <input
                         type="text"
+                        dir="ltr"
                         minLength={6}
                         className={styles.inlinePassInput}
                         placeholder={isAr ? 'كلمة المرور الجديدة...' : 'Nouveau mot de passe...'}
@@ -799,7 +840,7 @@ export default function StaffTab({
                     <button
                       type="button"
                       className={styles.deleteStaffBtn}
-                      onClick={() => handleDeleteStaff(member)}
+                      onClick={() => setMemberToDelete(member)}
                     >
                       {isAr ? 'حذف' : 'Supprimer'}
                     </button>
@@ -810,6 +851,56 @@ export default function StaffTab({
           </div>
         )}
       </div>
+
+      {/* نافذة تأكيد حذف الموظف في منتصف الشاشة */}
+      {memberToDelete &&
+        createPortal(
+          <div
+            className={styles.feedbackBackdrop}
+            onClick={() => !deletingMember && setMemberToDelete(null)}
+          >
+            <div
+              dir={isAr ? 'rtl' : 'ltr'}
+              className={styles.feedbackCard}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={styles.feedbackIconError}>⚠️</div>
+              <h3 className={styles.feedbackTitle}>
+                {isAr ? 'تأكيد حذف الموظف' : "Confirmer la suppression"}
+              </h3>
+              <p className={styles.feedbackMessage}>
+                {isAr
+                  ? `هل أنت متأكد من حذف الموظف "${memberToDelete.full_name}" وحسابه نهائياً؟`
+                  : `Supprimer définitivement l'employé "${memberToDelete.full_name}" et son compte ?`}
+              </p>
+              <div className={styles.confirmModalActions}>
+                <button
+                  type="button"
+                  disabled={deletingMember}
+                  className={styles.confirmDangerBtn}
+                  onClick={handleConfirmDeleteStaff}
+                >
+                  {deletingMember
+                    ? isAr
+                      ? 'جاري الحذف...'
+                      : 'Suppression...'
+                    : isAr
+                    ? 'نعم، حذف نهائي'
+                    : 'Oui, supprimer'}
+                </button>
+                <button
+                  type="button"
+                  disabled={deletingMember}
+                  className={styles.confirmCancelBtn}
+                  onClick={() => setMemberToDelete(null)}
+                >
+                  {isAr ? 'إلغاء' : 'Annuler'}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* كرت الإشعار الجميل في منتصف الشاشة بالكامل */}
       {feedbackModal.open &&

@@ -30,10 +30,103 @@
   }
 }
 
+@keyframes shimmerWave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes modalPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.skeletonBase {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmerWave 1.4s infinite linear;
+  border-radius: 14px;
+}
+
+.skeletonTitle {
+  width: 240px;
+  max-width: 70%;
+  height: 28px;
+  margin-bottom: 0.5rem;
+}
+
+.skeletonSub {
+  width: 340px;
+  max-width: 90%;
+  height: 16px;
+}
+
+.skeletonBtn {
+  width: 190px;
+  height: 42px;
+}
+
+.skeletonHero {
+  width: 100%;
+  height: 220px;
+  border-radius: 26px;
+  margin-bottom: 1.5rem;
+}
+
+.skeletonInfoLineSm {
+  width: 55%;
+  height: 14px;
+  margin-bottom: 0.55rem;
+}
+
+.skeletonInfoLineLg {
+  width: 75%;
+  height: 22px;
+  margin-bottom: 0.55rem;
+}
+
+.skeletonPlanCard {
+  width: 100%;
+  height: 360px;
+  border-radius: 20px;
+}
+
+.skeletonHistoryTitle {
+  width: 180px;
+  height: 20px;
+  margin-bottom: 0.85rem;
+}
+
+.skeletonHistoryRow {
+  width: 100%;
+  height: 62px;
+}
+
 .wrapper {
   max-width: 1040px;
   margin: 0 auto;
   padding-bottom: 2rem;
+}
+
+.pendingAlertBanner {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+  padding: 0.85rem 1.1rem;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
 }
 
 .headerRow {
@@ -44,6 +137,21 @@
   gap: 1rem;
   margin-bottom: 1.5rem;
   animation: fadeSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.pageMainTitle {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.pageSubTitle {
+  margin: 0.3rem 0 0;
+  color: #64748b;
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
 /* البطاقة الرئيسية (Hero Card) */
@@ -86,6 +194,75 @@
   animation: shimmerSweep 1.1s ease-out;
 }
 
+.heroGlowOrb {
+  position: absolute;
+  top: -60px;
+  inset-inline-end: -60px;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.14) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.heroTopFlex {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.heroDetailsCol {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.heroBadgesRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+}
+
+.heroStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.32rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.heroCycleBadge {
+  background: rgba(255, 255, 255, 0.14);
+  color: #e2e8f0;
+  padding: 0.32rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.heroPlanTitle {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.heroPlanTagline {
+  margin: 0.45rem 0 0;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 0.92rem;
+  max-width: 520px;
+  line-height: 1.6;
+}
+
 .statusDot {
   width: 8px;
   height: 8px;
@@ -110,10 +287,73 @@
   border-color: rgba(255, 255, 255, 0.38);
 }
 
+.countdownLabel {
+  display: block;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 700;
+}
+
+.countdownNumbersRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
+
+.countdownBigDays {
+  font-size: 2.1rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.countdownUnitText {
+  font-size: 0.95rem;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.countdownExpiry {
+  margin-top: 0.45rem;
+  font-size: 0.78rem;
+  color: #bae6fd;
+  font-weight: 600;
+}
+
+.heroProgressWrap {
+  margin-top: 1.6rem;
+  position: relative;
+  z-index: 1;
+}
+
+.heroProgressMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 700;
+  margin-bottom: 0.45rem;
+}
+
+.heroProgressTrack {
+  width: 100%;
+  height: 9px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.heroProgressFill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
 /* بطاقات المعلومات السريعة الثلاث */
 .infoGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   gap: 1rem;
   margin-bottom: 1.75rem;
 }
@@ -140,6 +380,44 @@
   box-shadow: 0 14px 28px rgba(0, 82, 204, 0.09);
 }
 
+.infoLabel {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.infoValueDark {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 1.05rem;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.infoValueBlue {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 1.15rem;
+  color: #0052cc;
+  font-weight: 900;
+}
+
+.infoSubMuted {
+  color: #94a3b8;
+  font-size: 0.78rem;
+}
+
+.infoSubSlate {
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.infoSubGreen {
+  color: #16a34a;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 /* حاوية الباقات والتجديد */
 .plansSection {
   background: #ffffff;
@@ -148,6 +426,80 @@
   padding: 1.75rem;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
   animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.34s both;
+}
+
+.plansSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.plansSectionTitle {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.plansSectionSub {
+  margin: 0.25rem 0 0;
+  font-size: 0.86rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.cycleTabsWrap {
+  display: inline-flex;
+  background: #f1f5f9;
+  padding: 0.32rem;
+  border-radius: 14px;
+  gap: 0.3rem;
+}
+
+.cycleTabBtn {
+  border: none;
+  padding: 0.48rem 0.9rem;
+  border-radius: 11px;
+  font-weight: 800;
+  font-size: 0.82rem;
+  cursor: pointer;
+  background: transparent;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cycleTabBtn:hover {
+  color: #0052cc;
+  transform: translateY(-1px);
+}
+
+.cycleTabBtnActive {
+  background: #ffffff;
+  color: #0052cc;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.cycleDiscountBadge {
+  background: #dcfce7;
+  color: #15803d;
+  padding: 0.1rem 0.42rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.plansGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+  gap: 1.25rem;
 }
 
 /* بطاقات مقارنة الباقات */
@@ -182,6 +534,83 @@
   box-shadow: 0 22px 42px rgba(0, 82, 204, 0.18);
 }
 
+.planCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.planCardTitle {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.currentPlanBadge {
+  background: #dbeafe;
+  color: #1d4ed8;
+  padding: 0.22rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.popularPlanBadge {
+  background: #0052cc;
+  color: #ffffff;
+  padding: 0.22rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.planCardSubtitle {
+  margin: 0 0 1rem;
+  font-size: 0.84rem;
+  color: #64748b;
+}
+
+.planPriceBox {
+  margin-bottom: 1.15rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.planPriceNumber {
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.planPriceUnit {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #475569;
+  margin-inline-start: 0.35rem;
+}
+
+.planFeaturesList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.planFeatureItem {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
 /* الأزرار التفاعلية */
 .ctaButton {
   display: block;
@@ -208,6 +637,7 @@
 .supportBtn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   background: #0f172a;
   color: #ffffff;
@@ -226,20 +656,355 @@
   box-shadow: 0 10px 22px rgba(15, 23, 42, 0.22);
 }
 
-.cycleTabBtn {
+/* سجل عمليات الدفع */
+.historyCard {
+  margin-top: 1.5rem;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 1.35rem;
+  border: 1px solid #e2e8f0;
+  animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.historyTitle {
+  margin: 0 0 1rem;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.historyRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.historyPlanName {
+  color: #0f172a;
+  font-size: 0.92rem;
+}
+
+.historyMeta {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 0.2rem;
+}
+
+.historyStatusBadge {
+  padding: 0.28rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* نافذة الدفع */
+.checkoutBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 9999;
+}
+
+.checkoutModalBox {
+  background: #ffffff;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90dvh;
+  overflow-y: auto;
+  padding: 1.6rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: modalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.checkoutHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.checkoutTitle {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.checkoutSubtitle {
+  margin: 0.2rem 0 0;
+  font-size: 0.84rem;
+  color: #64748b;
+}
+
+.checkoutCloseBtn {
+  background: #f1f5f9;
   border: none;
-  padding: 0.48rem 0.9rem;
-  border-radius: 11px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-weight: 800;
+  color: #475569;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.checkoutCloseBtn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.paymentMethodsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1.15rem;
+}
+
+.paymentMethodBtn {
+  padding: 0.7rem 0.5rem;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
   font-weight: 800;
   font-size: 0.82rem;
   cursor: pointer;
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
-  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  gap: 0.25rem;
+  transition: all 0.2s ease;
 }
 
-.cycleTabBtn:hover {
+.paymentMethodBtnActive {
+  border: 2px solid #0052cc;
+  background: #eff6ff;
   color: #0052cc;
-  transform: translateY(-1px);
+}
+
+.paymentDetailsBox {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1rem;
+  margin-bottom: 1.15rem;
+}
+
+.paymentAmountRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.paymentAmountLabel {
+  font-size: 0.84rem;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.paymentAmountBlue {
+  font-size: 1.05rem;
+  color: #0052cc;
+  font-weight: 900;
+}
+
+.paymentAmountGreen {
+  font-size: 1.05rem;
+  color: #16a34a;
+  font-weight: 900;
+}
+
+.beneficiaryRow {
+  font-size: 0.84rem;
+  color: #334155;
+  margin-bottom: 0.45rem;
+}
+
+.copyFieldRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.copyFieldValue {
+  font-size: 0.82rem;
+  color: #0f172a;
+  word-break: break-all;
+}
+
+.copyMiniBtn {
+  background: #e2e8f0;
+  border: none;
+  border-radius: 8px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease;
+}
+
+.copyMiniBtn:hover {
+  background: #cbd5e1;
+}
+
+.visaPayLinkBtn {
+  display: inline-block;
+  margin-top: 0.35rem;
+  background: #0052cc;
+  color: #ffffff;
+  padding: 0.55rem 1rem;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.feedbackAlertBox {
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.feedbackAlertSuccess {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.feedbackAlertError {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.checkoutForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.checkoutFieldLabel {
+  display: block;
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 0.35rem;
+}
+
+.checkoutFileInput {
+  width: 100%;
+  padding: 0.6rem;
+  border-radius: 12px;
+  border: 1px dashed #94a3b8;
+  background: #f8fafc;
+  font-size: 0.84rem;
+  box-sizing: border-box;
+}
+
+.checkoutTextInput {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.88rem;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.checkoutTextInput:focus {
+  border-color: #0052cc;
+  box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.12);
+}
+
+/* =========================================
+   تجاوب الأجهزة اللوحية والهواتف
+   ========================================= */
+@media (max-width: 640px) {
+  .pageMainTitle {
+    font-size: 1.3rem;
+  }
+
+  .supportBtn {
+    width: 100%;
+  }
+
+  .heroCard {
+    padding: 1.35rem;
+    border-radius: 22px;
+  }
+
+  .heroPlanTitle {
+    font-size: 1.35rem;
+  }
+
+  .countdownBox {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .countdownBigDays {
+    font-size: 1.75rem;
+  }
+
+  .plansSection {
+    padding: 1.2rem;
+    border-radius: 20px;
+  }
+
+  .cycleTabsWrap {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+  }
+
+  .cycleTabBtn {
+    padding: 0.5rem 0.4rem;
+    font-size: 0.78rem;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .planCard {
+    padding: 1.2rem;
+  }
+
+  .checkoutModalBox {
+    padding: 1.2rem;
+    border-radius: 20px;
+  }
+}
+
+@media (max-width: 380px) {
+  .paymentMethodsGrid {
+    grid-template-columns: 1fr;
+  }
 }

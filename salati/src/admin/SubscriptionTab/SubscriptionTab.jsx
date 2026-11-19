@@ -2,10 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import styles from './SubscriptionTab.module.css';
 
-export default function SubscriptionTab({ isAr = true, hallData, platformSettings }) {
+export default function SubscriptionTab({
+  isAr = true,
+  isLoading = false,
+  hallData,
+  platformSettings
+}) {
   const planTier = hallData?.plan_tier || 'basic';
   const currentBillingCycle = hallData?.billing_cycle || 'monthly';
   const subStatus = hallData?.subscription_status || 'trial';
+
+  const localeStr = isAr ? 'ar-DZ' : 'fr-FR';
+  const currencyLabel = isAr ? 'دج' : 'DA';
 
   const [selectedCycle, setSelectedCycle] = useState(currentBillingCycle);
 
@@ -18,6 +26,7 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
   const [paymentFeedback, setPaymentFeedback] = useState({ type: '', text: '' });
   const [copiedField, setCopiedField] = useState('');
   const [paymentHistory, setPaymentHistory] = useState([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
 
   const basicMonthly = Number(platformSettings?.basic_monthly_price || 3500);
   const proMonthly = Number(platformSettings?.pro_monthly_price || 6500);
@@ -39,13 +48,18 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
   // جلب سجل مدفوعات الصالة السابقة
   const fetchPayments = async () => {
     if (!hallData?.id) return;
-    const { data } = await supabase
-      .from('subscription_payments')
-      .select('*')
-      .eq('hall_id', hallData.id)
-      .order('created_at', { ascending: false });
+    setLoadingPayments(true);
+    try {
+      const { data } = await supabase
+        .from('subscription_payments')
+        .select('*')
+        .eq('hall_id', hallData.id)
+        .order('created_at', { ascending: false });
 
-    if (data) setPaymentHistory(data);
+      if (data) setPaymentHistory(data);
+    } finally {
+      setLoadingPayments(false);
+    }
   };
 
   useEffect(() => {
@@ -157,7 +171,7 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
 
   const planMeta = {
     basic: {
-      name: isAr ? 'الباقة الأساسية (Essentiel)' : 'Offre Essentiel',
+      name: isAr ? 'الباقة الأساسية (Essentielle)' : 'Offre Essentielle',
       tagline: isAr
         ? 'كل الأدوات الأساسية لإدارة حجوزات الصالة وتنظيم المواعيد'
         : 'Tous les outils essentiels pour gérer les réservations de votre salle',
@@ -260,7 +274,7 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
       : Math.min(100, Math.max(4, Math.round((daysLeft / totalCycleDays) * 100)));
 
   const formattedEndDate = endDateObj
-    ? endDateObj.toLocaleDateString(isAr ? 'ar-DZ' : 'fr-FR', {
+    ? endDateObj.toLocaleDateString(localeStr, {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -271,7 +285,7 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
     : 'Non défini';
 
   const formattedStartDate = createdDateObj
-    ? createdDateObj.toLocaleDateString(isAr ? 'ar-DZ' : 'fr-FR', {
+    ? createdDateObj.toLocaleDateString(localeStr, {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
@@ -284,7 +298,7 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
     const targetName = planMeta[targetPlanKey]?.name || activePlan.name;
     const cycleName = cycleLabels[cycleKey]?.title || '';
     const amount = calculatePrice(planMeta[targetPlanKey]?.monthlyPrice || 0, cycleKey);
-    const priceStr = amount ? ` (${amount.toLocaleString()} دج)` : '';
+    const priceStr = amount ? ` (${amount.toLocaleString(localeStr)} ${currencyLabel})` : '';
 
     const text = isAr
       ? `مرحباً فريق Salati، أرغب في تفعيل / تجديد اشتراك صالة "${
@@ -300,7 +314,7 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
   const comparisonPlans = [
     {
       key: 'basic',
-      title: isAr ? 'الباقة الأساسية' : 'Essentiel',
+      title: isAr ? 'الباقة الأساسية' : 'Essentielle',
       subtitle: isAr ? 'للانطلاق وتنظيم الحجوزات' : 'Pour démarrer sereinement',
       monthlyPrice: basicMonthly,
       popular: false,
@@ -319,7 +333,7 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
       monthlyPrice: proMonthly,
       popular: true,
       features: [
-        { text: isAr ? 'جميع ميزات الباقة الأساسية بالكامل' : 'Toutes les fonctions Essentiel', ok: true },
+        { text: isAr ? 'جميع ميزات الباقة الأساسية بالكامل' : 'Toutes les fonctions Essentielle', ok: true },
         { text: isAr ? 'كود QR الذكي لزيادة تقييمات Google Maps' : 'QR Code intelligent avis Google', ok: true },
         { text: isAr ? 'بطاقة تقييم جاهزة للطباعة داخل الصالة' : 'Carte d’avis imprimable en salle', ok: true },
         { text: isAr ? 'أولوية قصوى في الدعم الفني والتحديثات' : 'Support prioritaire & nouveautés', ok: true },
@@ -331,22 +345,45 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
   const isUrgent = daysLeft !== null && daysLeft <= 5;
   const hasPendingPayment = paymentHistory.some((p) => p.status === 'pending');
 
+  if (isLoading) {
+    return (
+      <div dir={isAr ? 'rtl' : 'ltr'} className={styles.wrapper} aria-busy="true">
+        <div className={styles.headerRow}>
+          <div style={{ flex: 1 }}>
+            <div className={`${styles.skeletonBase} ${styles.skeletonTitle}`} />
+            <div className={`${styles.skeletonBase} ${styles.skeletonSub}`} />
+          </div>
+          <div className={`${styles.skeletonBase} ${styles.skeletonBtn}`} />
+        </div>
+
+        <div className={`${styles.skeletonBase} ${styles.skeletonHero}`} />
+
+        <div className={styles.infoGrid}>
+          {[0, 1, 2].map((idx) => (
+            <div key={idx} className={styles.infoCard}>
+              <div className={`${styles.skeletonBase} ${styles.skeletonInfoLineSm}`} />
+              <div className={`${styles.skeletonBase} ${styles.skeletonInfoLineLg}`} />
+              <div className={`${styles.skeletonBase} ${styles.skeletonInfoLineSm}`} />
+            </div>
+          ))}
+        </div>
+
+        <div className={styles.plansSection}>
+          <div className={styles.plansGrid}>
+            {[0, 1].map((idx) => (
+              <div key={idx} className={`${styles.skeletonBase} ${styles.skeletonPlanCard}`} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div dir={isAr ? 'rtl' : 'ltr'} className={styles.wrapper}>
       {/* تنبيه وجود طلب دفع قيد المراجعة */}
       {hasPendingPayment && (
-        <div
-          style={{
-            background: '#fef3c7',
-            border: '1px solid #fcd34d',
-            color: '#92400e',
-            padding: '0.85rem 1.1rem',
-            borderRadius: '14px',
-            fontWeight: 800,
-            fontSize: '0.9rem',
-            marginBottom: '1rem'
-          }}
-        >
+        <div className={styles.pendingAlertBanner}>
           {isAr
             ? '⏳ لديك طلب دفع قيد المراجعة حالياً — سيتم تفعيل اشتراكك فور تأكيد التحويل.'
             : '⏳ Vous avez un paiement en cours de vérification — votre abonnement sera activé sous peu.'}
@@ -356,10 +393,10 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
       {/* رأس الصفحة */}
       <div className={styles.headerRow}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.55rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>
+          <h2 className={styles.pageMainTitle}>
             {isAr ? 'إدارة الاشتراك والباقة' : 'Abonnement & Facturation'}
           </h2>
-          <p style={{ margin: '0.3rem 0 0', color: '#64748b', fontSize: '0.92rem' }}>
+          <p className={styles.pageSubTitle}>
             {isAr
               ? 'راقب حالة اشتراكك، المدة المتبقية، وقم بالتجديد أو الترقية في أي وقت'
               : 'Suivez votre forfait actif, votre échéance et gérez vos renouvellements'}
@@ -379,43 +416,16 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
 
       {/* البطاقة الرئيسية الفاخرة (Hero Subscription Card) */}
       <div className={styles.heroCard} style={{ background: activePlan.gradient }}>
-        <div
-          style={{
-            position: 'absolute',
-            top: '-60px',
-            insetInlineEnd: '-60px',
-            width: '240px',
-            height: '240px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.14) 0%, transparent 70%)',
-            pointerEvents: 'none'
-          }}
-        />
+        <div className={styles.heroGlowOrb} />
 
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            flexWrap: 'wrap',
-            gap: '1.5rem',
-            position: 'relative',
-            zIndex: 1
-          }}
-        >
-          <div style={{ flex: '1 1 340px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.85rem' }}>
+        <div className={styles.heroTopFlex}>
+          <div className={styles.heroDetailsCol}>
+            <div className={styles.heroBadgesRow}>
               <span
+                className={styles.heroStatusBadge}
                 style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
                   background: currentStatus.bg,
-                  color: currentStatus.color,
-                  padding: '0.32rem 0.85rem',
-                  borderRadius: '999px',
-                  fontSize: '0.78rem',
-                  fontWeight: 800
+                  color: currentStatus.color
                 }}
               >
                 <span
@@ -425,24 +435,15 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
                 {currentStatus.label}
               </span>
 
-              <span
-                style={{
-                  background: 'rgba(255, 255, 255, 0.14)',
-                  color: '#e2e8f0',
-                  padding: '0.32rem 0.8rem',
-                  borderRadius: '999px',
-                  fontSize: '0.78rem',
-                  fontWeight: 700
-                }}
-              >
+              <span className={styles.heroCycleBadge}>
                 {cycleLabels[currentBillingCycle]?.title || (isAr ? 'شهري' : 'Mensuel')}
               </span>
             </div>
 
-            <h3 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em' }}>
+            <h3 className={styles.heroPlanTitle}>
               💎 {activePlan.name}
             </h3>
-            <p style={{ margin: '0.45rem 0 0', color: 'rgba(255, 255, 255, 0.82)', fontSize: '0.92rem', maxWidth: '520px', lineHeight: 1.6 }}>
+            <p className={styles.heroPlanTagline}>
               {activePlan.tagline}
             </p>
           </div>
@@ -452,24 +453,24 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
             className={styles.countdownBox}
             style={{ textAlign: isAr ? 'right' : 'left' }}
           >
-            <span style={{ display: 'block', fontSize: '0.78rem', color: 'rgba(255,255,255,0.78)', fontWeight: 700 }}>
+            <span className={styles.countdownLabel}>
               {isAr ? 'المدة المتبقية في الاشتراك' : 'Temps restant'}
             </span>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.3rem' }}>
-              <strong style={{ fontSize: '2.1rem', fontWeight: 900, lineHeight: 1 }}>
-                {daysLeft !== null ? daysLeft : '∞'}
+            <div className={styles.countdownNumbersRow}>
+              <strong className={styles.countdownBigDays}>
+                {daysLeft !== null ? daysLeft.toLocaleString(localeStr) : '∞'}
               </strong>
-              <span style={{ fontSize: '0.95rem', fontWeight: 700, opacity: 0.9 }}>
+              <span className={styles.countdownUnitText}>
                 {daysLeft !== null
                   ? isAr
                     ? `يوم و ${hoursLeft} ساعة`
-                    : `jours et ${hoursLeft}h`
+                    : `${daysLeft <= 1 ? 'jour' : 'jours'} et ${hoursLeft}h`
                   : isAr
                   ? 'غير محدود'
                   : 'Illimité'}
               </span>
             </div>
-            <div style={{ marginTop: '0.45rem', fontSize: '0.78rem', color: '#bae6fd', fontWeight: 600 }}>
+            <div className={styles.countdownExpiry}>
               {isAr ? 'ينتهي في:' : 'Expire le :'} {formattedEndDate}
             </div>
           </div>
@@ -477,17 +478,8 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
 
         {/* شريط التقدم المرئي */}
         {daysLeft !== null && (
-          <div style={{ marginTop: '1.6rem', position: 'relative', zIndex: 1 }}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: '0.78rem',
-                color: 'rgba(255, 255, 255, 0.85)',
-                fontWeight: 700,
-                marginBottom: '0.45rem'
-              }}
-            >
+          <div className={styles.heroProgressWrap}>
+            <div className={styles.heroProgressMeta}>
               <span>
                 {isUrgent
                   ? isAr
@@ -497,24 +489,14 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
                   ? 'حالة صلاحية الاشتراك'
                   : 'Validité de la période en cours'}
               </span>
-              <span>{progressPercent}%</span>
+              <span dir="ltr">{progressPercent}%</span>
             </div>
-            <div
-              style={{
-                width: '100%',
-                height: '9px',
-                background: 'rgba(255, 255, 255, 0.18)',
-                borderRadius: '999px',
-                overflow: 'hidden'
-              }}
-            >
+            <div className={styles.heroProgressTrack}>
               <div
+                className={styles.heroProgressFill}
                 style={{
                   width: `${progressPercent}%`,
-                  height: '100%',
-                  background: isUrgent ? '#fbbf24' : '#38bdf8',
-                  borderRadius: '999px',
-                  transition: 'width 0.5s ease'
+                  background: isUrgent ? '#fbbf24' : '#38bdf8'
                 }}
               />
             </div>
@@ -525,43 +507,43 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
       {/* شبكة المعلومات السريعة (3 بطاقات) */}
       <div className={styles.infoGrid}>
         <div className={styles.infoCard}>
-          <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 700 }}>
+          <span className={styles.infoLabel}>
             🏰 {isAr ? 'الصالة المسجلة' : 'Salle enregistrée'}
           </span>
-          <strong style={{ display: 'block', marginTop: '0.35rem', fontSize: '1.05rem', color: '#0f172a', fontWeight: 800 }}>
+          <strong className={styles.infoValueDark}>
             {hallData?.name || (isAr ? 'صالتي' : 'Ma Salle')}
           </strong>
-          <small style={{ color: '#94a3b8', fontSize: '0.78rem' }}>
+          <small className={styles.infoSubMuted}>
             {isAr ? 'تاريخ الانضمام:' : 'Inscrit le :'} {formattedStartDate}
           </small>
         </div>
 
         <div className={styles.infoCard}>
-          <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 700 }}>
+          <span className={styles.infoLabel}>
             💳 {isAr ? 'قيمة الباقة الحالية' : 'Tarif de votre offre'}
           </span>
-          <strong style={{ display: 'block', marginTop: '0.35rem', fontSize: '1.15rem', color: '#0052cc', fontWeight: 900 }}>
+          <strong className={styles.infoValueBlue}>
             {activePlan.monthlyPrice
-              ? `${calculatePrice(activePlan.monthlyPrice, currentBillingCycle).toLocaleString()} ${
-                  isAr ? 'دج' : 'DA'
-                }`
+              ? `${calculatePrice(activePlan.monthlyPrice, currentBillingCycle).toLocaleString(
+                  localeStr
+                )} ${currencyLabel}`
               : isAr
               ? 'تسعيرة مخصصة'
               : 'Sur mesure'}
           </strong>
-          <small style={{ color: '#64748b', fontSize: '0.78rem' }}>
+          <small className={styles.infoSubSlate}>
             {cycleLabels[currentBillingCycle]?.title}
           </small>
         </div>
 
         <div className={styles.infoCard}>
-          <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 700 }}>
+          <span className={styles.infoLabel}>
             🛡️ {isAr ? 'طرق الدفع والتفعيل' : 'Paiement & Activation'}
           </span>
-          <strong style={{ display: 'block', marginTop: '0.35rem', fontSize: '1rem', color: '#0f172a', fontWeight: 800 }}>
+          <strong className={styles.infoValueDark} style={{ fontSize: '1rem' }}>
             {isAr ? 'بريدي موب / CCP / USDT / Visa' : 'BaridiMob / CCP / USDT / Visa'}
           </strong>
-          <small style={{ color: '#16a34a', fontSize: '0.78rem', fontWeight: 700 }}>
+          <small className={styles.infoSubGreen}>
             {isAr ? 'تفعيل سريع بعد إرسال إثبات الدفع' : 'Activation rapide après justificatif'}
           </small>
         </div>
@@ -569,21 +551,12 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
 
       {/* قسم اختيار مدة التجديد ومقارنة الباقات */}
       <div className={styles.plansSection}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '1rem',
-            marginBottom: '1.5rem'
-          }}
-        >
+        <div className={styles.plansSectionHeader}>
           <div>
-            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900, color: '#0f172a' }}>
+            <h3 className={styles.plansSectionTitle}>
               {isAr ? 'باقات الاشتراك والتجديد' : 'Offres & Renouvellement'}
             </h3>
-            <p style={{ margin: '0.25rem 0 0', fontSize: '0.86rem', color: '#64748b' }}>
+            <p className={styles.plansSectionSub}>
               {isAr
                 ? 'اختر مدة الاشتراك المناسبة للاستفادة من تخفيضات الدفع النصف سنوي والسنوي'
                 : 'Choisissez votre durée pour profiter des remises semestrielles et annuelles'}
@@ -591,15 +564,7 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
           </div>
 
           {/* أزرار تبديل المدة (شهري / 6 أشهر / سنوي) */}
-          <div
-            style={{
-              display: 'inline-flex',
-              background: '#f1f5f9',
-              padding: '0.32rem',
-              borderRadius: '14px',
-              gap: '0.3rem'
-            }}
-          >
+          <div className={styles.cycleTabsWrap}>
             {Object.entries(cycleLabels).map(([key, info]) => {
               const active = selectedCycle === key;
               return (
@@ -607,27 +572,11 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
                   key={key}
                   type="button"
                   onClick={() => setSelectedCycle(key)}
-                  className={styles.cycleTabBtn}
-                  style={{
-                    background: active ? '#ffffff' : 'transparent',
-                    color: active ? '#0052cc' : '#475569',
-                    boxShadow: active ? '0 2px 8px rgba(15, 23, 42, 0.08)' : 'none'
-                  }}
+                  className={`${styles.cycleTabBtn} ${active ? styles.cycleTabBtnActive : ''}`}
                 >
                   <span>{info.title}</span>
                   {info.badge && (
-                    <span
-                      style={{
-                        background: '#dcfce7',
-                        color: '#15803d',
-                        padding: '0.1rem 0.42rem',
-                        borderRadius: '999px',
-                        fontSize: '0.7rem',
-                        fontWeight: 800
-                      }}
-                    >
-                      {info.badge}
-                    </span>
+                    <span className={styles.cycleDiscountBadge}>{info.badge}</span>
                   )}
                 </button>
               );
@@ -636,13 +585,7 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
         </div>
 
         {/* بطاقات مقارنة الباقات */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))',
-            gap: '1.25rem'
-          }}
-        >
+        <div className={styles.plansGrid}>
           {comparisonPlans.map((plan) => {
             const isCurrent = planTier === plan.key;
             const computedTotal = calculatePrice(plan.monthlyPrice, selectedCycle);
@@ -653,68 +596,42 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
                 className={`${styles.planCard} ${plan.popular ? styles.planCardPopular : ''}`}
               >
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', marginBottom: '0.6rem' }}>
-                    <h4 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#0f172a' }}>
-                      {plan.title}
-                    </h4>
+                  <div className={styles.planCardHeader}>
+                    <h4 className={styles.planCardTitle}>{plan.title}</h4>
 
                     {isCurrent ? (
-                      <span
-                        style={{
-                          background: '#dbeafe',
-                          color: '#1d4ed8',
-                          padding: '0.22rem 0.65rem',
-                          borderRadius: '999px',
-                          fontSize: '0.74rem',
-                          fontWeight: 800
-                        }}
-                      >
+                      <span className={styles.currentPlanBadge}>
                         {isAr ? 'باقتك الحالية' : 'Votre offre'}
                       </span>
                     ) : plan.popular ? (
-                      <span
-                        style={{
-                          background: '#0052cc',
-                          color: '#ffffff',
-                          padding: '0.22rem 0.65rem',
-                          borderRadius: '999px',
-                          fontSize: '0.74rem',
-                          fontWeight: 800
-                        }}
-                      >
+                      <span className={styles.popularPlanBadge}>
                         {isAr ? 'موصى بها' : 'Recommandée'}
                       </span>
                     ) : null}
                   </div>
 
-                  <p style={{ margin: '0 0 1rem', fontSize: '0.84rem', color: '#64748b' }}>
-                    {plan.subtitle}
-                  </p>
+                  <p className={styles.planCardSubtitle}>{plan.subtitle}</p>
 
-                  <div style={{ marginBottom: '1.15rem', paddingBottom: '1rem', borderBottom: '1px solid #e2e8f0' }}>
-                    <span style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a' }}>
-                      {computedTotal.toLocaleString()}
+                  <div className={styles.planPriceBox}>
+                    <span className={styles.planPriceNumber}>
+                      {computedTotal.toLocaleString(localeStr)}
                     </span>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#475569', marginInlineStart: '0.35rem' }}>
-                      {isAr ? 'دج' : 'DA'} {cycleLabels[selectedCycle]?.unit}
+                    <span className={styles.planPriceUnit}>
+                      {currencyLabel} {cycleLabels[selectedCycle]?.unit}
                     </span>
                   </div>
 
-                  <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.4rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                  <ul className={styles.planFeaturesList}>
                     {plan.features.map((f, idx) => (
                       <li
                         key={idx}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.55rem',
-                          fontSize: '0.86rem',
-                          fontWeight: 600,
-                          color: f.ok ? '#1e293b' : '#94a3b8'
-                        }}
+                        className={styles.planFeatureItem}
+                        style={{ color: f.ok ? '#1e293b' : '#94a3b8' }}
                       >
                         <span>{f.ok ? '✅' : '✕'}</span>
-                        <span style={{ textDecoration: f.ok ? 'none' : 'line-through' }}>{f.text}</span>
+                        <span style={{ textDecoration: f.ok ? 'none' : 'line-through' }}>
+                          {f.text}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -750,150 +667,104 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
       </div>
 
       {/* سجل طلبات الدفع السابقة */}
-      {paymentHistory.length > 0 && (
-        <div
-          style={{
-            marginTop: '1.5rem',
-            background: '#ffffff',
-            borderRadius: '20px',
-            padding: '1.35rem',
-            border: '1px solid #e2e8f0'
-          }}
-        >
-          <h4 style={{ margin: '0 0 1rem', fontSize: '1.05rem', fontWeight: 900, color: '#0f172a' }}>
-            {isAr ? 'سجل عمليات الدفع' : 'Historique des paiements'}
-          </h4>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-            {paymentHistory.map((item) => {
-              const badge =
-                item.status === 'approved'
-                  ? { bg: '#dcfce7', color: '#166534', label: isAr ? 'مقبول ومفعّل' : 'Approuvé' }
-                  : item.status === 'rejected'
-                  ? { bg: '#fee2e2', color: '#991b1b', label: isAr ? 'مرفوض' : 'Rejeté' }
-                  : { bg: '#fef3c7', color: '#92400e', label: isAr ? 'قيد المراجعة' : 'En attente' };
-
-              const methodLabel =
-                item.payment_method === 'usdt'
-                  ? 'USDT (Crypto)'
-                  : item.payment_method === 'visa'
-                  ? 'Visa / Mastercard'
-                  : 'BaridiMob / CCP';
-
-              return (
-                <div
-                  key={item.id}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: '0.75rem',
-                    padding: '0.75rem 1rem',
-                    borderRadius: '14px',
-                    background: '#f8fafc',
-                    border: '1px solid #e2e8f0'
-                  }}
-                >
-                  <div>
-                    <strong style={{ color: '#0f172a', fontSize: '0.92rem' }}>
-                      {item.plan_tier === 'pro' ? 'Pro' : 'Essentiel'} •{' '}
-                      {cycleLabels[item.billing_cycle]?.title || item.billing_cycle}
-                    </strong>
-                    <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>
-                      {methodLabel} •{' '}
-                      {item.payment_method === 'usdt' || item.payment_method === 'visa'
-                        ? `$${item.amount_usd} (${Number(item.amount_dzd).toLocaleString()} دج)`
-                        : `${Number(item.amount_dzd).toLocaleString()} دج`}{' '}
-                      • {new Date(item.created_at).toLocaleDateString(isAr ? 'ar-DZ' : 'fr-FR')}
-                    </div>
-                  </div>
-
-                  <span
-                    style={{
-                      background: badge.bg,
-                      color: badge.color,
-                      padding: '0.28rem 0.75rem',
-                      borderRadius: '999px',
-                      fontSize: '0.78rem',
-                      fontWeight: 800
-                    }}
-                  >
-                    {badge.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+      {loadingPayments ? (
+        <div className={styles.historyCard} aria-busy="true">
+          <div className={`${styles.skeletonBase} ${styles.skeletonHistoryTitle}`} />
+          <div className={`${styles.skeletonBase} ${styles.skeletonHistoryRow}`} />
         </div>
+      ) : (
+        paymentHistory.length > 0 && (
+          <div className={styles.historyCard}>
+            <h4 className={styles.historyTitle}>
+              {isAr ? 'سجل عمليات الدفع' : 'Historique des paiements'}
+            </h4>
+            <div className={styles.historyList}>
+              {paymentHistory.map((item) => {
+                const badge =
+                  item.status === 'approved'
+                    ? { bg: '#dcfce7', color: '#166534', label: isAr ? 'مقبول ومفعّل' : 'Approuvé' }
+                    : item.status === 'rejected'
+                    ? { bg: '#fee2e2', color: '#991b1b', label: isAr ? 'مرفوض' : 'Rejeté' }
+                    : { bg: '#fef3c7', color: '#92400e', label: isAr ? 'قيد المراجعة' : 'En attente' };
+
+                const methodLabel =
+                  item.payment_method === 'usdt'
+                    ? 'USDT (Crypto)'
+                    : item.payment_method === 'visa'
+                    ? 'Visa / Mastercard'
+                    : 'BaridiMob / CCP';
+
+                return (
+                  <div key={item.id} className={styles.historyRow}>
+                    <div>
+                      <strong className={styles.historyPlanName}>
+                        {item.plan_tier === 'pro' ? 'Offre Pro' : 'Offre Essentielle'} •{' '}
+                        {cycleLabels[item.billing_cycle]?.title || item.billing_cycle}
+                      </strong>
+                      <div className={styles.historyMeta}>
+                        {methodLabel} •{' '}
+                        <span dir="ltr">
+                          {item.payment_method === 'usdt' || item.payment_method === 'visa'
+                            ? `$${item.amount_usd} (${Number(item.amount_dzd).toLocaleString(
+                                localeStr
+                              )} ${currencyLabel})`
+                            : `${Number(item.amount_dzd).toLocaleString(localeStr)} ${currencyLabel}`}
+                        </span>{' '}
+                        • {new Date(item.created_at).toLocaleDateString(localeStr)}
+                      </div>
+                    </div>
+
+                    <span
+                      className={styles.historyStatusBadge}
+                      style={{
+                        background: badge.bg,
+                        color: badge.color
+                      }}
+                    >
+                      {badge.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )
       )}
 
       {/* نافذة الدفع (BaridiMob / العملات الرقمية USDT / بطاقة Visa) */}
       {checkoutModal && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.65)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1rem',
-            zIndex: 9999
-          }}
+          className={styles.checkoutBackdrop}
           onClick={() => !submittingPayment && setCheckoutModal(null)}
         >
           <div
-            style={{
-              background: '#ffffff',
-              borderRadius: '24px',
-              width: '100%',
-              maxWidth: '520px',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              padding: '1.6rem',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
-            }}
+            dir={isAr ? 'rtl' : 'ltr'}
+            className={styles.checkoutModalBox}
             onClick={(e) => e.stopPropagation()}
           >
             {/* رأس النافذة */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div className={styles.checkoutHeader}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900, color: '#0f172a' }}>
+                <h3 className={styles.checkoutTitle}>
                   {isAr ? 'إتمام الدفع وتفعيل الاشتراك' : 'Finaliser le paiement'}
                 </h3>
-                <p style={{ margin: '0.2rem 0 0', fontSize: '0.84rem', color: '#64748b' }}>
-                  {checkoutModal.planKey === 'pro' ? 'Offre Pro' : 'Offre Essentiel'} •{' '}
+                <p className={styles.checkoutSubtitle}>
+                  {checkoutModal.planKey === 'pro' ? 'Offre Pro' : 'Offre Essentielle'} •{' '}
                   {cycleLabels[checkoutModal.cycleKey]?.title}
                 </p>
               </div>
               <button
                 type="button"
+                aria-label={isAr ? 'إغلاق' : 'Fermer'}
                 onClick={() => !submittingPayment && setCheckoutModal(null)}
-                style={{
-                  background: '#f1f5f9',
-                  border: 'none',
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  fontWeight: 800,
-                  color: '#475569'
-                }}
+                className={styles.checkoutCloseBtn}
               >
                 ✕
               </button>
             </div>
 
             {/* أزرار اختيار طريقة الدفع */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '0.5rem',
-                marginBottom: '1.15rem'
-              }}
-            >
+            <div className={styles.paymentMethodsGrid}>
               {[
                 { id: 'baridimob', label: 'BaridiMob / CCP', icon: '🇩🇿' },
                 { id: 'usdt', label: 'USDT Crypto', icon: '🪙' },
@@ -905,20 +776,9 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
                     key={m.id}
                     type="button"
                     onClick={() => setPaymentMethod(m.id)}
-                    style={{
-                      padding: '0.7rem 0.5rem',
-                      borderRadius: '14px',
-                      border: active ? '2px solid #0052cc' : '1px solid #e2e8f0',
-                      background: active ? '#eff6ff' : '#ffffff',
-                      color: active ? '#0052cc' : '#334155',
-                      fontWeight: 800,
-                      fontSize: '0.82rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '0.25rem'
-                    }}
+                    className={`${styles.paymentMethodBtn} ${
+                      active ? styles.paymentMethodBtnActive : ''
+                    }`}
                   >
                     <span style={{ fontSize: '1.15rem' }}>{m.icon}</span>
                     <span>{m.label}</span>
@@ -928,51 +788,35 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
             </div>
 
             {/* تفاصيل التحويل حسب الطريقة المختارة */}
-            <div
-              style={{
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: '16px',
-                padding: '1rem',
-                marginBottom: '1.15rem'
-              }}
-            >
+            <div className={styles.paymentDetailsBox}>
               {paymentMethod === 'baridimob' && (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
-                    <span style={{ fontSize: '0.84rem', color: '#64748b', fontWeight: 700 }}>
+                  <div className={styles.paymentAmountRow}>
+                    <span className={styles.paymentAmountLabel}>
                       {isAr ? 'المبلغ المطلوب تحويله:' : 'Montant à transférer :'}
                     </span>
-                    <strong style={{ fontSize: '1.05rem', color: '#0052cc', fontWeight: 900 }}>
-                      {checkoutModal.amountDzd.toLocaleString()} {isAr ? 'دج' : 'DA'}
+                    <strong className={styles.paymentAmountBlue} dir="ltr">
+                      {checkoutModal.amountDzd.toLocaleString(localeStr)} {currencyLabel}
                     </strong>
                   </div>
 
                   {platformSettings?.account_holder_name && (
-                    <div style={{ fontSize: '0.84rem', color: '#334155', marginBottom: '0.45rem' }}>
+                    <div className={styles.beneficiaryRow}>
                       <strong>{isAr ? 'اسم المستفيد:' : 'Bénéficiaire :'}</strong>{' '}
                       {platformSettings.account_holder_name}
                     </div>
                   )}
 
                   {platformSettings?.baridimob_rip && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginTop: '0.5rem' }}>
-                      <div style={{ fontSize: '0.83rem', color: '#0f172a', wordBreak: 'break-all' }}>
-                        <strong>RIP (BaridiMob):</strong> {platformSettings.baridimob_rip}
+                    <div className={styles.copyFieldRow}>
+                      <div className={styles.copyFieldValue}>
+                        <strong>RIP (BaridiMob):</strong>{' '}
+                        <span dir="ltr">{platformSettings.baridimob_rip}</span>
                       </div>
                       <button
                         type="button"
                         onClick={() => copyToClipboard(platformSettings.baridimob_rip, 'rip')}
-                        style={{
-                          background: '#e2e8f0',
-                          border: 'none',
-                          borderRadius: '8px',
-                          padding: '0.3rem 0.6rem',
-                          fontSize: '0.75rem',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          flexShrink: 0
-                        }}
+                        className={styles.copyMiniBtn}
                       >
                         {copiedField === 'rip' ? '✓' : isAr ? 'نسخ' : 'Copier'}
                       </button>
@@ -980,23 +824,15 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
                   )}
 
                   {platformSettings?.ccp_account && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginTop: '0.5rem' }}>
-                      <div style={{ fontSize: '0.83rem', color: '#0f172a' }}>
-                        <strong>CCP:</strong> {platformSettings.ccp_account}
+                    <div className={styles.copyFieldRow}>
+                      <div className={styles.copyFieldValue}>
+                        <strong>CCP:</strong>{' '}
+                        <span dir="ltr">{platformSettings.ccp_account}</span>
                       </div>
                       <button
                         type="button"
                         onClick={() => copyToClipboard(platformSettings.ccp_account, 'ccp')}
-                        style={{
-                          background: '#e2e8f0',
-                          border: 'none',
-                          borderRadius: '8px',
-                          padding: '0.3rem 0.6rem',
-                          fontSize: '0.75rem',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          flexShrink: 0
-                        }}
+                        className={styles.copyMiniBtn}
                       >
                         {copiedField === 'ccp' ? '✓' : isAr ? 'نسخ' : 'Copier'}
                       </button>
@@ -1007,33 +843,25 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
 
               {paymentMethod === 'usdt' && (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
-                    <span style={{ fontSize: '0.84rem', color: '#64748b', fontWeight: 700 }}>
+                  <div className={styles.paymentAmountRow}>
+                    <span className={styles.paymentAmountLabel}>
                       {isAr ? 'المبلغ المطلوب (USDT):' : 'Montant (USDT) :'}
                     </span>
-                    <strong style={{ fontSize: '1.05rem', color: '#16a34a', fontWeight: 900 }}>
+                    <strong className={styles.paymentAmountGreen} dir="ltr">
                       {checkoutModal.amountUsd} USDT
                     </strong>
                   </div>
 
                   {platformSettings?.usdt_trc20_address && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginTop: '0.5rem' }}>
-                      <div style={{ fontSize: '0.8rem', color: '#0f172a', wordBreak: 'break-all' }}>
-                        <strong>USDT (TRC20):</strong> {platformSettings.usdt_trc20_address}
+                    <div className={styles.copyFieldRow}>
+                      <div className={styles.copyFieldValue}>
+                        <strong>USDT (TRC20):</strong>{' '}
+                        <span dir="ltr">{platformSettings.usdt_trc20_address}</span>
                       </div>
                       <button
                         type="button"
                         onClick={() => copyToClipboard(platformSettings.usdt_trc20_address, 'trc20')}
-                        style={{
-                          background: '#e2e8f0',
-                          border: 'none',
-                          borderRadius: '8px',
-                          padding: '0.3rem 0.6rem',
-                          fontSize: '0.75rem',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          flexShrink: 0
-                        }}
+                        className={styles.copyMiniBtn}
                       >
                         {copiedField === 'trc20' ? '✓' : isAr ? 'نسخ' : 'Copier'}
                       </button>
@@ -1041,23 +869,15 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
                   )}
 
                   {platformSettings?.usdt_bep20_address && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginTop: '0.5rem' }}>
-                      <div style={{ fontSize: '0.8rem', color: '#0f172a', wordBreak: 'break-all' }}>
-                        <strong>USDT (BEP20):</strong> {platformSettings.usdt_bep20_address}
+                    <div className={styles.copyFieldRow}>
+                      <div className={styles.copyFieldValue}>
+                        <strong>USDT (BEP20):</strong>{' '}
+                        <span dir="ltr">{platformSettings.usdt_bep20_address}</span>
                       </div>
                       <button
                         type="button"
                         onClick={() => copyToClipboard(platformSettings.usdt_bep20_address, 'bep20')}
-                        style={{
-                          background: '#e2e8f0',
-                          border: 'none',
-                          borderRadius: '8px',
-                          padding: '0.3rem 0.6rem',
-                          fontSize: '0.75rem',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          flexShrink: 0
-                        }}
+                        className={styles.copyMiniBtn}
                       >
                         {copiedField === 'bep20' ? '✓' : isAr ? 'نسخ' : 'Copier'}
                       </button>
@@ -1068,11 +888,11 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
 
               {paymentMethod === 'visa' && (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
-                    <span style={{ fontSize: '0.84rem', color: '#64748b', fontWeight: 700 }}>
+                  <div className={styles.paymentAmountRow}>
+                    <span className={styles.paymentAmountLabel}>
                       {isAr ? 'المبلغ بالدولار (USD):' : 'Montant (USD) :'}
                     </span>
-                    <strong style={{ fontSize: '1.05rem', color: '#0052cc', fontWeight: 900 }}>
+                    <strong className={styles.paymentAmountBlue} dir="ltr">
                       ${checkoutModal.amountUsd} USD
                     </strong>
                   </div>
@@ -1082,17 +902,7 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
                       href={platformSettings.visa_payment_link}
                       target="_blank"
                       rel="noreferrer"
-                      style={{
-                        display: 'inline-block',
-                        marginTop: '0.35rem',
-                        background: '#0052cc',
-                        color: '#ffffff',
-                        padding: '0.55rem 1rem',
-                        borderRadius: '10px',
-                        fontSize: '0.84rem',
-                        fontWeight: 800,
-                        textDecoration: 'none'
-                      }}
+                      className={styles.visaPayLinkBtn}
                     >
                       {isAr ? '💳 افتح رابط الدفع بالبطاقة (Visa / RedotPay)' : '💳 Ouvrir le lien de paiement Visa'}
                     </a>
@@ -1109,61 +919,43 @@ export default function SubscriptionTab({ isAr = true, hallData, platformSetting
 
             {paymentFeedback.text && (
               <div
-                style={{
-                  background: paymentFeedback.type === 'success' ? '#dcfce7' : '#fee2e2',
-                  color: paymentFeedback.type === 'success' ? '#166534' : '#991b1b',
-                  padding: '0.75rem 0.9rem',
-                  borderRadius: '12px',
-                  fontSize: '0.84rem',
-                  fontWeight: 700,
-                  marginBottom: '1rem'
-                }}
+                className={`${styles.feedbackAlertBox} ${
+                  paymentFeedback.type === 'success'
+                    ? styles.feedbackAlertSuccess
+                    : styles.feedbackAlertError
+                }`}
               >
                 {paymentFeedback.text}
               </div>
             )}
 
             {/* نموذج رفع الوصل ورقم العملية */}
-            <form onSubmit={handleSubmitPayment} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+            <form onSubmit={handleSubmitPayment} className={styles.checkoutForm}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 800, color: '#1e293b', marginBottom: '0.35rem' }}>
+                <label className={styles.checkoutFieldLabel}>
                   {isAr ? 'صورة وصل الدفع (Screenshot / Reçu)' : 'Capture du reçu de paiement'}
                 </label>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    borderRadius: '12px',
-                    border: '1px dashed #94a3b8',
-                    background: '#f8fafc',
-                    fontSize: '0.84rem',
-                    boxSizing: 'border-box'
-                  }}
+                  className={styles.checkoutFileInput}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 800, color: '#1e293b', marginBottom: '0.35rem' }}>
+                <label className={styles.checkoutFieldLabel}>
                   {isAr
                     ? 'رقم العملية / معرّف التحويل (اختياري إذا أرفقت الصورة)'
                     : 'Référence / TxID (optionnel avec capture)'}
                 </label>
                 <input
                   type="text"
+                  dir="ltr"
                   value={transactionRef}
                   onChange={(e) => setTransactionRef(e.target.value)}
                   placeholder={isAr ? 'مثال: 0012345678 أو TxID' : 'Ex: 0012345678 ou TxID'}
-                  style={{
-                    width: '100%',
-                    padding: '0.7rem 0.9rem',
-                    borderRadius: '12px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '0.88rem',
-                    boxSizing: 'border-box'
-                  }}
+                  className={styles.checkoutTextInput}
                 />
               </div>
 

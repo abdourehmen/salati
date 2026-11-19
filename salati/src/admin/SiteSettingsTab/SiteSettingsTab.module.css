@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  animation: fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes fadeUp {
@@ -16,16 +16,64 @@
   }
 }
 
+@keyframes shimmerWave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeletonBase {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmerWave 1.4s infinite linear;
+  border-radius: 12px;
+}
+
+.skeletonLabelCenter {
+  width: 55%;
+  height: 14px;
+  margin: 0 auto;
+}
+
+.skeletonInputPill {
+  width: 100%;
+  height: 38px;
+  border-radius: 50px;
+}
+
+.skeletonColHeader {
+  width: 60%;
+  height: 32px;
+  border-radius: 50px;
+  margin: 0 auto;
+}
+
+.skeletonColBody {
+  width: 100%;
+  height: 170px;
+  border-radius: 18px;
+}
+
+.skeletonQrSection {
+  width: 100%;
+  height: 120px;
+  border-radius: 18px;
+}
+
 .pageTitleBar {
   padding-bottom: 0.85rem;
   border-bottom: 1px solid #e2e8f0;
 }
 
 .pageMainTitle {
-  font-size: 1.65rem;
+  font-size: 1.55rem;
   font-weight: 900;
   color: #0f172a;
   margin: 0;
+  line-height: 1.3;
 }
 
 /* البطاقة الرئيسية الكبيرة */
@@ -51,6 +99,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  min-width: 0;
 }
 
 .pillFieldBox label {
@@ -104,6 +153,7 @@
   flex-direction: column;
   gap: 1rem;
   min-height: 310px;
+  min-width: 0;
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
@@ -122,6 +172,7 @@
   font-size: 0.85rem;
   font-weight: 800;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  text-align: center;
 }
 
 /* شريط الإضافة السريع داخل كل عمود */
@@ -168,6 +219,11 @@
   transform: scale(1.06);
 }
 
+.miniAddBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* قائمة العناصر (الأوقات والمميزات) */
 .itemsListStack {
   display: flex;
@@ -185,7 +241,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  animation: pillPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: pillPop 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes pillPop {
@@ -204,12 +260,16 @@
   font-weight: 700;
   color: #0f172a;
   flex: 1;
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .itemPriceTag {
   font-size: 0.85rem;
   font-weight: 900;
   color: var(--primary-blue, #0052cc);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .removeItemBtn {
@@ -222,6 +282,7 @@
   font-size: 0.72rem;
   font-weight: 800;
   cursor: pointer;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -279,7 +340,7 @@
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid #cbd5e1;
-  animation: pillPop 0.25s ease;
+  animation: pillPop 0.25s ease both;
 }
 
 .photoThumbItem img {
@@ -304,6 +365,194 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+:global(html[dir="ltr"]) .deletePhotoBtn {
+  left: auto;
+  right: 6px;
+}
+
+.deletePhotoBtn:hover {
+  background-color: #dc2626;
+  transform: scale(1.08);
+}
+
+/* قسم كود QR الذكي */
+.qrSectionCard {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 1.25rem 1.5rem;
+}
+
+.qrHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.qrTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.qrSubtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.qrTierBadge {
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.qrTierActive {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.qrTierLocked {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.qrUpgradeBox {
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.qrUpgradeText {
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.qrUpgradeBtn {
+  background: #0052cc;
+  color: #ffffff;
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.qrUpgradeBtn:hover {
+  background: #0043a8;
+  transform: translateY(-1px);
+}
+
+.qrContentRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: center;
+}
+
+.qrInputCol {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.qrInputLabel {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 0.4rem;
+}
+
+.qrUrlInput {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.qrUrlInput:focus {
+  border-color: var(--primary-blue, #0052cc);
+  box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
+}
+
+.qrActionsRow {
+  display: flex;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.qrDownloadBtn,
+.qrPrintBtn {
+  color: #ffffff;
+  border: none;
+  padding: 0.6rem 1.05rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.qrDownloadBtn {
+  background: #0f172a;
+}
+
+.qrPrintBtn {
+  background: #0052cc;
+}
+
+.qrDownloadBtn:hover,
+.qrPrintBtn:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.qrPreviewCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 0.85rem;
+  text-align: center;
+  min-width: 150px;
+  animation: pillPop 0.25s ease both;
+}
+
+.qrPreviewImg {
+  width: 130px;
+  height: 130px;
+  display: block;
+  margin: 0 auto;
+}
+
+.qrPreviewHint {
+  display: block;
+  margin-top: 0.4rem;
+  color: #64748b;
+  font-weight: 700;
 }
 
 /* زر الحفظ النهائي */
@@ -316,11 +565,12 @@
 .saveSiteBtn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.55rem;
   background-color: var(--primary-blue, #0052cc);
   color: #ffffff;
   border: none;
-  padding: 0.8rem 1.85rem;
+  padding: 0.82rem 1.85rem;
   border-radius: 50px;
   font-size: 0.92rem;
   font-weight: 800;
@@ -334,6 +584,13 @@
   transform: translateY(-2px);
 }
 
+.saveSiteBtn:active {
+  transform: scale(0.98);
+}
+
+/* =========================================
+   تجاوب الأجهزة اللوحية والهواتف
+   ========================================= */
 @media (max-width: 1200px) {
   .topFiveInputsGrid {
     grid-template-columns: repeat(2, 1fr);
@@ -343,5 +600,55 @@
 @media (max-width: 900px) {
   .threeColumnsGrid {
     grid-template-columns: 1fr;
+  }
+
+  .columnCard {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .pageMainTitle {
+    font-size: 1.3rem;
+  }
+
+  .mainEditorCard {
+    padding: 1.15rem;
+    border-radius: 22px;
+    gap: 1.15rem;
+  }
+
+  .topFiveInputsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .qrSectionCard {
+    padding: 1rem;
+  }
+
+  .qrActionsRow > button,
+  .qrUpgradeBtn,
+  .saveSiteBtn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .qrPreviewCard {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .inlineAddGroup {
+    flex-wrap: wrap;
+  }
+
+  .inlineAddGroup input {
+    flex: 1 1 100%;
+  }
+
+  .miniAddBtn {
+    width: 100%;
+    border-radius: 50px;
   }
 }

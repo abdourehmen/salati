@@ -24,6 +24,8 @@ const translations = {
     googleBtn: 'المتابعة باستخدام Google',
     noAccount: 'ليس لديك حساب بعد؟',
     registerLink: 'سجّل صالتك الآن',
+    showPassAria: 'إظهار كلمة المرور',
+    hidePassAria: 'إخفاء كلمة المرور',
     // نصوص استعادة كلمة المرور
     resetTitle: 'استعادة كلمة المرور',
     resetSubtitle: 'أدخل بريدك الإلكتروني وسنرسل لك رابطاً آمناً لتعيين كلمة مرور جديدة.',
@@ -56,6 +58,8 @@ const translations = {
     googleBtn: 'Continuer avec Google',
     noAccount: 'Vous n’avez pas encore de compte ?',
     registerLink: 'Inscrivez votre salle',
+    showPassAria: 'Afficher le mot de passe',
+    hidePassAria: 'Masquer le mot de passe',
     // Textes récupération mot de passe
     resetTitle: 'Récupération du mot de passe',
     resetSubtitle: 'Entrez votre adresse e-mail pour recevoir un lien de réinitialisation sécurisé.',
@@ -92,12 +96,14 @@ export default function Login() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const [checkingSession, setCheckingSession] = useState(true);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
+    let isMounted = true;
     const observer = new MutationObserver(() => {
       setLang(document.documentElement.lang || 'ar');
     });
@@ -130,11 +136,13 @@ export default function Login() {
           if (staffRecord) {
             if (staffRecord.is_active === false) {
               await supabase.auth.signOut();
-              setErrorMessage(
-                document.documentElement.lang === 'fr'
-                  ? 'Votre compte a été suspendu par le propriétaire.'
-                  : 'تم إيقاف حسابك مؤقتاً من طرف مالك القاعة.'
-              );
+              if (isMounted) {
+                setErrorMessage(
+                  document.documentElement.lang === 'fr'
+                    ? 'Votre compte a été suspendu par le propriétaire.'
+                    : 'تم إيقاف حسابك مؤقتاً من طرف مالك القاعة.'
+                );
+              }
               return;
             }
             navigate('/admin');
@@ -158,11 +166,16 @@ export default function Login() {
       }
     };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        handleOAuthSession(session);
-      }
-    });
+    supabase.auth
+      .getSession()
+      .then(async ({ data: { session } }) => {
+        if (session) {
+          await handleOAuthSession(session);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setCheckingSession(false);
+      });
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
@@ -178,6 +191,7 @@ export default function Login() {
     });
 
     return () => {
+      isMounted = false;
       observer.disconnect();
       authListener?.subscription?.unsubscribe();
     };
@@ -190,7 +204,8 @@ export default function Login() {
       [name]: type === 'checkbox' ? checked : value
     });
   };
-const handleGoogleLogin = async () => {
+
+  const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     setErrorMessage('');
     setSuccessMessage('');
@@ -227,7 +242,7 @@ const handleGoogleLogin = async () => {
       // 1. تسجيل الدخول عبر Supabase Auth
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email.trim(),
-        password: formData.password,
+        password: formData.password
       });
 
       if (error) throw error;
@@ -255,8 +270,8 @@ const handleGoogleLogin = async () => {
       }
     } catch (error) {
       setErrorMessage(
-        lang === 'ar' 
-          ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.' 
+        lang === 'ar'
+          ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'
           : 'E-mail ou mot de passe incorrect.'
       );
     } finally {
@@ -332,26 +347,14 @@ const handleGoogleLogin = async () => {
   };
 
   const t = translations[lang] || translations.ar;
+  const isAr = lang === 'ar';
 
   const renderEyeButton = (isVisible, toggleFn) => (
     <button
       type="button"
       onClick={toggleFn}
-      aria-label={isVisible ? 'Hide password' : 'Show password'}
-      style={{
-        position: 'absolute',
-        top: '50%',
-        transform: 'translateY(-50%)',
-        ...(lang === 'ar' ? { left: '0.85rem' } : { right: '0.85rem' }),
-        background: 'none',
-        border: 'none',
-        padding: 0,
-        cursor: 'pointer',
-        color: '#64748b',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}
+      aria-label={isVisible ? t.hidePassAria : t.showPassAria}
+      className={styles.eyeBtn}
     >
       {isVisible ? (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -367,14 +370,36 @@ const handleGoogleLogin = async () => {
     </button>
   );
 
-  const passwordInputPadding = lang === 'ar' ? { paddingLeft: '2.75rem' } : { paddingRight: '2.75rem' };
+  if (checkingSession) {
+    return (
+      <div dir={isAr ? 'rtl' : 'ltr'} className={styles.pageWrapper} aria-busy="true">
+        <div className={styles.cardContainer}>
+          <div className={styles.header}>
+            <div className={`${styles.skeletonBase} ${styles.skeletonTitle}`} />
+            <div className={`${styles.skeletonBase} ${styles.skeletonSubtitle}`} />
+          </div>
+          <div className={styles.form}>
+            <div className={styles.inputGroup}>
+              <div className={`${styles.skeletonBase} ${styles.skeletonLabel}`} />
+              <div className={`${styles.skeletonBase} ${styles.skeletonInput}`} />
+            </div>
+            <div className={styles.inputGroup}>
+              <div className={`${styles.skeletonBase} ${styles.skeletonLabel}`} />
+              <div className={`${styles.skeletonBase} ${styles.skeletonInput}`} />
+            </div>
+            <div className={`${styles.skeletonBase} ${styles.skeletonBtn}`} />
+            <div className={`${styles.skeletonBase} ${styles.skeletonBtn}`} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={styles.pageWrapper}>
+    <div dir={isAr ? 'rtl' : 'ltr'} className={styles.pageWrapper}>
       <div className={styles.cardContainer}>
-        
         {/* الترويسة */}
-        <div className={styles.header}>
+        <div key={`header-${viewMode}`} className={`${styles.header} ${styles.viewFade}`}>
           {viewMode === 'login' && (
             <>
               <h1 className={styles.title}>
@@ -401,44 +426,22 @@ const handleGoogleLogin = async () => {
 
         {/* تنبيه الخطأ */}
         {errorMessage && (
-          <div style={{
-            backgroundColor: 'rgba(239, 68, 68, 0.08)',
-            border: '1px solid rgba(239, 68, 68, 0.2)',
-            color: '#dc2626',
-            padding: '0.75rem 1rem',
-            borderRadius: '16px',
-            fontSize: '0.875rem',
-            fontWeight: '700',
-            marginBottom: '1.5rem',
-            textAlign: 'center'
-          }}>
+          <div role="alert" className={styles.errorAlert}>
             {errorMessage}
           </div>
         )}
 
         {/* تنبيه النجاح */}
         {successMessage && (
-          <div style={{
-            backgroundColor: 'rgba(16, 185, 129, 0.08)',
-            border: '1px solid rgba(16, 185, 129, 0.25)',
-            color: '#059669',
-            padding: '0.85rem 1rem',
-            borderRadius: '16px',
-            fontSize: '0.875rem',
-            fontWeight: '700',
-            marginBottom: '1.5rem',
-            textAlign: 'center',
-            lineHeight: '1.6'
-          }}>
+          <div role="status" className={styles.successAlert}>
             {successMessage}
           </div>
         )}
 
         {/* 1. نموذج الدخول الأساسي */}
         {viewMode === 'login' && (
-          <>
+          <div key="view-login" className={styles.viewFade}>
             <form onSubmit={handleSubmit} className={styles.form}>
-              
               {/* البريد الإلكتروني */}
               <div className={styles.inputGroup}>
                 <label htmlFor="email">{t.emailLabel}</label>
@@ -446,6 +449,7 @@ const handleGoogleLogin = async () => {
                   type="email"
                   id="email"
                   name="email"
+                  dir="ltr"
                   required
                   placeholder={t.emailPlaceholder}
                   value={formData.email}
@@ -457,8 +461,8 @@ const handleGoogleLogin = async () => {
               <div className={styles.inputGroup}>
                 <div className={styles.passwordHeader}>
                   <label htmlFor="password">{t.passwordLabel}</label>
-                  <a 
-                    href="#forgot-password" 
+                  <a
+                    href="#forgot-password"
                     className={styles.forgotLink}
                     onClick={(e) => {
                       e.preventDefault();
@@ -471,16 +475,17 @@ const handleGoogleLogin = async () => {
                     {t.forgotPassword}
                   </a>
                 </div>
-                <div style={{ position: 'relative', width: '100%' }}>
+                <div className={styles.passwordFieldWrap}>
                   <input
                     type={showPassword ? 'text' : 'password'}
                     id="password"
                     name="password"
+                    dir="ltr"
                     required
                     placeholder={t.passwordPlaceholder}
                     value={formData.password}
                     onChange={handleChange}
-                    style={{ width: '100%', ...passwordInputPadding }}
+                    className={styles.passwordInput}
                   />
                   {renderEyeButton(showPassword, () => setShowPassword((prev) => !prev))}
                 </div>
@@ -502,7 +507,6 @@ const handleGoogleLogin = async () => {
               <button type="submit" className={styles.submitBtn} disabled={loading || googleLoading}>
                 {loading ? t.submittingBtn : t.submitBtn}
               </button>
-
             </form>
 
             {/* فاصل وزر تسجيل الدخول عبر Google */}
@@ -516,7 +520,7 @@ const handleGoogleLogin = async () => {
               onClick={handleGoogleLogin}
               disabled={loading || googleLoading}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24">
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
                 <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
                 <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z" />
                 <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z" />
@@ -524,17 +528,18 @@ const handleGoogleLogin = async () => {
               </svg>
               <span>{googleLoading ? t.submittingBtn : t.googleBtn}</span>
             </button>
-          </>
+          </div>
         )}
 
         {/* 2. نموذج طلب رابط استعادة كلمة المرور */}
         {viewMode === 'forgot' && (
-          <form onSubmit={handleSendResetLink} className={styles.form}>
+          <form key="view-forgot" onSubmit={handleSendResetLink} className={`${styles.form} ${styles.viewFade}`}>
             <div className={styles.inputGroup}>
               <label htmlFor="resetEmail">{t.emailLabel}</label>
               <input
                 type="email"
                 id="resetEmail"
+                dir="ltr"
                 required
                 placeholder={t.emailPlaceholder}
                 value={resetEmail}
@@ -548,8 +553,7 @@ const handleGoogleLogin = async () => {
 
             <button
               type="button"
-              className={styles.link}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', marginTop: '0.25rem' }}
+              className={styles.backBtn}
               onClick={() => {
                 setErrorMessage('');
                 setSuccessMessage('');
@@ -563,19 +567,20 @@ const handleGoogleLogin = async () => {
 
         {/* 3. نموذج تعيين كلمة المرور الجديدة بعد فتح رابط البريد */}
         {viewMode === 'update_password' && (
-          <form onSubmit={handleUpdateNewPassword} className={styles.form}>
+          <form key="view-update" onSubmit={handleUpdateNewPassword} className={`${styles.form} ${styles.viewFade}`}>
             <div className={styles.inputGroup}>
               <label htmlFor="newPassword">{t.newPassLabel}</label>
-              <div style={{ position: 'relative', width: '100%' }}>
+              <div className={styles.passwordFieldWrap}>
                 <input
                   type={showNewPassword ? 'text' : 'password'}
                   id="newPassword"
+                  dir="ltr"
                   required
                   minLength={6}
                   placeholder="••••••••"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  style={{ width: '100%', ...passwordInputPadding }}
+                  className={styles.passwordInput}
                 />
                 {renderEyeButton(showNewPassword, () => setShowNewPassword((prev) => !prev))}
               </div>
@@ -583,16 +588,17 @@ const handleGoogleLogin = async () => {
 
             <div className={styles.inputGroup}>
               <label htmlFor="confirmPassword">{t.confirmPassLabel}</label>
-              <div style={{ position: 'relative', width: '100%' }}>
+              <div className={styles.passwordFieldWrap}>
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   id="confirmPassword"
+                  dir="ltr"
                   required
                   minLength={6}
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  style={{ width: '100%', ...passwordInputPadding }}
+                  className={styles.passwordInput}
                 />
                 {renderEyeButton(showConfirmPassword, () => setShowConfirmPassword((prev) => !prev))}
               </div>
@@ -607,16 +613,14 @@ const handleGoogleLogin = async () => {
         {/* رابط التسجيل */}
         <div className={styles.footer}>
           <span>{t.noAccount} </span>
-          <button 
-            type="button" 
-            className={styles.link}
-            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+          <button
+            type="button"
+            className={styles.linkBtn}
             onClick={() => navigate('/register')}
           >
             {t.registerLink}
           </button>
         </div>
-
       </div>
     </div>
   );

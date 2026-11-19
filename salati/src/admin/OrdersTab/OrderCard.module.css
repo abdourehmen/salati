@@ -24,6 +24,65 @@
   }
 }
 
+@keyframes shimmerWave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeletonBase {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmerWave 1.4s infinite linear;
+  border-radius: 10px;
+}
+
+.skeletonDateBadge {
+  width: 55%;
+  height: 24px;
+  border-radius: 50px;
+}
+
+.skeletonStatusPill {
+  width: 24%;
+  height: 24px;
+  border-radius: 50px;
+}
+
+.skeletonLabel {
+  width: 45%;
+  height: 16px;
+}
+
+.skeletonPriceVal {
+  width: 35%;
+  height: 20px;
+}
+
+.skeletonSubBox {
+  height: 52px;
+  border-radius: 14px;
+}
+
+.skeletonDepositBtn {
+  width: 100%;
+  height: 36px;
+  border-radius: 50px;
+}
+
+.skeletonDetailLine {
+  width: 100%;
+  height: 18px;
+}
+
+.skeletonActionBtn {
+  height: 36px;
+  border-radius: 50px;
+}
+
 .orderCard:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 28px rgba(0, 82, 204, 0.08);
@@ -53,7 +112,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.45rem;
   font-size: 0.78rem;
 }
 
@@ -64,6 +124,7 @@
   padding: 0.25rem 0.65rem;
   border-radius: 50px;
   border: 1px solid #e2e8f0;
+  line-height: 1.35;
 }
 
 .statusPill {
@@ -71,6 +132,8 @@
   border-radius: 50px;
   font-weight: 800;
   font-size: 0.75rem;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .statusConfirmed {
@@ -103,6 +166,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .priceLabel {
@@ -112,9 +176,10 @@
 }
 
 .totalPriceValue {
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   font-weight: 900;
   color: #0f172a;
+  white-space: nowrap;
 }
 
 .amountsGrid {
@@ -179,7 +244,7 @@
   color: #0f172a;
   border: 1px solid #cbd5e1;
   border-radius: 50px;
-  padding: 0.5rem 1rem;
+  padding: 0.52rem 1rem;
   font-size: 0.82rem;
   font-weight: 800;
   cursor: pointer;
@@ -216,17 +281,28 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.65rem;
   font-size: 0.88rem;
 }
 
 .detailLabel {
   color: #64748b;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .detailValue {
   color: #0f172a;
   font-weight: 800;
+  overflow-wrap: break-word;
+}
+
+:global(html[dir="rtl"]) .detailValue {
+  text-align: left;
+}
+
+:global(html[dir="ltr"]) .detailValue {
+  text-align: right;
 }
 
 .phoneValue {
@@ -250,7 +326,7 @@
 
 .detailsBtn,
 .deleteBtn {
-  padding: 0.55rem 0.75rem;
+  padding: 0.58rem 0.75rem;
   border-radius: 50px;
   font-size: 0.82rem;
   font-weight: 800;
@@ -286,4 +362,30 @@
 .detailsBtn:active,
 .deleteBtn:active {
   transform: scale(0.96);
+}
+
+/* =========================================
+   تجاوب الأجهزة اللوحية والهواتف
+   ========================================= */
+@media (max-width: 480px) {
+  .orderCard {
+    padding: 1rem;
+    border-radius: 20px;
+    gap: 0.75rem;
+  }
+
+  .financialBox {
+    padding: 0.8rem;
+  }
+
+  .totalPriceValue {
+    font-size: 1.02rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .amountsGrid,
+  .cardActionsRow {
+    grid-template-columns: 1fr;
+  }
 }

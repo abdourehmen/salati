@@ -5,6 +5,7 @@ import { IconCoins } from '../Icons';
 export default function OrderCard({
   item,
   isAr = true,
+  isLoading = false,
   hasConflict = false,
   parseNumber,
   getTimeSlotLabel,
@@ -12,9 +13,49 @@ export default function OrderCard({
   handleDeleteBooking,
   handleOpenDetails // تفتح نافذة التفاصيل (التأكيد، الإلغاء، أو العقد الرقمي)
 }) {
+  if (isLoading || !item) {
+    return (
+      <div className={styles.orderCard} aria-busy="true">
+        <div className={styles.cardTopMeta}>
+          <div className={`${styles.skeletonBase} ${styles.skeletonDateBadge}`} />
+          <div className={`${styles.skeletonBase} ${styles.skeletonStatusPill}`} />
+        </div>
+
+        <div className={styles.financialBox}>
+          <div className={styles.totalPriceRow}>
+            <div className={`${styles.skeletonBase} ${styles.skeletonLabel}`} />
+            <div className={`${styles.skeletonBase} ${styles.skeletonPriceVal}`} />
+          </div>
+
+          <div className={styles.amountsGrid}>
+            <div className={`${styles.skeletonBase} ${styles.skeletonSubBox}`} />
+            <div className={`${styles.skeletonBase} ${styles.skeletonSubBox}`} />
+          </div>
+
+          <div className={`${styles.skeletonBase} ${styles.skeletonDepositBtn}`} />
+        </div>
+
+        <hr className={styles.cardDivider} />
+
+        <div className={styles.clientDetailsList}>
+          <div className={`${styles.skeletonBase} ${styles.skeletonDetailLine}`} />
+          <div className={`${styles.skeletonBase} ${styles.skeletonDetailLine}`} />
+          <div className={`${styles.skeletonBase} ${styles.skeletonDetailLine}`} />
+        </div>
+
+        <div className={styles.cardActionsRow}>
+          <div className={`${styles.skeletonBase} ${styles.skeletonActionBtn}`} />
+          <div className={`${styles.skeletonBase} ${styles.skeletonActionBtn}`} />
+        </div>
+      </div>
+    );
+  }
+
   const totalVal = item.rawAmount ?? (parseNumber ? parseNumber(item.amount) : 0);
   const depositVal = item.rawDeposit ?? (parseNumber ? parseNumber(item.deposit) : 0);
   const remainingVal = Math.max(0, totalVal - depositVal);
+  const localeStr = isAr ? 'ar-DZ' : 'fr-FR';
+  const currencyLabel = isAr ? 'دج' : 'DA';
 
   // تقسيم الاسم الكامل إذا كان يحتوي على مسافة لعرضه كـ (الاسم / اللقب) كما في التصميم
   const nameParts = (item.client || '').trim().split(' ');
@@ -60,7 +101,7 @@ export default function OrderCard({
             {isAr ? 'سعر كراء القاعة:' : 'Prix de location :'}
           </span>
           <strong className={styles.totalPriceValue}>
-            {totalVal.toLocaleString()} {isAr ? 'دج' : 'DA'}
+            {totalVal.toLocaleString(localeStr)} {currencyLabel}
           </strong>
         </div>
 
@@ -71,7 +112,7 @@ export default function OrderCard({
               {isAr ? 'العربون المدفوع' : 'Acompte payé'}
             </span>
             <strong className={styles.depositValue}>
-              {depositVal.toLocaleString()} {isAr ? 'دج' : 'DA'}
+              {depositVal.toLocaleString(localeStr)} {currencyLabel}
             </strong>
           </div>
 
@@ -81,7 +122,7 @@ export default function OrderCard({
               {isAr ? 'المبلغ المتبقي' : 'Reste à payer'}
             </span>
             <strong className={styles.remainingValue}>
-              {remainingVal.toLocaleString()} {isAr ? 'دج' : 'DA'}
+              {remainingVal.toLocaleString(localeStr)} {currencyLabel}
             </strong>
           </div>
         </div>
@@ -117,9 +158,13 @@ export default function OrderCard({
 
         <div className={styles.detailRow}>
           <span className={styles.detailLabel}>{isAr ? 'رقم الهاتف :' : 'Téléphone :'}</span>
-          <a href={`tel:${item.phone}`} className={styles.phoneValue} dir="ltr">
-            {item.phone || '---'}
-          </a>
+          {item.phone ? (
+            <a href={`tel:${item.phone}`} className={styles.phoneValue} dir="ltr">
+              {item.phone}
+            </a>
+          ) : (
+            <strong className={styles.detailValue}>---</strong>
+          )}
         </div>
       </div>
 
@@ -128,6 +173,7 @@ export default function OrderCard({
         <button
           type="button"
           className={styles.detailsBtn}
+          aria-label={isAr ? 'تفاصيل الطلبية' : 'Détails de la demande'}
           onClick={() => handleOpenDetails && handleOpenDetails(item)}
         >
           {isAr ? 'تفاصيل الطلبية' : 'Détails'}
@@ -136,6 +182,7 @@ export default function OrderCard({
         <button
           type="button"
           className={styles.deleteBtn}
+          aria-label={isAr ? 'حذف طلبية' : 'Supprimer la demande'}
           onClick={() => handleDeleteBooking && handleDeleteBooking(item.id)}
         >
           {isAr ? 'حذف طلبية' : 'Supprimer'}

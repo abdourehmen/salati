@@ -16,7 +16,7 @@ const navigate = (to) => {
   window.dispatchEvent(new Event('popstate'));
 };
 
-function AnimatedNumber({ value }) {
+function AnimatedNumber({ value, locale = 'ar-DZ' }) {
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
@@ -43,7 +43,7 @@ function AnimatedNumber({ value }) {
     return () => clearInterval(timer);
   }, [value]);
 
-  return <span>{displayValue.toLocaleString()}</span>;
+  return <span dir="ltr">{displayValue.toLocaleString(locale)}</span>;
 }
 
 const translations = {
@@ -52,7 +52,6 @@ const translations = {
     title: 'لوحة تحكم مالك المنصة',
     subtitle: 'إدارة الصالات، الباقات (الأساسية، Pro، المجمعات)، ومتابعة الإيرادات اللحظية.',
     logout: 'خروج آمن',
-    checkingAuth: 'جاري التحقق من هوية مالك المنصة...',
     unauthorizedTitle: 'وصول محظور',
     unauthorizedDesc: 'هذه المنطقة مشفرة ومخصصة لمالك منصة Salati فقط.',
     backHome: 'العودة للواجهة الرئيسية',
@@ -126,7 +125,6 @@ const translations = {
     title: 'Tableau de bord Propriétaire',
     subtitle: 'Gestion des salles, offres (Basique, Pro, Entreprise) et revenus mensuels.',
     logout: 'Déconnexion',
-    checkingAuth: 'Vérification des accès Super Admin...',
     unauthorizedTitle: 'Accès Restreint',
     unauthorizedDesc: 'Cette zone est réservée au propriétaire de la plateforme Salati.',
     backHome: 'Retour à l’accueil',
@@ -135,7 +133,7 @@ const translations = {
     trialHalls: 'Essai Gratuit',
     suspendedHalls: 'Suspendues / Expirées',
     totalBookings: 'Total Réservations',
-    monthlyRevenue: 'Revenu Mensuel Estimé (DZD)',
+    monthlyRevenue: 'Revenu Mensuel Estimé (DA)',
     tabHalls: 'Salles & Offres',
     tabPayments: 'Paiements & Reçus',
     tabSettings: 'Paramètres & Paiement',
@@ -191,6 +189,7 @@ const translations = {
 export default function SuperAdmin() {
   const [lang, setLang] = useState(document.documentElement.lang || 'ar');
   const [authStatus, setAuthStatus] = useState('checking');
+  const [loadingData, setLoadingData] = useState(true);
   const [activeTab, setActiveTab] = useState('halls');
 
   const [halls, setHalls] = useState([]);
@@ -238,13 +237,18 @@ export default function SuperAdmin() {
   };
 
   const verifySuperAdmin = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user || user.email?.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase()) {
-      setAuthStatus('unauthorized');
-      return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.email?.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase()) {
+        setAuthStatus('unauthorized');
+        setLoadingData(false);
+        return;
+      }
+      setAuthStatus('authorized');
+      await fetchAllData();
+    } finally {
+      setLoadingData(false);
     }
-    setAuthStatus('authorized');
-    fetchAllData();
   };
 
   const fetchAllData = async () => {
@@ -495,20 +499,57 @@ export default function SuperAdmin() {
     navigate('/login');
   };
 
-  const t = translations[lang] || translations.ar;
+  const toggleLanguage = () => {
+    const nextLang = lang === 'ar' ? 'fr' : 'ar';
+    document.documentElement.lang = nextLang;
+    document.documentElement.dir = nextLang === 'ar' ? 'rtl' : 'ltr';
+    setLang(nextLang);
+  };
 
-  if (authStatus === 'checking') {
+  const t = translations[lang] || translations.ar;
+  const isAr = lang === 'ar';
+  const localeStr = isAr ? 'ar-DZ' : 'fr-FR';
+  const currencyLabel = isAr ? 'دج' : 'DA';
+
+  // Shimmer Skeleton أثناء التحقق وجلب البيانات
+  if (authStatus === 'checking' || loadingData) {
     return (
-      <div className={styles.centeredBox} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-        <div className={styles.loaderRing}></div>
-        <p className={styles.loadingText}>{t.checkingAuth}</p>
+      <div className={styles.pageWrapper} dir={isAr ? 'rtl' : 'ltr'} aria-busy="true">
+        <header className={styles.topBar}>
+          <div className={styles.topBarInner}>
+            <div className={styles.brandArea}>
+              <div className={`${styles.skeletonBase} ${styles.skeletonLogo}`} />
+              <div className={`${styles.skeletonBase} ${styles.skeletonBadge}`} />
+            </div>
+            <div className={styles.topActions}>
+              <div className={`${styles.skeletonBase} ${styles.skeletonTopBtn}`} />
+              <div className={`${styles.skeletonBase} ${styles.skeletonTopBtnLg}`} />
+            </div>
+          </div>
+        </header>
+
+        <div className={styles.container}>
+          <div className={styles.headerSection}>
+            <div className={`${styles.skeletonBase} ${styles.skeletonMainTitle}`} />
+            <div className={`${styles.skeletonBase} ${styles.skeletonSubTitle}`} />
+          </div>
+
+          <div className={styles.kpiGrid}>
+            {[0, 1, 2, 3, 4, 5].map((idx) => (
+              <div key={idx} className={`${styles.skeletonBase} ${styles.skeletonKpiCard}`} />
+            ))}
+          </div>
+
+          <div className={`${styles.skeletonBase} ${styles.skeletonTabsBar}`} />
+          <div className={`${styles.skeletonBase} ${styles.skeletonPanel}`} />
+        </div>
       </div>
     );
   }
 
   if (authStatus === 'unauthorized') {
     return (
-      <div className={styles.centeredBox} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <div className={styles.centeredBox} dir={isAr ? 'rtl' : 'ltr'}>
         <div className={styles.unauthCard}>
           <div className={styles.lockIcon}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
@@ -554,7 +595,7 @@ export default function SuperAdmin() {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleDateString(lang === 'ar' ? 'ar-DZ' : 'fr-FR', {
+    return new Date(dateStr).toLocaleDateString(localeStr, {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -577,14 +618,16 @@ export default function SuperAdmin() {
   ];
 
   return (
-    <div className={styles.pageWrapper} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className={styles.pageWrapper} dir={isAr ? 'rtl' : 'ltr'}>
       <div className={styles.ambientGlowTop} />
       <div className={styles.ambientGlowBottom} />
 
       <header className={styles.topBar}>
         <div className={styles.topBarInner}>
           <div className={styles.brandArea}>
-            <span className={styles.logo}>salati<span className={styles.dot}>.</span></span>
+            <span className={styles.logo} dir="ltr">
+              salati<span className={styles.dot}>.</span>
+            </span>
             <span className={styles.badgeAdmin}>
               <span className={styles.pulseDot} />
               {t.brandSub}
@@ -592,16 +635,8 @@ export default function SuperAdmin() {
           </div>
 
           <div className={styles.topActions}>
-            <button
-              type="button"
-              className={styles.langSwitch}
-              onClick={() => {
-                const nextLang = lang === 'ar' ? 'fr' : 'ar';
-                document.documentElement.lang = nextLang;
-                setLang(nextLang);
-              }}
-            >
-              {lang === 'ar' ? 'FR' : 'AR'}
+            <button type="button" className={styles.langSwitch} onClick={toggleLanguage}>
+              {isAr ? 'FR' : 'AR'}
             </button>
             <button type="button" className={styles.logoutBtn} onClick={handleLogout}>
               {t.logout}
@@ -617,7 +652,7 @@ export default function SuperAdmin() {
         </div>
 
         {toastMsg && (
-          <div className={styles.toastFloating}>
+          <div role="status" className={styles.toastFloating}>
             <span className={styles.toastIcon}>✓</span>
             <span>{toastMsg}</span>
           </div>
@@ -635,7 +670,7 @@ export default function SuperAdmin() {
                 <span className={styles.kpiEmoji}>{item.icon}</span>
               </div>
               <strong className={styles.kpiValue}>
-                <AnimatedNumber value={item.value} />
+                <AnimatedNumber value={item.value} locale={localeStr} />
               </strong>
             </div>
           ))}
@@ -657,17 +692,8 @@ export default function SuperAdmin() {
           >
             <span>{t.tabPayments}</span>
             {pendingPaymentsCount > 0 && (
-              <span
-                style={{
-                  background: '#ef4444',
-                  color: '#ffffff',
-                  borderRadius: '999px',
-                  padding: '0.1rem 0.5rem',
-                  fontSize: '0.75rem',
-                  fontWeight: 800
-                }}
-              >
-                {pendingPaymentsCount}
+              <span className={styles.pendingPillBadge}>
+                {pendingPaymentsCount.toLocaleString(localeStr)}
               </span>
             )}
           </button>
@@ -780,7 +806,9 @@ export default function SuperAdmin() {
                             </select>
                           </td>
                           <td>
-                            <span className={styles.bookingPill}>{bookingsCountByHall[hall.id] || 0}</span>
+                            <span className={styles.bookingPill} dir="ltr">
+                              {(bookingsCountByHall[hall.id] || 0).toLocaleString(localeStr)}
+                            </span>
                           </td>
                           <td>
                             <span className={`${styles.statusBadge} ${badge.cls}`}>
@@ -862,13 +890,13 @@ export default function SuperAdmin() {
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th>{lang === 'ar' ? 'الصالة' : 'Salle'}</th>
-                    <th>{lang === 'ar' ? 'الباقة والمدة' : 'Offre & Durée'}</th>
-                    <th>{lang === 'ar' ? 'طريقة الدفع والمبلغ' : 'Méthode & Montant'}</th>
-                    <th>{lang === 'ar' ? 'رقم العملية / الوصل' : 'Référence / Reçu'}</th>
-                    <th>{lang === 'ar' ? 'التاريخ' : 'Date'}</th>
-                    <th>{lang === 'ar' ? 'الحالة' : 'Statut'}</th>
-                    <th>{lang === 'ar' ? 'الإجراء' : 'Action'}</th>
+                    <th>{isAr ? 'الصالة' : 'Salle'}</th>
+                    <th>{isAr ? 'الباقة والمدة' : 'Offre & Durée'}</th>
+                    <th>{isAr ? 'طريقة الدفع والمبلغ' : 'Méthode & Montant'}</th>
+                    <th>{isAr ? 'رقم العملية / الوصل' : 'Référence / Reçu'}</th>
+                    <th>{isAr ? 'التاريخ' : 'Date'}</th>
+                    <th>{isAr ? 'الحالة' : 'Statut'}</th>
+                    <th>{isAr ? 'الإجراء' : 'Action'}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -888,16 +916,27 @@ export default function SuperAdmin() {
 
                       const statusText =
                         pay.status === 'approved'
-                          ? lang === 'ar'
+                          ? isAr
                             ? 'مقبول'
                             : 'Validé'
                           : pay.status === 'rejected'
-                          ? lang === 'ar'
+                          ? isAr
                             ? 'مرفوض'
                             : 'Rejeté'
-                          : lang === 'ar'
+                          : isAr
                           ? 'قيد المراجعة'
                           : 'En attente';
+
+                      const tierLabel =
+                        pay.plan_tier === 'enterprise'
+                          ? isAr
+                            ? 'المجمعات'
+                            : 'Entreprise'
+                          : pay.plan_tier === 'pro'
+                          ? 'Pro'
+                          : isAr
+                          ? 'الأساسية'
+                          : 'Essentielle';
 
                       return (
                         <tr key={pay.id}>
@@ -906,16 +945,16 @@ export default function SuperAdmin() {
                           </td>
                           <td>
                             <div>
-                              <strong>{pay.plan_tier === 'pro' ? 'Pro' : 'Essentiel'}</strong> •{' '}
+                              <strong>{tierLabel}</strong> •{' '}
                               {pay.billing_cycle === 'annual'
-                                ? lang === 'ar'
+                                ? isAr
                                   ? 'سنوي'
                                   : 'Annuel'
                                 : pay.billing_cycle === 'semi_annual'
-                                ? lang === 'ar'
+                                ? isAr
                                   ? '6 أشهر'
                                   : '6 mois'
-                                : lang === 'ar'
+                                : isAr
                                 ? 'شهري'
                                 : 'Mensuel'}
                             </div>
@@ -928,14 +967,14 @@ export default function SuperAdmin() {
                                 ? 'Visa / Card'
                                 : 'BaridiMob / CCP'}
                             </div>
-                            <div style={{ fontSize: '0.82rem', color: '#475569' }}>
-                              {Number(pay.amount_dzd).toLocaleString()} دج
+                            <div style={{ fontSize: '0.82rem', color: '#475569' }} dir="ltr">
+                              {Number(pay.amount_dzd || 0).toLocaleString(localeStr)} {currencyLabel}
                               {pay.amount_usd ? ` ($${pay.amount_usd})` : ''}
                             </div>
                           </td>
                           <td>
                             {pay.transaction_ref && (
-                              <div style={{ fontSize: '0.8rem', marginBottom: '0.3rem', wordBreak: 'break-all' }}>
+                              <div dir="ltr" style={{ fontSize: '0.8rem', marginBottom: '0.3rem', wordBreak: 'break-all' }}>
                                 {pay.transaction_ref}
                               </div>
                             )}
@@ -1003,6 +1042,7 @@ export default function SuperAdmin() {
                 <input
                   id="trialDays"
                   type="number"
+                  dir="ltr"
                   min="1"
                   max="365"
                   value={settings.trial_days}
@@ -1012,7 +1052,7 @@ export default function SuperAdmin() {
 
               <div className={styles.formGroup}>
                 <label htmlFor="holderName">
-                  {lang === 'ar' ? 'اسم المستفيد (BaridiMob / CCP)' : 'Nom du bénéficiaire'}
+                  {isAr ? 'اسم المستفيد (BaridiMob / CCP)' : 'Nom du bénéficiaire'}
                 </label>
                 <input
                   id="holderName"
@@ -1024,7 +1064,7 @@ export default function SuperAdmin() {
 
               <div className={styles.formGroup}>
                 <label htmlFor="baridiRip">
-                  {lang === 'ar' ? 'رقم RIP بريدي موب (BaridiMob)' : 'Numéro RIP BaridiMob'}
+                  {isAr ? 'رقم RIP بريدي موب (BaridiMob)' : 'Numéro RIP BaridiMob'}
                 </label>
                 <input
                   id="baridiRip"
@@ -1037,7 +1077,7 @@ export default function SuperAdmin() {
 
               <div className={styles.formGroup}>
                 <label htmlFor="ccpAccount">
-                  {lang === 'ar' ? 'رقم الحساب البريدي CCP (اختياري)' : 'Compte CCP (Optionnel)'}
+                  {isAr ? 'رقم الحساب البريدي CCP (اختياري)' : 'Compte CCP (Optionnel)'}
                 </label>
                 <input
                   id="ccpAccount"
@@ -1050,7 +1090,7 @@ export default function SuperAdmin() {
 
               <div className={styles.formGroup}>
                 <label htmlFor="usdtTrc20">
-                  {lang === 'ar' ? 'عنوان محفظة USDT (شبكة Tron TRC20)' : 'Adresse USDT (TRC20)'}
+                  {isAr ? 'عنوان محفظة USDT (شبكة Tron TRC20)' : 'Adresse USDT (TRC20)'}
                 </label>
                 <input
                   id="usdtTrc20"
@@ -1063,7 +1103,7 @@ export default function SuperAdmin() {
 
               <div className={styles.formGroup}>
                 <label htmlFor="usdtBep20">
-                  {lang === 'ar' ? 'عنوان محفظة USDT (شبكة BNB Smart Chain BEP20 / ERC20)' : 'Adresse USDT (BEP20 / ERC20)'}
+                  {isAr ? 'عنوان محفظة USDT (شبكة BNB Smart Chain BEP20 / ERC20)' : 'Adresse USDT (BEP20 / ERC20)'}
                 </label>
                 <input
                   id="usdtBep20"
@@ -1076,7 +1116,7 @@ export default function SuperAdmin() {
 
               <div className={styles.formGroup}>
                 <label htmlFor="visaLink">
-                  {lang === 'ar' ? 'رابط الدفع ببطاقة Visa / RedotPay (اختياري)' : 'Lien de paiement Visa / RedotPay (Optionnel)'}
+                  {isAr ? 'رابط الدفع ببطاقة Visa / RedotPay (اختياري)' : 'Lien de paiement Visa / RedotPay (Optionnel)'}
                 </label>
                 <input
                   id="visaLink"
@@ -1090,11 +1130,12 @@ export default function SuperAdmin() {
 
               <div className={styles.formGroup}>
                 <label htmlFor="usdtRate">
-                  {lang === 'ar' ? 'سعر صرف 1 USDT بالدينار الجزائري (DZD)' : 'Taux de change 1 USDT en DZD'}
+                  {isAr ? 'سعر صرف 1 USDT بالدينار الجزائري (DZD)' : 'Taux de change 1 USDT en DZD'}
                 </label>
                 <input
                   id="usdtRate"
                   type="number"
+                  dir="ltr"
                   min="1"
                   value={settings.dzd_to_usdt_rate}
                   onChange={(e) => setSettings({ ...settings, dzd_to_usdt_rate: e.target.value })}
@@ -1116,6 +1157,7 @@ export default function SuperAdmin() {
                 <textarea
                   id="annAr"
                   rows="3"
+                  dir="rtl"
                   value={settings.announcement_ar}
                   onChange={(e) => setSettings({ ...settings, announcement_ar: e.target.value })}
                 />
@@ -1145,33 +1187,18 @@ export default function SuperAdmin() {
       {/* نافذة معاينة صورة وصل الدفع */}
       {previewReceiptUrl && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.75)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1rem',
-            zIndex: 9999
-          }}
+          dir={isAr ? 'rtl' : 'ltr'}
+          className={styles.receiptBackdrop}
           onClick={() => setPreviewReceiptUrl(null)}
         >
           <div
-            style={{
-              background: '#ffffff',
-              borderRadius: '18px',
-              padding: '1rem',
-              maxWidth: '520px',
-              width: '100%',
-              textAlign: 'center'
-            }}
+            className={styles.receiptModalCard}
             onClick={(e) => e.stopPropagation()}
           >
             <img
               src={previewReceiptUrl}
               alt="Receipt"
-              style={{ maxWidth: '100%', maxHeight: '72vh', borderRadius: '12px' }}
+              className={styles.receiptPreviewImg}
             />
             <div style={{ marginTop: '0.85rem' }}>
               <button
@@ -1179,7 +1206,7 @@ export default function SuperAdmin() {
                 className={styles.primaryBtn}
                 onClick={() => setPreviewReceiptUrl(null)}
               >
-                {lang === 'ar' ? 'إغلاق' : 'Fermer'}
+                {isAr ? 'إغلاق' : 'Fermer'}
               </button>
             </div>
           </div>

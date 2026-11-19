@@ -252,7 +252,7 @@ const content = {
     linkPrivacy: 'سياسة الخصوصية',
     copyright: 'جميع الحقوق محفوظة منصة salati © 2026'
   },
-  fr: {
+fr: {
     titlePrefix: 'La gestion de votre salle des fêtes devient plus simple avec ',
     subtitle: 'Un système cloud complet pour suivre les réservations, gérer les visites et offrir un site dédié à votre salle affichant les photos et les dates disponibles.',
     primaryCta: 'Commencer maintenant',
@@ -331,10 +331,8 @@ const content = {
     plan2PriceSemiAnnual: '39 000 DA',
     plan2PriceAnnual: '78 000 DA',
     plan2Features: [
-      'Toutes les fonctionnalités Essentiel incluses',
+      'Toutes les fonctionnalités Essentielles incluses',
       'Générateur QR Code Avis Google Maps dédié',
-     
-      
       'Support téléphonique prioritaire VIP'
     ],
 
@@ -347,7 +345,7 @@ const content = {
     faqs: [
       {
         q: 'Est-ce que salati prend une commission sur mes réservations ?',
-        a: 'Absolument pas ! Nous applons un système d’abonnement fixe sans aucune commission sur vos ventes. 100% de vos revenus restent à vous.'
+        a: 'Absolument pas ! Nous appliquons un système d’abonnement fixe sans aucune commission sur vos ventes. 100% de vos revenus restent à vous.'
       },
       {
         q: 'Faut-il installer un logiciel ou du matériel spécifique ?',
@@ -367,7 +365,7 @@ const content = {
       }
     ],
 
-    footerDesc: 'La première plateforme algérienne dédiée à la gestion des salles des fêtes et complexes d\'événements avec minissites en ligne.',
+    footerDesc: 'La première plateforme algérienne dédiée à la gestion des salles des fêtes et complexes d\'événements avec minisites en ligne.',
     footerCol1: 'Liens Rapides',
     footerCol2: 'Légal & Support',
     footerCol3: 'Contactez-nous',
@@ -389,6 +387,14 @@ export default function Home() {
   const [tilt, setTilt] = useState({ x: 0, y: 0, active: false });
   const [openFaq, setOpenFaq] = useState(null);
   const [isImgLoaded, setIsImgLoaded] = useState(false);
+  const [isPageBooting, setIsPageBooting] = useState(true);
+
+  useEffect(() => {
+    const bootTimer = setTimeout(() => {
+      setIsPageBooting(false);
+    }, 240);
+    return () => clearTimeout(bootTimer);
+  }, []);
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -425,7 +431,7 @@ export default function Home() {
     animatedElements.forEach(el => observer.observe(el));
 
     return () => observer.disconnect();
-  }, []);
+  }, [isPageBooting]);
 
   const handleMouseMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -477,6 +483,30 @@ export default function Home() {
 
   const cycleParam = billingCycle === 'semiAnnual' ? 'semi_annual' : billingCycle;
 
+  if (isPageBooting) {
+    return (
+      <div className={styles.homeContainer} aria-busy="true">
+        <section className={styles.hero}>
+          <div className={styles.heroContainer}>
+            <div className={styles.heroText}>
+              <div className={`${styles.skeletonBase} ${styles.skeletonTitleLine}`} />
+              <div className={`${styles.skeletonBase} ${styles.skeletonTitleLineShort}`} />
+              <div className={`${styles.skeletonBase} ${styles.skeletonSubLine}`} />
+              <div className={`${styles.skeletonBase} ${styles.skeletonSubLineShort}`} />
+              <div className={styles.skeletonCtaRow}>
+                <div className={`${styles.skeletonBase} ${styles.skeletonBtn}`} />
+                <div className={`${styles.skeletonBase} ${styles.skeletonBtn}`} />
+              </div>
+            </div>
+            <div className={styles.heroVisual}>
+              <div className={`${styles.skeletonBase} ${styles.heroImageSkeleton}`} />
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.homeContainer}>
       {/* 1. Hero Section */}
@@ -498,7 +528,7 @@ export default function Home() {
             <p className={styles.subtitle}>{t.subtitle}</p>
             <div className={styles.ctaGroup}>
               <a href="/register" onClick={(e) => navigateTo(e, '/register')} className={styles.primaryCta}>{t.primaryCta}</a>
-              <a href="#pricing" className={styles.secondaryCta}>{t.secondaryCta}</a>
+              <a href="#pricing" onClick={(e) => navigateTo(e, '#pricing')} className={styles.secondaryCta}>{t.secondaryCta}</a>
             </div>
           </div>
 
@@ -702,14 +732,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div
-          className={styles.pricingGrid}
-          style={{
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            maxWidth: '860px',
-            margin: '0 auto'
-          }}
-        >
+        <div className={`${styles.pricingGrid} ${styles.twoPlansGrid}`}>
           
           {/* الباقة 1 */}
           {(() => {
@@ -888,43 +911,44 @@ export default function Home() {
 
         </div>
       </section>
-{/* 6. قسم الأسئلة الشائعة (FAQ) */}
-<section id="faq" className={styles.faqSection}>
-  <div className={`${styles.faqHeader} ${styles.revealOnScroll} ${styles.fadeUp}`}>
-    <h2 className={styles.faqTitle}>{t.faqTitle}</h2>
-    <p className={styles.faqSubtitle}>{t.faqSubtitle}</p>
-  </div>
 
-  <div className={`${styles.faqContainer} ${styles.revealOnScroll} ${styles.fadeUp}`}>
-    {t.faqs.map((faq, index) => {
-      const isOpen = openFaq === index;
-      return (
-        <div 
-          key={index} 
-          className={`${styles.faqItem} ${isOpen ? styles.faqItemOpen : ''}`}
-        >
-          <button 
-            className={styles.faqQuestion}
-            onClick={() => toggleFaq(index)}
-            aria-expanded={isOpen}
-          >
-            <span>{faq.q}</span>
-            <span className={`${styles.faqChevron} ${isOpen ? styles.faqChevronOpen : ''}`}>
-              <IconChevronDown />
-            </span>
-          </button>
-          
-          {/* الحاوية الانسيابية للأنيميشن */}
-          <div className={`${styles.faqAnswerWrapper} ${isOpen ? styles.faqAnswerOpen : ''}`}>
-            <div className={styles.faqAnswerInner}>
-              <p>{faq.a}</p>
-            </div>
-          </div>
+      {/* 6. قسم الأسئلة الشائعة (FAQ) */}
+      <section id="faq" className={styles.faqSection}>
+        <div className={`${styles.faqHeader} ${styles.revealOnScroll} ${styles.fadeUp}`}>
+          <h2 className={styles.faqTitle}>{t.faqTitle}</h2>
+          <p className={styles.faqSubtitle}>{t.faqSubtitle}</p>
         </div>
-      );
-    })}
-  </div>
-</section>
+
+        <div className={`${styles.faqContainer} ${styles.revealOnScroll} ${styles.fadeUp}`}>
+          {t.faqs.map((faq, index) => {
+            const isOpen = openFaq === index;
+            return (
+              <div 
+                key={index} 
+                className={`${styles.faqItem} ${isOpen ? styles.faqItemOpen : ''}`}
+              >
+                <button 
+                  className={styles.faqQuestion}
+                  onClick={() => toggleFaq(index)}
+                  aria-expanded={isOpen}
+                >
+                  <span>{faq.q}</span>
+                  <span className={`${styles.faqChevron} ${isOpen ? styles.faqChevronOpen : ''}`}>
+                    <IconChevronDown />
+                  </span>
+                </button>
+                
+                {/* الحاوية الانسيابية للأنيميشن */}
+                <div className={`${styles.faqAnswerWrapper} ${isOpen ? styles.faqAnswerOpen : ''}`}>
+                  <div className={styles.faqAnswerInner}>
+                    <p>{faq.a}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       {/* 7. قسم الفوتر (Footer) */}
       <footer className={styles.footer}>

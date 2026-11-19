@@ -13,6 +13,7 @@ export default function OrdersTab({
   orderSearchQuery,
   setOrderSearchQuery,
   isAr = true,
+  isLoading = false,
   isBookingConflicted,
   parseNumber,
   getTimeSlotLabel,
@@ -21,6 +22,7 @@ export default function OrdersTab({
   handleOpenDetails
 }) {
   const cancelledCount = bookings.filter((b) => b.status === 'cancelled').length;
+  const localeStr = isAr ? 'ar-DZ' : 'fr-FR';
 
   return (
     <div className={styles.ordersContainer}>
@@ -29,15 +31,22 @@ export default function OrdersTab({
         <h2 className={styles.pageMainTitle}>
           {isAr ? 'الطلبيات' : 'Demandes'}
         </h2>
-        <span className={styles.totalCountPill}>
-          {bookings.length} {isAr ? 'طلب' : 'demandes'}
-        </span>
+        {isLoading ? (
+          <div className={`${styles.skeletonBase} ${styles.skeletonCountPill}`} />
+        ) : (
+          <span className={styles.totalCountPill}>
+            {bookings.length.toLocaleString(localeStr)}{' '}
+            {isAr ? 'طلب' : bookings.length <= 1 ? 'demande' : 'demandes'}
+          </span>
+        )}
       </div>
 
       {/* شريط البحث العريض كما في التصميم */}
       <div className={styles.searchSection}>
         <div className={styles.wideSearchBar}>
-          <IconSearch />
+          <span className={styles.searchIconWrap}>
+            <IconSearch />
+          </span>
           <input
             type="text"
             placeholder={
@@ -52,6 +61,7 @@ export default function OrdersTab({
             <button
               type="button"
               className={styles.clearSearchBtn}
+              aria-label={isAr ? 'مسح البحث' : 'Effacer la recherche'}
               onClick={() => setOrderSearchQuery('')}
             >
               ✕
@@ -107,14 +117,20 @@ export default function OrdersTab({
         </button>
       </div>
 
-      {/* شبكة بطاقات الطلبات (3 أعمدة) */}
-      {filteredOrders.length === 0 ? (
+      {/* شبكة بطاقات الطلبات (3 أعمدة) أو Shimmer Skeleton */}
+      {isLoading ? (
+        <div className={styles.cardsGridThreeCols} aria-busy="true">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <OrderCard key={idx} isAr={isAr} isLoading={true} />
+          ))}
+        </div>
+      ) : filteredOrders.length === 0 ? (
         <div className={styles.emptyOrdersBox}>
           <span>🔍</span>
           <p>
             {isAr
               ? 'لا توجد طلبيات مطابقة لخيارات البحث أو الفلترة الحالية'
-              : 'Aucune demande trouvée'}
+              : 'Aucune demande ne correspond aux critères actuels'}
           </p>
         </div>
       ) : (

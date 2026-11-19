@@ -4,7 +4,16 @@ import OrderCard from '../OrdersTab/OrderCard';
 import { IconChevronLeft, IconChevronRight } from '../Icons';
 
 // مكون الرسم البياني الخطي الممتد من بداية الكرت إلى نهايته
-function StatSparklineCard({ title, totalValue, points, color, gradientId, onClick, delay = 0 }) {
+function StatSparklineCard({
+  title,
+  totalValue,
+  points,
+  color,
+  gradientId,
+  onClick,
+  delay = 0,
+  localeStr = 'ar-DZ'
+}) {
   const [hoveredIdx, setHoveredIdx] = useState(null);
 
   const width = 320;
@@ -50,7 +59,7 @@ function StatSparklineCard({ title, totalValue, points, color, gradientId, onCli
       <div className={styles.statCardHeader}>
         <span className={styles.statCardTitle}>{title}</span>
         <strong className={styles.statCardNumber} style={{ color }}>
-          {totalValue}
+          {Number(totalValue || 0).toLocaleString(localeStr)}
         </strong>
       </div>
 
@@ -60,13 +69,13 @@ function StatSparklineCard({ title, totalValue, points, color, gradientId, onCli
           <div
             className={styles.floatingTooltip}
             style={{
-              left: `clamp(46px, ${rawLeftPercent}%, calc(100% - 46px))`,
+              left: `clamp(48px, ${rawLeftPercent}%, calc(100% - 48px))`,
               top: `${Math.max(2, (activePoint.y / height) * 100 - 34)}%`,
               borderColor: color
             }}
           >
             <span>{activePoint.label}</span>
-            <strong style={{ color }}>{activePoint.value}</strong>
+            <strong style={{ color }}>{activePoint.value.toLocaleString(localeStr)}</strong>
           </div>
         )}
 
@@ -108,6 +117,10 @@ function StatSparklineCard({ title, totalValue, points, color, gradientId, onCli
                 style={{ left: `${leftPct}%`, top: `${topPct}%` }}
                 onMouseEnter={() => setHoveredIdx(idx)}
                 onMouseLeave={() => setHoveredIdx(null)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setHoveredIdx(idx);
+                }}
               >
                 <span
                   className={`${styles.htmlPointDot} ${
@@ -129,6 +142,7 @@ function StatSparklineCard({ title, totalValue, points, color, gradientId, onCli
 
 export default function OverviewTab({
   isAr = true,
+  isLoading = false,
   bookings = [],
   unconfirmedOrders = [],
   confirmedBookings = [],
@@ -142,6 +156,9 @@ export default function OverviewTab({
 }) {
   const [todayIdx, setTodayIdx] = useState(0);
   const [hoveredBarIdx, setHoveredBarIdx] = useState(null);
+
+  const localeStr = isAr ? 'ar-DZ' : 'fr-FR';
+  const currencyLabel = isAr ? 'دج' : 'DA';
 
   // 1. إجمالي المبيعات المؤكدة
   const totalSales = useMemo(() => {
@@ -254,38 +271,55 @@ export default function OverviewTab({
         </h2>
       </div>
 
-      {/* الصف الأول: 3 بطاقات إحصائية لآخر 4 أشهر */}
-      <section className={styles.topStatsGrid}>
-        <StatSparklineCard
-          title={isAr ? 'الطلبات' : 'Total Demandes'}
-          totalValue={bookings.length}
-          points={ordersTrend}
-          color="#0052cc"
-          gradientId="gradOrders"
-          delay={0}
-          onClick={() => setActiveTab && setActiveTab('orders')}
-        />
+      {/* الصف الأول: 3 بطاقات إحصائية لآخر 4 أشهر أو Shimmer Skeleton */}
+      {isLoading ? (
+        <section className={styles.topStatsGrid} aria-busy="true">
+          {[0, 1, 2].map((idx) => (
+            <div key={idx} className={styles.statCard} style={{ cursor: 'default' }}>
+              <div className={styles.statCardHeader}>
+                <div className={`${styles.skeletonBase} ${styles.skeletonStatTitle}`} />
+                <div className={`${styles.skeletonBase} ${styles.skeletonStatNum}`} />
+              </div>
+              <div className={`${styles.skeletonBase} ${styles.skeletonSparkline}`} />
+            </div>
+          ))}
+        </section>
+      ) : (
+        <section className={styles.topStatsGrid}>
+          <StatSparklineCard
+            title={isAr ? 'الطلبات' : 'Total Demandes'}
+            totalValue={bookings.length}
+            points={ordersTrend}
+            color="#0052cc"
+            gradientId="gradOrders"
+            delay={0}
+            localeStr={localeStr}
+            onClick={() => setActiveTab && setActiveTab('orders')}
+          />
 
-        <StatSparklineCard
-          title={isAr ? 'الطلبات المعلّقة' : 'En attente'}
-          totalValue={unconfirmedOrders.length}
-          points={pendingTrend}
-          color="#d97706"
-          gradientId="gradPending"
-          delay={80}
-          onClick={() => setActiveTab && setActiveTab('orders')}
-        />
+          <StatSparklineCard
+            title={isAr ? 'الطلبات المعلّقة' : 'En attente'}
+            totalValue={unconfirmedOrders.length}
+            points={pendingTrend}
+            color="#d97706"
+            gradientId="gradPending"
+            delay={80}
+            localeStr={localeStr}
+            onClick={() => setActiveTab && setActiveTab('orders')}
+          />
 
-        <StatSparklineCard
-          title={isAr ? 'إجمالي العمال' : 'Équipe & Staff'}
-          totalValue={staffList.length}
-          points={staffTrend}
-          color="#059669"
-          gradientId="gradStaff"
-          delay={160}
-          onClick={() => setActiveTab && setActiveTab('staff')}
-        />
-      </section>
+          <StatSparklineCard
+            title={isAr ? 'إجمالي العمال' : 'Équipe & Staff'}
+            totalValue={staffList.length}
+            points={staffTrend}
+            color="#059669"
+            gradientId="gradStaff"
+            delay={160}
+            localeStr={localeStr}
+            onClick={() => setActiveTab && setActiveTab('staff')}
+          />
+        </section>
+      )}
 
       {/* الصف الثاني: طلبيات اليوم + رسم المبيعات لـ 12 شهراً بالنسب المئوية */}
       <section className={styles.bottomMainGrid}>
@@ -295,32 +329,36 @@ export default function OverviewTab({
               {isAr ? 'طلبيات اليوم' : 'Demandes du jour'}
             </h3>
 
-            {todayOrders.length > 1 && (
+            {!isLoading && todayOrders.length > 1 && (
               <div className={styles.sliderControls}>
                 <button
                   type="button"
                   className={styles.sliderBtn}
+                  aria-label={isAr ? 'الطلب السابق' : 'Demande précédente'}
                   onClick={() =>
                     setTodayIdx((prev) => (prev - 1 + todayOrders.length) % todayOrders.length)
                   }
                 >
-                  <IconChevronRight />
+                  {isAr ? <IconChevronRight /> : <IconChevronLeft />}
                 </button>
-                <span className={styles.sliderCounter}>
+                <span className={styles.sliderCounter} dir="ltr">
                   {safeTodayIdx + 1} / {todayOrders.length}
                 </span>
                 <button
                   type="button"
                   className={styles.sliderBtn}
+                  aria-label={isAr ? 'الطلب التالي' : 'Demande suivante'}
                   onClick={() => setTodayIdx((prev) => (prev + 1) % todayOrders.length)}
                 >
-                  <IconChevronLeft />
+                  {isAr ? <IconChevronLeft /> : <IconChevronRight />}
                 </button>
               </div>
             )}
           </div>
 
-          {currentTodayOrder ? (
+          {isLoading ? (
+            <OrderCard isAr={isAr} isLoading={true} />
+          ) : currentTodayOrder ? (
             <OrderCard
               key={currentTodayOrder.id}
               item={currentTodayOrder}
@@ -345,66 +383,79 @@ export default function OverviewTab({
             <span className={styles.panelSubTitle}>{isAr ? 'المبيعات' : 'Ventes'}</span>
           </div>
 
-          <div className={styles.salesBodyGrid}>
-            <div className={styles.salesTotalCol}>
-              <strong className={styles.salesBigNumber}>
-                {totalSales.toLocaleString()} <span>{isAr ? 'دج' : 'DA'}</span>
-              </strong>
-              <span className={styles.salesHint}>
-                {isAr ? 'إجمالي المداخيل المؤكدة' : 'Revenus confirmés'}
-              </span>
+          {isLoading ? (
+            <div className={styles.salesBodyGrid} aria-busy="true">
+              <div className={styles.salesTotalCol}>
+                <div className={`${styles.skeletonBase} ${styles.skeletonBigSales}`} />
+                <div className={`${styles.skeletonBase} ${styles.skeletonSalesHint}`} />
+              </div>
+              <div className={`${styles.skeletonBase} ${styles.skeletonChartBox}`} />
             </div>
-
-            <div className={styles.barChartArea}>
-              {/* خطوط الشبكة الأفقية بالنسب المئوية من 0% إلى 100% */}
-              <div className={styles.chartGridLines}>
-                {[100, 80, 60, 40, 20, 0].map((percentTick) => (
-                  <div key={percentTick} className={styles.gridLineRow}>
-                    <span className={styles.yAxisLabel}>{percentTick}%</span>
-                    <div className={styles.gridLine} />
-                  </div>
-                ))}
+          ) : (
+            <div className={styles.salesBodyGrid}>
+              <div className={styles.salesTotalCol}>
+                <strong className={styles.salesBigNumber}>
+                  {totalSales.toLocaleString(localeStr)} <span>{currencyLabel}</span>
+                </strong>
+                <span className={styles.salesHint}>
+                  {isAr ? 'إجمالي المداخيل المؤكدة' : 'Revenus confirmés'}
+                </span>
               </div>
 
-              {/* أعمدة الـ 12 شهراً */}
-              <div className={styles.barsContainer}>
-                {monthlySalesData.map((bar, idx) => {
-                  const heightPercent = Math.min(100, Math.max(bar.percentage, 3));
-                  const isHovered = hoveredBarIdx === idx;
-
-                  return (
-                    <div
-                      key={idx}
-                      className={styles.barColumn}
-                      onMouseEnter={() => setHoveredBarIdx(idx)}
-                      onMouseLeave={() => setHoveredBarIdx(null)}
-                    >
-                      {isHovered && (
-                        <div className={styles.barTooltip}>
-                          <span>{bar.label}</span>
-                          <strong>{bar.percentage}%</strong>
-                          {bar.amount > 0 && (
-                            <small>{bar.amount.toLocaleString()} دج</small>
-                          )}
-                        </div>
-                      )}
-
-                      <div className={styles.barTrack}>
-                        <div
-                          className={`${styles.barFill} ${isHovered ? styles.barFillActive : ''}`}
-                          style={{
-                            height: `${heightPercent}%`,
-                            animationDelay: `${idx * 55}ms`
-                          }}
-                        />
-                      </div>
-                      <span className={styles.xAxisLabel}>{bar.label}</span>
+              <div className={styles.barChartArea}>
+                {/* خطوط الشبكة الأفقية بالنسب المئوية من 0% إلى 100% */}
+                <div className={styles.chartGridLines}>
+                  {[100, 80, 60, 40, 20, 0].map((percentTick) => (
+                    <div key={percentTick} className={styles.gridLineRow}>
+                      <span className={styles.yAxisLabel} dir="ltr">{percentTick}%</span>
+                      <div className={styles.gridLine} />
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
+
+                {/* أعمدة الـ 12 شهراً */}
+                <div className={styles.barsContainer}>
+                  {monthlySalesData.map((bar, idx) => {
+                    const heightPercent = Math.min(100, Math.max(bar.percentage, 3));
+                    const isHovered = hoveredBarIdx === idx;
+
+                    return (
+                      <div
+                        key={idx}
+                        className={styles.barColumn}
+                        onMouseEnter={() => setHoveredBarIdx(idx)}
+                        onMouseLeave={() => setHoveredBarIdx(null)}
+                        onClick={() => setHoveredBarIdx(isHovered ? null : idx)}
+                      >
+                        {isHovered && (
+                          <div className={styles.barTooltip}>
+                            <span>{bar.label}</span>
+                            <strong dir="ltr">{bar.percentage}%</strong>
+                            {bar.amount > 0 && (
+                              <small dir="ltr">
+                                {bar.amount.toLocaleString(localeStr)} {currencyLabel}
+                              </small>
+                            )}
+                          </div>
+                        )}
+
+                        <div className={styles.barTrack}>
+                          <div
+                            className={`${styles.barFill} ${isHovered ? styles.barFillActive : ''}`}
+                            style={{
+                              height: `${heightPercent}%`,
+                              animationDelay: `${idx * 55}ms`
+                            }}
+                          />
+                        </div>
+                        <span className={styles.xAxisLabel}>{bar.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
     </div>
