@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import styles from './Register.module.css';
 
@@ -15,6 +15,7 @@ export default function Register() {
   const rawCycle = params.get('cycle');
   const selectedCycle = ['monthly', 'semi_annual', 'annual'].includes(rawCycle) ? rawCycle : 'monthly';
 
+  const [oauthUser, setOauthUser] = useState(null);
   const [formData, setFormData] = useState({
     hallName: '',
     fullName: '',
@@ -25,7 +26,87 @@ export default function Register() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // تعبئة البريد الإلكتروني والاسم تلقائياً إذا كان المستخدم قادماً من تسجيل الدخول عبر Google
+  useEffect(() => {
+    const fillUserFromSession = async (session) => {
+      if (!session?.user) return;
+      const userId = session.user.id;
+      const userEmail = session.user.email?.trim().toLowerCase();
+
+      // إذا كان يملك صالة مسجلة بالفعل أو موظفاً نشطاً، توجيهه مباشرة للوحة التحكم
+      const { data: existingHall } = await supabase
+        .from('halls')
+        .select('id')
+        .eq('owner_id', userId)
+        .maybeSingle();
+
+      if (existingHall) {
+        navigate('/admin');
+        return;
+      }
+
+      if (userEmail) {
+        const { data: staffRecord } = await supabase
+          .from('hall_staff')
+          .select('is_active')
+          .ilike('email', userEmail)
+          .maybeSingle();
+
+        if (staffRecord && staffRecord.is_active !== false) {
+          navigate('/admin');
+          return;
+        }
+      }
+
+      setOauthUser(session.user);
+      setFormData((prev) => ({
+        ...prev,
+        email: session.user.email || prev.email,
+        fullName:
+          prev.fullName ||
+          session.user.user_metadata?.full_name ||
+          session.user.user_metadata?.name ||
+          ''
+      }));
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) fillUserFromSession(session);
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+        fillUserFromSession(session);
+      }
+    });
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  const handleGoogleRegister = async () => {
+    setGoogleLoading(true);
+    setErrorMessage('');
+
+    try {
+      const currentSearch = window.location.search || '';
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/register${currentSearch}`
+        }
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      setErrorMessage('تعذر المتابعة باستخدام Google: ' + error.message);
+      setGoogleLoading(false);
+    }
+  };
 
   const generateSlug = (name, userId = '') => {
     const suffix = userId ? `-${String(userId).slice(0, 5)}` : `-${Date.now().toString().slice(-4)}`;
@@ -51,22 +132,38 @@ export default function Register() {
     setErrorMessage('');
 
     try {
-      // 1. إنشاء الحساب في Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email.trim(),
-        password: formData.password,
-        options: {
+      let user = oauthUser;
+
+      if (user) {
+        // المستخدم مسجل الدخول مسبقاً عبر Google: نُحدّث بياناته وكلمة المرور
+        const updatePayload = {
           data: {
             full_name: formData.fullName,
             phone: formData.phone,
             hall_name: formData.hallName
           }
+        };
+        if (formData.password && formData.password.length >= 6) {
+          updatePayload.password = formData.password;
         }
-      });
+        await supabase.auth.updateUser(updatePayload);
+      } else {
+        // 1. إنشاء الحساب العادي في Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.email.trim(),
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.fullName,
+              phone: formData.phone,
+              hall_name: formData.hallName
+            }
+          }
+        });
 
-      if (authError) throw authError;
-
-      const user = authData.user;
+        if (authError) throw authError;
+        user = authData.user;
+      }
 
       if (user) {
         // جلب مدة الفترة التجريبية من إعدادات المنصة (الافتراضي 14 يوماً)
@@ -138,6 +235,57 @@ export default function Register() {
           </div>
         )}
 
+        {/* زر التسجيل السريع عبر Google (يظهر قبل الربط ويختفي بعد تعبئة البريد تلقائياً) */}
+        {!oauthUser && (
+          <>
+            <button
+              type="button"
+              onClick={handleGoogleRegister}
+              disabled={loading || googleLoading}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.65rem',
+                backgroundColor: '#ffffff',
+                color: '#0f172a',
+                border: '1px solid #e2e8f0',
+                borderRadius: '14px',
+                padding: '0.8rem 1.25rem',
+                fontSize: '0.95rem',
+                fontWeight: '700',
+                cursor: googleLoading ? 'not-allowed' : 'pointer',
+                opacity: googleLoading ? 0.65 : 1,
+                transition: 'all 0.2s ease',
+                boxSizing: 'border-box'
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z" />
+                <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z" />
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z" />
+              </svg>
+              <span>{googleLoading ? 'جاري الاتصال بـ Google...' : 'المتابعة باستخدام Google'}</span>
+            </button>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              textAlign: 'center',
+              margin: '1.25rem 0',
+              color: '#64748b',
+              fontSize: '0.85rem',
+              fontWeight: '600'
+            }}>
+              <span style={{ flex: 1, borderBottom: '1px solid #e2e8f0' }} />
+              <span style={{ padding: '0 0.75rem' }}>أو أكمل البيانات يدوياً</span>
+              <span style={{ flex: 1, borderBottom: '1px solid #e2e8f0' }} />
+            </div>
+          </>
+        )}
+
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.gridRow}>
             <div className={styles.inputGroup}>
@@ -196,9 +344,11 @@ export default function Register() {
                 type="email"
                 name="email"
                 required
+                readOnly={Boolean(oauthUser)}
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="abdourehmen4@gmail.com"
+                style={oauthUser ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed' } : undefined}
               />
             </div>
             <div className={styles.inputGroup}>
@@ -215,7 +365,7 @@ export default function Register() {
             </div>
           </div>
 
-          <button type="submit" className={styles.submitBtn} disabled={loading}>
+          <button type="submit" className={styles.submitBtn} disabled={loading || googleLoading}>
             {loading ? 'جاري إنشاء الحساب وتفعيل الصالة...' : 'إنشاء الحساب وتفعيل الصالة'}
           </button>
         </form>

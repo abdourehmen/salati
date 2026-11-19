@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 import styles from './Navbar.module.css';
 
 /* أيقونات الملاحة والقائمة */
@@ -11,7 +12,7 @@ const IconHome = () => (
 
 const IconSparkles = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 7.92c0 .13 0 .261 0 .391a7.5 7.5 0 0 0-7.92 7.92c-.13 0-.261 0-.391 0a7.5 7.5 0 0 0-7.92-7.92c0-.13 0-.261 0-.391A7.5 7.5 0 0 0 12 3z"></path>
+    <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 7.92c0 .13 0 .261 0 .391a7.5 7.5 0 0 0-7.92 7.92c-.13 0-.261 0-.391 0a7.5 7.5 0 0 0-7.92-7.92c-.13 0-.261 0-.391A7.5 7.5 0 0 0 12 3z"></path>
   </svg>
 );
 
@@ -85,6 +86,7 @@ export default function Navbar() {
   const [lang, setLang] = useState(document.documentElement.lang || 'ar');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const langDropdownRef = useRef(null);
 
   useEffect(() => {
@@ -98,6 +100,68 @@ export default function Navbar() {
     });
 
     return () => observer.disconnect();
+  }, []);
+
+  /* التحقق من وجود صالة مسجلة أو سجل موظف نشط قبل إظهار زر لوحة التحكم */
+  useEffect(() => {
+    const checkDashboardAccess = async (session) => {
+      if (!session?.user) {
+        setIsLoggedIn(false);
+        return;
+      }
+
+      const userId = session.user.id;
+      const userEmail = session.user.email?.trim().toLowerCase();
+
+      // 1. فحص هل المستخدم يملك صالة مسجلة بالفعل
+      const { data: existingHall } = await supabase
+        .from('halls')
+        .select('id')
+        .eq('owner_id', userId)
+        .maybeSingle();
+
+      if (existingHall) {
+        setIsLoggedIn(true);
+        return;
+      }
+
+      // 2. فحص هل المستخدم موظف نشط في صالة
+      if (userEmail) {
+        const { data: staffRecord } = await supabase
+          .from('hall_staff')
+          .select('is_active')
+          .ilike('email', userEmail)
+          .maybeSingle();
+
+        if (staffRecord && staffRecord.is_active !== false) {
+          setIsLoggedIn(true);
+          return;
+        }
+      }
+
+      // 3. مستخدم سجل بـ Google لكنه لم يكمل إنشاء صالته بعد
+      setIsLoggedIn(false);
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      checkDashboardAccess(session);
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      checkDashboardAccess(session);
+    });
+
+    const handleRouteChange = () => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        checkDashboardAccess(session);
+      });
+    };
+    window.addEventListener('popstate', handleRouteChange);
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+      window.removeEventListener('popstate', handleRouteChange);
+    };
   }, []);
 
   /* إغلاق قائمة اللغات المنسدلة عند الضغط خارجها */
@@ -199,12 +263,20 @@ export default function Navbar() {
 
           {/* أزرار الإجراءات في أسفل قائمة الجوال */}
           <div className={styles.mobileNavActions}>
-            <a href="/login" onClick={(e) => navigateTo(e, '/login')} className={styles.loginBtn}>
-              {isAr ? 'دخول الحساب' : 'Connexion'}
-            </a>
-            <a href="/register" onClick={(e) => navigateTo(e, '/register')} className={styles.registerBtn}>
-              {isAr ? 'ابدأ تجربة مجانية' : 'Essai Gratuit'}
-            </a>
+            {isLoggedIn ? (
+              <a href="/admin" onClick={(e) => navigateTo(e, '/admin')} className={styles.registerBtn}>
+                {isAr ? 'لوحة التحكم' : 'Tableau de bord'}
+              </a>
+            ) : (
+              <>
+                <a href="/login" onClick={(e) => navigateTo(e, '/login')} className={styles.loginBtn}>
+                  {isAr ? 'دخول الحساب' : 'Connexion'}
+                </a>
+                <a href="/register" onClick={(e) => navigateTo(e, '/register')} className={styles.registerBtn}>
+                  {isAr ? 'ابدأ تجربة مجانية' : 'Essai Gratuit'}
+                </a>
+              </>
+            )}
           </div>
         </div>
 
@@ -247,12 +319,20 @@ export default function Navbar() {
           </div>
 
           <div className={styles.desktopNavActions}>
-            <a href="/login" onClick={(e) => navigateTo(e, '/login')} className={styles.loginBtn}>
-              {isAr ? 'دخول' : 'Connexion'}
-            </a>
-            <a href="/register" onClick={(e) => navigateTo(e, '/register')} className={styles.registerBtn}>
-              {isAr ? 'تجربة مجانية' : 'Essai Gratuit'}
-            </a>
+            {isLoggedIn ? (
+              <a href="/admin" onClick={(e) => navigateTo(e, '/admin')} className={styles.registerBtn}>
+                {isAr ? 'لوحة التحكم' : 'Tableau de bord'}
+              </a>
+            ) : (
+              <>
+                <a href="/login" onClick={(e) => navigateTo(e, '/login')} className={styles.loginBtn}>
+                  {isAr ? 'دخول' : 'Connexion'}
+                </a>
+                <a href="/register" onClick={(e) => navigateTo(e, '/register')} className={styles.registerBtn}>
+                  {isAr ? 'تجربة مجانية' : 'Essai Gratuit'}
+                </a>
+              </>
+            )}
           </div>
 
           {/* زر الهامبرغر للجوال */}

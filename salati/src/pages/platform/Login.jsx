@@ -20,6 +20,8 @@ const translations = {
     forgotPassword: 'نسيت كلمة المرور؟',
     submitBtn: 'دخول لوحة التحكم',
     submittingBtn: 'جاري التحقق والتحويل...',
+    orDivider: 'أو',
+    googleBtn: 'المتابعة باستخدام Google',
     noAccount: 'ليس لديك حساب بعد؟',
     registerLink: 'سجّل صالتك الآن',
     // نصوص استعادة كلمة المرور
@@ -50,6 +52,8 @@ const translations = {
     forgotPassword: 'Mot de passe oublié ?',
     submitBtn: 'Accéder au tableau de bord',
     submittingBtn: 'Connexion en cours...',
+    orDivider: 'ou',
+    googleBtn: 'Continuer avec Google',
     noAccount: 'Vous n’avez pas encore de compte ?',
     registerLink: 'Inscrivez votre salle',
     // Textes récupération mot de passe
@@ -89,6 +93,7 @@ export default function Login() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -99,15 +104,76 @@ export default function Login() {
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 
     // الكشف التلقائي عن رابط استعادة كلمة المرور القادم من البريد الإلكتروني
-    if (window.location.hash.includes('type=recovery') || window.location.search.includes('type=recovery')) {
+    const isRecoveryLink =
+      window.location.hash.includes('type=recovery') ||
+      window.location.search.includes('type=recovery');
+
+    if (isRecoveryLink) {
       setViewMode('update_password');
     }
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+    // التحقق من الجلسة بعد الدخول عبر Google وتوجيه المستخدم حسب حالته
+    const handleOAuthSession = async (session) => {
+      if (!session?.user || isRecoveryLink) return;
+      if (session.user.app_metadata?.provider === 'google') {
+        const userId = session.user.id;
+        const userEmail = session.user.email?.trim().toLowerCase();
+
+        // 1. التحقق إن كان موظفاً في صالة
+        if (userEmail) {
+          const { data: staffRecord } = await supabase
+            .from('hall_staff')
+            .select('is_active, hall_id')
+            .ilike('email', userEmail)
+            .maybeSingle();
+
+          if (staffRecord) {
+            if (staffRecord.is_active === false) {
+              await supabase.auth.signOut();
+              setErrorMessage(
+                document.documentElement.lang === 'fr'
+                  ? 'Votre compte a été suspendu par le propriétaire.'
+                  : 'تم إيقاف حسابك مؤقتاً من طرف مالك القاعة.'
+              );
+              return;
+            }
+            navigate('/admin');
+            return;
+          }
+        }
+
+        // 2. التحقق إن كان يملك صالة مسجلة بالفعل
+        const { data: existingHall } = await supabase
+          .from('halls')
+          .select('id')
+          .eq('owner_id', userId)
+          .maybeSingle();
+
+        if (existingHall) {
+          navigate('/admin');
+        } else {
+          // 3. مستخدم جديد بدون صالة: توجيهه لصفحة التسجيل لإكمال بيانات الصالة
+          navigate('/register');
+        }
+      }
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        handleOAuthSession(session);
+      }
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setErrorMessage('');
         setSuccessMessage('');
         setViewMode('update_password');
+        return;
+      }
+
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+        await handleOAuthSession(session);
       }
     });
 
@@ -123,6 +189,32 @@ export default function Login() {
       ...formData,
       [name]: type === 'checkbox' ? checked : value
     });
+  };
+const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/login`,
+          queryParams: {
+            prompt: 'select_account'
+          }
+        }
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      setErrorMessage(
+        lang === 'ar'
+          ? 'تعذر بدء تسجيل الدخول عبر Google: ' + error.message
+          : 'Erreur Google Auth : ' + error.message
+      );
+      setGoogleLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -241,7 +333,7 @@ export default function Login() {
 
   const t = translations[lang] || translations.ar;
 
- const renderEyeButton = (isVisible, toggleFn) => (
+  const renderEyeButton = (isVisible, toggleFn) => (
     <button
       type="button"
       onClick={toggleFn}
@@ -344,73 +436,95 @@ export default function Login() {
 
         {/* 1. نموذج الدخول الأساسي */}
         {viewMode === 'login' && (
-          <form onSubmit={handleSubmit} className={styles.form}>
-            
-            {/* البريد الإلكتروني */}
-            <div className={styles.inputGroup}>
-              <label htmlFor="email">{t.emailLabel}</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                required
-                placeholder={t.emailPlaceholder}
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-
-            {/* كلمة المرور */}
-            <div className={styles.inputGroup}>
-              <div className={styles.passwordHeader}>
-                <label htmlFor="password">{t.passwordLabel}</label>
-                <a 
-                  href="#forgot-password" 
-                  className={styles.forgotLink}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setErrorMessage('');
-                    setSuccessMessage('');
-                    setResetEmail(formData.email);
-                    setViewMode('forgot');
-                  }}
-                >
-                  {t.forgotPassword}
-                </a>
-              </div>
-              <div style={{ position: 'relative', width: '100%' }}>
+          <>
+            <form onSubmit={handleSubmit} className={styles.form}>
+              
+              {/* البريد الإلكتروني */}
+              <div className={styles.inputGroup}>
+                <label htmlFor="email">{t.emailLabel}</label>
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  name="password"
+                  type="email"
+                  id="email"
+                  name="email"
                   required
-                  placeholder={t.passwordPlaceholder}
-                  value={formData.password}
+                  placeholder={t.emailPlaceholder}
+                  value={formData.email}
                   onChange={handleChange}
-                  style={{ width: '100%', ...passwordInputPadding }}
                 />
-                {renderEyeButton(showPassword, () => setShowPassword((prev) => !prev))}
               </div>
+
+              {/* كلمة المرور */}
+              <div className={styles.inputGroup}>
+                <div className={styles.passwordHeader}>
+                  <label htmlFor="password">{t.passwordLabel}</label>
+                  <a 
+                    href="#forgot-password" 
+                    className={styles.forgotLink}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setErrorMessage('');
+                      setSuccessMessage('');
+                      setResetEmail(formData.email);
+                      setViewMode('forgot');
+                    }}
+                  >
+                    {t.forgotPassword}
+                  </a>
+                </div>
+                <div style={{ position: 'relative', width: '100%' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="password"
+                    name="password"
+                    required
+                    placeholder={t.passwordPlaceholder}
+                    value={formData.password}
+                    onChange={handleChange}
+                    style={{ width: '100%', ...passwordInputPadding }}
+                  />
+                  {renderEyeButton(showPassword, () => setShowPassword((prev) => !prev))}
+                </div>
+              </div>
+
+              {/* خيار تذكرني */}
+              <div className={styles.checkboxGroup}>
+                <input
+                  type="checkbox"
+                  id="rememberMe"
+                  name="rememberMe"
+                  checked={formData.rememberMe}
+                  onChange={handleChange}
+                />
+                <label htmlFor="rememberMe">{t.rememberMe}</label>
+              </div>
+
+              {/* زر الدخول */}
+              <button type="submit" className={styles.submitBtn} disabled={loading || googleLoading}>
+                {loading ? t.submittingBtn : t.submitBtn}
+              </button>
+
+            </form>
+
+            {/* فاصل وزر تسجيل الدخول عبر Google */}
+            <div className={styles.divider}>
+              <span>{t.orDivider}</span>
             </div>
 
-            {/* خيار تذكرني */}
-            <div className={styles.checkboxGroup}>
-              <input
-                type="checkbox"
-                id="rememberMe"
-                name="rememberMe"
-                checked={formData.rememberMe}
-                onChange={handleChange}
-              />
-              <label htmlFor="rememberMe">{t.rememberMe}</label>
-            </div>
-
-            {/* زر الدخول */}
-            <button type="submit" className={styles.submitBtn} disabled={loading}>
-              {loading ? t.submittingBtn : t.submitBtn}
+            <button
+              type="button"
+              className={styles.googleBtn}
+              onClick={handleGoogleLogin}
+              disabled={loading || googleLoading}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z" />
+                <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z" />
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z" />
+              </svg>
+              <span>{googleLoading ? t.submittingBtn : t.googleBtn}</span>
             </button>
-
-          </form>
+          </>
         )}
 
         {/* 2. نموذج طلب رابط استعادة كلمة المرور */}
