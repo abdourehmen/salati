@@ -389,6 +389,52 @@ export default function Home() {
   const [isImgLoaded, setIsImgLoaded] = useState(false);
   const [isPageBooting, setIsPageBooting] = useState(true);
 
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    phone: '',
+    wilaya: '',
+    message: ''
+  });
+  const [contactSending, setContactSending] = useState(false);
+  const [contactStatus, setContactStatus] = useState(null);
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    setContactSending(true);
+    setContactStatus(null);
+
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        },
+        body: JSON.stringify({
+          access_key: '7605bbdd-1090-4597-8289-d5cfddc8a41c',
+          subject: `طلب استشارة جديد من ${contactForm.name} - منصة salati`,
+          from_name: 'منصة salati',
+          name: contactForm.name,
+          phone: contactForm.phone,
+          wilaya: contactForm.wilaya,
+          message: contactForm.message
+        })
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setContactStatus('success');
+        setContactForm({ name: '', phone: '', wilaya: '', message: '' });
+      } else {
+        setContactStatus('error');
+      }
+    } catch {
+      setContactStatus('error');
+    } finally {
+      setContactSending(false);
+    }
+  };
+
   useEffect(() => {
     const bootTimer = setTimeout(() => {
       setIsPageBooting(false);
@@ -869,12 +915,56 @@ export default function Home() {
               <p>{lang === 'ar' ? 'أدخل معلوماتك وسيتصل بك مستشارنا التقني فوراً' : 'Laissez-nous vos coordonnées'}</p>
             </div>
 
-            <form onSubmit={(e) => e.preventDefault()} className={styles.saasContactForm}>
+            {contactStatus === 'success' && (
+              <div
+                role="status"
+                style={{
+                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  color: '#059669',
+                  padding: '0.85rem 1rem',
+                  borderRadius: '14px',
+                  fontSize: '0.9rem',
+                  fontWeight: '700',
+                  marginBottom: '1rem',
+                  textAlign: 'center'
+                }}
+              >
+                {lang === 'ar'
+                  ? '✓ تم إرسال طلبك بنجاح! سيتواصل معك فريقنا قريباً.'
+                  : '✓ Votre demande a été envoyée avec succès ! Notre équipe vous contactera bientôt.'}
+              </div>
+            )}
+
+            {contactStatus === 'error' && (
+              <div
+                role="alert"
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  color: '#dc2626',
+                  padding: '0.85rem 1rem',
+                  borderRadius: '14px',
+                  fontSize: '0.9rem',
+                  fontWeight: '700',
+                  marginBottom: '1rem',
+                  textAlign: 'center'
+                }}
+              >
+                {lang === 'ar'
+                  ? 'تعذر إرسال الطلب حالياً، يرجى المحاولة مرة أخرى.'
+                  : 'Impossible d’envoyer la demande, veuillez réessayer.'}
+              </div>
+            )}
+
+            <form onSubmit={handleContactSubmit} className={styles.saasContactForm}>
               <div className={styles.inputFieldGroup}>
                 <label>{lang === 'ar' ? 'اسم الصالة أو اسمك الشخصي' : 'Nom ou Nom de la salle'}</label>
                 <input 
                   type="text" 
                   placeholder={lang === 'ar' ? 'مثال: صالة الأحلام - الجزائر' : 'Ex: Salle Les Rêves'} 
+                  value={contactForm.name}
+                  onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
                   required 
                 />
               </div>
@@ -882,12 +972,24 @@ export default function Home() {
               <div className={styles.inputRow}>
                 <div className={styles.inputFieldGroup}>
                   <label>{lang === 'ar' ? 'رقم الهاتف' : 'Téléphone'}</label>
-                  <input type="tel" placeholder="05XX XX XX XX" required />
+                  <input
+                    type="tel"
+                    placeholder="05XX XX XX XX"
+                    value={contactForm.phone}
+                    onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })}
+                    required
+                  />
                 </div>
 
                 <div className={styles.inputFieldGroup}>
                   <label>{lang === 'ar' ? 'الولاية' : 'Wilaya'}</label>
-                  <input type="text" placeholder={lang === 'ar' ? 'مثال: وهران (31)' : 'Ex: Oran (31)'} required />
+                  <input
+                    type="text"
+                    placeholder={lang === 'ar' ? 'مثال: وهران (31)' : 'Ex: Oran (31)'}
+                    value={contactForm.wilaya}
+                    onChange={(e) => setContactForm({ ...contactForm, wilaya: e.target.value })}
+                    required
+                  />
                 </div>
               </div>
 
@@ -896,11 +998,17 @@ export default function Home() {
                 <textarea 
                   rows="3" 
                   placeholder={lang === 'ar' ? 'اكتب استفسارك هنا...' : 'Votre message...'}
+                  value={contactForm.message}
+                  onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
                 ></textarea>
               </div>
 
-              <button type="submit" className={styles.submitSaasBtn}>
-                <span>{lang === 'ar' ? 'إرسال الطلب الآن' : 'Envoyer la demande'}</span>
+              <button type="submit" className={styles.submitSaasBtn} disabled={contactSending}>
+                <span>
+                  {contactSending
+                    ? (lang === 'ar' ? 'جاري الإرسال...' : 'Envoi en cours...')
+                    : (lang === 'ar' ? 'إرسال الطلب الآن' : 'Envoyer la demande')}
+                </span>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                   <polyline points="12 5 19 12 12 19"></polyline>
