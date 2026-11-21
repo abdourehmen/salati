@@ -827,6 +827,90 @@
   margin: 0 auto 1rem auto;
 }
 
+/* =========================================
+   كرت التأكيد والتنبيه الصغير في منتصف الشاشة
+   ========================================= */
+.confirmCardBox {
+  background-color: #ffffff;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 380px;
+  padding: 1.75rem 1.5rem;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+  border: 1px solid #e2e8f0;
+  animation: modalSlide 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.confirmIconCircle {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem auto;
+}
+
+.confirmCardTitle {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 0.5rem 0;
+}
+
+.confirmCardMsg {
+  font-size: 0.925rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 0 1.5rem 0;
+}
+
+.confirmCardActions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.confirmCancelBtn {
+  flex: 1;
+  background-color: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  padding: 0.7rem 1rem;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirmCancelBtn:hover {
+  background-color: #e2e8f0;
+}
+
+.confirmDangerBtn {
+  flex: 1;
+  background-color: #dc2626;
+  color: #ffffff;
+  border: none;
+  padding: 0.7rem 1rem;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+  transition: all 0.2s ease;
+}
+
+.confirmDangerBtn:hover {
+  background-color: #b91c1c;
+  transform: translateY(-1px);
+}
+
 .sidebarOverlay {
   position: fixed;
   inset: 0;

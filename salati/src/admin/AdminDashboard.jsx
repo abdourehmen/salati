@@ -70,6 +70,31 @@ export default function AdminDashboard() {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
+  // كرت التأكيد والتنبيه الموحد في منتصف الشاشة (بديل window.confirm و alert)
+  const [centerDialog, setCenterDialog] = useState({
+    open: false,
+    type: 'confirm', // 'confirm' | 'alert'
+    title: '',
+    message: '',
+    confirmText: '',
+    onConfirm: null
+  });
+
+  const openCenterDialog = ({ type = 'confirm', title, message, confirmText, onConfirm = null }) => {
+    setCenterDialog({
+      open: true,
+      type,
+      title,
+      message,
+      confirmText: confirmText || (document.documentElement.lang === 'fr' ? 'Confirmer' : 'تأكيد'),
+      onConfirm
+    });
+  };
+
+  const closeCenterDialog = () => {
+    setCenterDialog((prev) => ({ ...prev, open: false, onConfirm: null }));
+  };
+
   const [orderFilterTab, setOrderFilterTab] = useState('provisional');
   const [orderSearchQuery, setOrderSearchQuery] = useState('');
 
@@ -241,14 +266,21 @@ export default function AdminDashboard() {
 
         if (matchedStaff && hall.owner_id !== currentUser?.id) {
           if (!matchedStaff.is_active) {
-            alert(
-              document.documentElement.lang === 'fr'
+            const isFrench = document.documentElement.lang === 'fr';
+            openCenterDialog({
+              type: 'alert',
+              title: isFrench ? 'Compte suspendu' : 'الحساب موقوف',
+              message: isFrench
                 ? 'Votre compte est suspendu.'
-                : 'تم إيقاف حسابك مؤقتاً من طرف مالك القاعة.'
-            );
-            await supabase.auth.signOut();
-            window.history.pushState({}, '', '/login');
-            window.dispatchEvent(new Event('popstate'));
+                : 'تم إيقاف حسابك مؤقتاً من طرف مالك القاعة.',
+              confirmText: isFrench ? "D'accord" : 'حسناً',
+              onConfirm: async () => {
+                closeCenterDialog();
+                await supabase.auth.signOut();
+                window.history.pushState({}, '', '/login');
+                window.dispatchEvent(new Event('popstate'));
+              }
+            });
             return;
           }
           setIsOwnerUser(false);
@@ -416,17 +448,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDeleteBooking = async (bookingId) => {
-    if (
-      !window.confirm(
-        isAr
-          ? 'هل أنت متأكد من حذف هذا الطلب نهائياً؟'
-          : 'Voulez-vous vraiment supprimer cette demande ?'
-      )
-    ) {
-      return;
-    }
-
+  const executeDeleteBooking = async (bookingId) => {
     try {
       const { data, error } = await supabase
         .from('bookings')
@@ -437,11 +459,15 @@ export default function AdminDashboard() {
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        alert(
-          isAr
+        openCenterDialog({
+          type: 'alert',
+          title: isAr ? 'تعذر الحذف' : 'Suppression bloquée',
+          message: isAr
             ? 'لم يتم حذف الطلب من قاعدة البيانات! تأكد من تفعيل صلاحية DELETE في Supabase.'
-            : 'Suppression bloquée par les permissions de la base de données.'
-        );
+            : 'Suppression bloquée par les permissions de la base de données.',
+          confirmText: isAr ? 'حسناً' : "D'accord",
+          onConfirm: closeCenterDialog
+        });
         return;
       }
 
@@ -449,8 +475,29 @@ export default function AdminDashboard() {
       showSuccessModal(isAr ? 'تم حذف الطلب نهائياً!' : 'Demande supprimée !');
     } catch (err) {
       console.error('خطأ في حذف الطلب:', err);
-      alert(isAr ? 'حدث خطأ أثناء الحذف: ' + err.message : 'Erreur : ' + err.message);
+      openCenterDialog({
+        type: 'alert',
+        title: isAr ? 'خطأ' : 'Erreur',
+        message: isAr ? 'حدث خطأ أثناء الحذف: ' + err.message : 'Erreur : ' + err.message,
+        confirmText: isAr ? 'حسناً' : "D'accord",
+        onConfirm: closeCenterDialog
+      });
     }
+  };
+
+  const handleDeleteBooking = (bookingId) => {
+    openCenterDialog({
+      type: 'confirm',
+      title: isAr ? 'تأكيد حذف الطلب' : 'Confirmer la suppression',
+      message: isAr
+        ? 'هل أنت متأكد من حذف هذا الطلب نهائياً؟'
+        : 'Voulez-vous vraiment supprimer cette demande ?',
+      confirmText: isAr ? 'حذف نهائي' : 'Supprimer',
+      onConfirm: async () => {
+        closeCenterDialog();
+        await executeDeleteBooking(bookingId);
+      }
+    });
   };
 
   const handleAddBookingSubmit = async (e) => {
@@ -544,11 +591,15 @@ export default function AdminDashboard() {
 
         if (error) throw error;
         if (!data || data.length === 0) {
-          alert(
-            isAr
+          openCenterDialog({
+            type: 'alert',
+            title: isAr ? 'تعذر التحديث' : 'Mise à jour bloquée',
+            message: isAr
               ? 'لم يتم تحديث الحالة في قاعدة البيانات! تأكد من تفعيل صلاحية UPDATE في Supabase.'
-              : 'Mise à jour bloquée par les permissions.'
-          );
+              : 'Mise à jour bloquée par les permissions.',
+            confirmText: isAr ? 'حسناً' : "D'accord",
+            onConfirm: closeCenterDialog
+          });
           return;
         }
 
@@ -607,7 +658,13 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       console.error('خطأ في تغيير الحالة:', err);
-      alert(isAr ? 'حدث خطأ أثناء التحديث: ' + err.message : 'Erreur : ' + err.message);
+      openCenterDialog({
+        type: 'alert',
+        title: isAr ? 'خطأ' : 'Erreur',
+        message: isAr ? 'حدث خطأ أثناء التحديث: ' + err.message : 'Erreur : ' + err.message,
+        confirmText: isAr ? 'حسناً' : "D'accord",
+        onConfirm: closeCenterDialog
+      });
     }
   };
 
@@ -654,7 +711,13 @@ export default function AdminDashboard() {
       );
     } catch (err) {
       console.error('خطأ في حفظ الإعدادات:', err);
-      alert(isAr ? 'فشل حفظ الإعدادات: ' + err.message : 'Erreur de sauvegarde : ' + err.message);
+      openCenterDialog({
+        type: 'alert',
+        title: isAr ? 'فشل الحفظ' : 'Erreur de sauvegarde',
+        message: isAr ? 'فشل حفظ الإعدادات: ' + err.message : 'Erreur de sauvegarde : ' + err.message,
+        confirmText: isAr ? 'حسناً' : "D'accord",
+        onConfirm: closeCenterDialog
+      });
     }
   };
 
@@ -1532,6 +1595,56 @@ export default function AdminDashboard() {
             >
               {isAr ? 'موافق' : "D'accord"}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* كرت التأكيد والتنبيه الصغير في منتصف الشاشة (بديل window.confirm و alert) */}
+      {centerDialog.open && (
+        <div
+          dir={isAr ? 'rtl' : 'ltr'}
+          className={styles.modalBackdrop}
+          style={{ zIndex: 1200 }}
+          onClick={closeCenterDialog}
+        >
+          <div
+            className={styles.confirmCardBox}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.confirmIconCircle}>
+              {centerDialog.type === 'confirm' ? (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              ) : (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+              )}
+            </div>
+            <h4 className={styles.confirmCardTitle}>{centerDialog.title}</h4>
+            <p className={styles.confirmCardMsg}>{centerDialog.message}</p>
+            <div className={styles.confirmCardActions}>
+              {centerDialog.type === 'confirm' && (
+                <button
+                  type="button"
+                  className={styles.confirmCancelBtn}
+                  onClick={closeCenterDialog}
+                >
+                  {isAr ? 'إلغاء' : 'Annuler'}
+                </button>
+              )}
+              <button
+                type="button"
+                className={styles.confirmDangerBtn}
+                onClick={centerDialog.onConfirm || closeCenterDialog}
+              >
+                {centerDialog.confirmText}
+              </button>
+            </div>
           </div>
         </div>
       )}
