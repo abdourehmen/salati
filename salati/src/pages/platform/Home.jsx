@@ -1072,36 +1072,6 @@ export default function Home() {
           <div className={styles.footerBrand}>
             <div className={styles.footerLogo}>salati<span>.work</span></div>
             <p className={styles.footerDesc}>{t.footerDesc}</p>
-
-            <div className={styles.socialLinks}>
-              <a
-                href="https://www.instagram.com/salati.work/?utm_source=ig_web_button_share_sheet"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram"
-                className={styles.socialBtn}
-              >
-                <IconInstagram />
-              </a>
-              <a
-                href="https://www.facebook.com/YOUR_PAGE"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Facebook"
-                className={styles.socialBtn}
-              >
-                <IconFacebook />
-              </a>
-              <a
-                href="https://www.tiktok.com/@YOUR_USERNAME"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="TikTok"
-                className={styles.socialBtn}
-              >
-                <IconTikTok />
-              </a>
-            </div>
           </div>
 
           <div className={styles.footerCol}>
@@ -1141,6 +1111,36 @@ export default function Home() {
               <div className={styles.contactItem}>
                 <IconMail /> <span>salatisalati20@gmail.com</span>
               </div>
+            </div>
+
+            <div className={styles.socialLinks}>
+              <a
+                href="https://www.instagram.com/salati.work/?utm_source=ig_web_button_share_sheet"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                className={styles.socialBtn}
+              >
+                <IconInstagram />
+              </a>
+              <a
+                href="https://www.facebook.com/YOUR_PAGE"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+                className={styles.socialBtn}
+              >
+                <IconFacebook />
+              </a>
+              <a
+                href="https://www.tiktok.com/@YOUR_USERNAME"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="TikTok"
+                className={styles.socialBtn}
+              >
+                <IconTikTok />
+              </a>
             </div>
           </div>
         </div>
