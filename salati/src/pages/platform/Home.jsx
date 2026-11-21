@@ -88,6 +88,26 @@ const IconMail = () => (
   </svg>
 );
 
+const IconInstagram = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+  </svg>
+);
+
+const IconFacebook = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+  </svg>
+);
+
+const IconTikTok = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path>
+  </svg>
+);
+
 /* أيقونات Bento Grid */
 const IconMonitor = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1052,6 +1072,36 @@ export default function Home() {
           <div className={styles.footerBrand}>
             <div className={styles.footerLogo}>salati<span>.work</span></div>
             <p className={styles.footerDesc}>{t.footerDesc}</p>
+
+            <div className={styles.socialLinks}>
+              <a
+                href="https://www.instagram.com/salati.work/?utm_source=ig_web_button_share_sheet"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                className={styles.socialBtn}
+              >
+                <IconInstagram />
+              </a>
+              <a
+                href="https://www.facebook.com/YOUR_PAGE"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+                className={styles.socialBtn}
+              >
+                <IconFacebook />
+              </a>
+              <a
+                href="https://www.tiktok.com/@YOUR_USERNAME"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="TikTok"
+                className={styles.socialBtn}
+              >
+                <IconTikTok />
+              </a>
+            </div>
           </div>
 
           <div className={styles.footerCol}>
