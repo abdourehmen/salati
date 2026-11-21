@@ -1098,10 +1098,10 @@ export default function Home() {
             <h4>{t.footerCol3}</h4>
             <div className={styles.contactInfo}>
               <div className={styles.contactItem}>
-                <IconPhone /> <span>+213 550 00 00 00</span>
+                <IconPhone /> <span>+213 675752775</span>
               </div>
               <div className={styles.contactItem}>
-                <IconMail /> <span>contact@salati.work</span>
+                <IconMail /> <span>salatisalati20@gmail.com</span>
               </div>
             </div>
           </div>
