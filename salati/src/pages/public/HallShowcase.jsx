@@ -561,6 +561,38 @@ export default function HallShowcase() {
     );
   }
 
+  /* قفل عرض الصالة عند انتهاء مدة الاشتراك أو إيقاف الحساب */
+  const isHallSuspended = hall?.is_active === false || hall?.subscription_status === 'suspended';
+  const isSubscriptionExpired =
+    hall?.subscription_ends_at && new Date(hall.subscription_ends_at) < new Date();
+
+  if (hall && (isHallSuspended || isSubscriptionExpired)) {
+    return (
+      <div dir={isAr ? 'rtl' : 'ltr'} className={styles.showcaseLayout}>
+        <main className={styles.mainContainer} style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className={`${styles.emptyStateBox} ${styles.animateFadeUp}`} style={{ maxWidth: '480px', width: '100%', textAlign: 'center', padding: '2.5rem 1.75rem' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔒</div>
+            <h2 style={{ marginBottom: '0.6rem' }}>
+              {isAr ? 'هذه الصفحة غير متاحة حالياً' : 'Cette page est temporairement indisponible'}
+            </h2>
+            <p style={{ marginBottom: '1.5rem', color: '#64748b', lineHeight: 1.6 }}>
+              {isAr
+                ? 'تم إيقاف عرض هذه الصالة مؤقتاً. يرجى التواصل مع إدارة الصالة مباشرة.'
+                : 'La vitrine de cette salle est temporairement suspendue. Veuillez contacter directement la salle.'}
+            </p>
+            <a
+              href="/"
+              className={styles.headerCtaBtn}
+              style={{ display: 'inline-flex', textDecoration: 'none', justifyContent: 'center' }}
+            >
+              {isAr ? 'العودة إلى الصفحة الرئيسية' : "Retour à l'accueil"}
+            </a>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   const hallName = hall?.name || (isAr ? 'قاعتي' : 'Ma Salle');
   const hallDescription = hall?.description || '';
   const hallAddress = hall?.address || (hall?.visiting_hours ? `${isAr ? 'أوقات المعاينة' : 'Heures de visite'} : ${hall.visiting_hours}` : '');

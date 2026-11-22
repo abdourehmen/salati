@@ -166,8 +166,8 @@ export default function Register() {
       }
 
       if (user) {
-        // جلب مدة الفترة التجريبية من إعدادات المنصة (الافتراضي 14 يوماً)
-        let trialDays = 14;
+        // جلب مدة الفترة التجريبية من إعدادات المنصة (الافتراضي 30 يوماً)
+        let trialDays = 30;
         const { data: settingsData } = await supabase
           .from('platform_settings')
           .select('trial_days')
@@ -175,7 +175,7 @@ export default function Register() {
           .maybeSingle();
 
         if (settingsData?.trial_days) {
-          trialDays = Number(settingsData.trial_days) || 14;
+          trialDays = Number(settingsData.trial_days) || 30;
         }
 
         const trialEnd = new Date();

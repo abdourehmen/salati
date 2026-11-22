@@ -1,15 +1,25 @@
 .orderCard {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 24px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.72) 0%,
+    rgba(255, 255, 255, 0.5) 100%
+  );
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 26px;
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
-  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.03);
+  box-shadow:
+    0 14px 36px rgba(15, 23, 42, 0.06),
+    0 4px 12px rgba(15, 23, 42, 0.03),
+    inset 0 1px 1px rgba(255, 255, 255, 0.92);
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.25s ease;
+              border-color 0.25s ease,
+              background 0.25s ease;
   animation: cardAppear 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
@@ -34,7 +44,12 @@
 }
 
 .skeletonBase {
-  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background: linear-gradient(
+    90deg,
+    rgba(226, 232, 240, 0.7) 25%,
+    rgba(241, 245, 249, 0.85) 50%,
+    rgba(226, 232, 240, 0.7) 75%
+  );
   background-size: 200% 100%;
   animation: shimmerWave 1.4s infinite linear;
   border-radius: 10px;
@@ -85,8 +100,16 @@
 
 .orderCard:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(0, 82, 204, 0.08);
-  border-color: #cbd5e1;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.82) 0%,
+    rgba(255, 255, 255, 0.6) 100%
+  );
+  box-shadow:
+    0 18px 42px rgba(0, 82, 204, 0.1),
+    0 6px 16px rgba(15, 23, 42, 0.05),
+    inset 0 1px 1px rgba(255, 255, 255, 0.96);
+  border-color: rgba(255, 255, 255, 0.96);
 }
 
 .cardConfirmed {
@@ -118,12 +141,12 @@
 }
 
 .dateBadge {
-  color: #475569;
+  color: #334155;
   font-weight: 700;
-  background-color: #f8fafc;
+  background-color: rgba(255, 255, 255, 0.65);
   padding: 0.25rem 0.65rem;
   border-radius: 50px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.85);
   line-height: 1.35;
 }
 
@@ -137,29 +160,33 @@
 }
 
 .statusConfirmed {
-  background-color: #ecfdf5;
+  background-color: rgba(236, 253, 245, 0.85);
   color: #059669;
+  border: 1px solid rgba(167, 243, 208, 0.7);
 }
 
 .statusProvisional {
-  background-color: #fffbeb;
+  background-color: rgba(255, 251, 235, 0.85);
   color: #d97706;
+  border: 1px solid rgba(253, 230, 138, 0.7);
 }
 
 .statusCancelled {
-  background-color: #fef2f2;
+  background-color: rgba(254, 242, 242, 0.85);
   color: #dc2626;
+  border: 1px solid rgba(254, 202, 202, 0.7);
 }
 
 /* الصندوق المالي العلوي */
 .financialBox {
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 18px;
+  background-color: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 20px;
   padding: 0.95rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
 .totalPriceRow {
@@ -190,7 +217,7 @@
 
 .depositBox,
 .remainingBox {
-  border-radius: 14px;
+  border-radius: 15px;
   padding: 0.6rem 0.5rem;
   display: flex;
   flex-direction: column;
@@ -207,13 +234,13 @@
 }
 
 .depositBox {
-  background-color: #ecfdf5;
-  border: 1px solid #a7f3d0;
+  background-color: rgba(236, 253, 245, 0.78);
+  border: 1px solid rgba(167, 243, 208, 0.8);
 }
 
 .remainingBox {
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
+  background-color: rgba(254, 242, 242, 0.78);
+  border: 1px solid rgba(254, 202, 202, 0.8);
 }
 
 .boxSubLabel {
@@ -240,22 +267,23 @@
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.88);
   color: #0f172a;
-  border: 1px solid #cbd5e1;
+  border: 1px solid rgba(203, 213, 225, 0.85);
   border-radius: 50px;
   padding: 0.52rem 1rem;
   font-size: 0.82rem;
   font-weight: 800;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
 .addDepositBtn:hover {
   background-color: var(--primary-blue, #0052cc);
   color: #ffffff;
   border-color: var(--primary-blue, #0052cc);
-  box-shadow: 0 4px 12px rgba(0, 82, 204, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 82, 204, 0.22);
 }
 
 .addDepositBtn:active {
@@ -265,7 +293,7 @@
 /* الخط الفاصل */
 .cardDivider {
   border: none;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid rgba(203, 213, 225, 0.55);
   margin: 0.1rem 0;
 }
 
@@ -336,9 +364,9 @@
 }
 
 .detailsBtn {
-  background-color: rgba(0, 82, 204, 0.08);
+  background-color: rgba(0, 82, 204, 0.1);
   color: var(--primary-blue, #0052cc);
-  border: 1px solid rgba(0, 82, 204, 0.2);
+  border: 1px solid rgba(0, 82, 204, 0.22);
 }
 
 .detailsBtn:hover {
@@ -348,9 +376,9 @@
 }
 
 .deleteBtn {
-  background-color: rgba(239, 68, 68, 0.06);
+  background-color: rgba(239, 68, 68, 0.09);
   color: #dc2626;
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.22);
 }
 
 .deleteBtn:hover {
@@ -370,7 +398,7 @@
 @media (max-width: 480px) {
   .orderCard {
     padding: 1rem;
-    border-radius: 20px;
+    border-radius: 22px;
     gap: 0.75rem;
   }
 

@@ -893,7 +893,7 @@ export default function AdminDashboard() {
           </p>
           <div className={styles.suspendedActions}>
             <a
-              href={`https://wa.me/213550000000?text=${waSupportText}`}
+              href={`https://wa.me/213562881397?text=${waSupportText}`}
               target="_blank"
               rel="noreferrer"
               className={styles.suspendedWaBtn}

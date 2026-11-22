@@ -50,7 +50,12 @@
 }
 
 .skeletonBase {
-  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background: linear-gradient(
+    90deg,
+    rgba(226, 232, 240, 0.7) 25%,
+    rgba(241, 245, 249, 0.85) 50%,
+    rgba(226, 232, 240, 0.7) 75%
+  );
   background-size: 200% 100%;
   animation: shimmerWave 1.4s infinite linear;
   border-radius: 10px;
@@ -123,11 +128,20 @@
 }
 
 .mainCard {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 26px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.68) 0%,
+    rgba(255, 255, 255, 0.48) 100%
+  );
+  backdrop-filter: blur(26px) saturate(180%);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 28px;
   padding: 1.5rem;
-  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.04);
+  box-shadow:
+    0 16px 40px rgba(15, 23, 42, 0.06),
+    0 4px 12px rgba(15, 23, 42, 0.03),
+    inset 0 1px 1px rgba(255, 255, 255, 0.92);
   display: flex;
   flex-direction: column;
   gap: 1.35rem;
@@ -137,8 +151,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.88);
   padding: 0.48rem 1.05rem;
   border-radius: 999px;
   font-size: 0.88rem;
@@ -146,22 +160,25 @@
   color: #1e293b;
   width: fit-content;
   max-width: 100%;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
 }
 
 .addStaffForm {
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.54);
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 24px;
   padding: 1.25rem;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
 }
 
 .addStaffForm:focus-within {
-  border-color: #93c5fd;
-  box-shadow: 0 6px 24px rgba(0, 82, 204, 0.06);
+  background: rgba(255, 255, 255, 0.68);
+  border-color: rgba(147, 197, 253, 0.85);
+  box-shadow: 0 8px 26px rgba(0, 82, 204, 0.07);
 }
 
 .inputsGrid {
@@ -189,16 +206,17 @@
   box-sizing: border-box;
   padding: 0.68rem 1rem;
   border-radius: 999px;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
+  border: 1px solid rgba(203, 213, 225, 0.85);
+  background: rgba(255, 255, 255, 0.85);
   font-size: 0.9rem;
   color: #0f172a;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .pillInputGroup input:focus {
   border-color: #0052cc;
+  background: #ffffff;
   box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.12);
 }
 
@@ -209,7 +227,7 @@
   justify-content: space-between;
   gap: 0.9rem;
   padding-top: 0.5rem;
-  border-top: 1px dashed #e2e8f0;
+  border-top: 1px dashed rgba(203, 213, 225, 0.7);
 }
 
 .permissionsList {
@@ -231,8 +249,8 @@
   gap: 0.4rem;
   padding: 0.44rem 0.92rem;
   border-radius: 999px;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
+  border: 1px solid rgba(203, 213, 225, 0.85);
+  background: rgba(255, 255, 255, 0.8);
   font-size: 0.82rem;
   font-weight: 700;
   color: #334155;
@@ -248,6 +266,7 @@
 
 .permChip:hover {
   border-color: #93c5fd;
+  background: #ffffff;
   transform: translateY(-2px);
   box-shadow: 0 3px 10px rgba(0, 82, 204, 0.08);
 }
@@ -257,7 +276,7 @@
 }
 
 .permChipActive {
-  background: #eff6ff;
+  background: rgba(239, 246, 255, 0.92);
   border-color: #0052cc;
   color: #0052cc;
   box-shadow: 0 2px 8px rgba(0, 82, 204, 0.12);
@@ -302,23 +321,33 @@
   align-items: start;
 }
 
-/* تصميم كرت العامل المنظّم مع الأنيميشن والهوفر */
+/* تصميم كرت العامل الزجاجي العائم */
 .staffCard {
   position: relative;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
-  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  border-radius: 26px;
   padding: 1.25rem;
-  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.76) 0%,
+    rgba(255, 255, 255, 0.54) 100%
+  );
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
   display: flex;
   flex-direction: column;
   gap: 0.95rem;
   min-width: 0;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+  box-shadow:
+    0 12px 32px rgba(15, 23, 42, 0.055),
+    0 4px 10px rgba(15, 23, 42, 0.025),
+    inset 0 1px 1px rgba(255, 255, 255, 0.94);
   animation: cardFadeSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
               box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-              border-color 0.3s ease;
+              border-color 0.3s ease,
+              background 0.3s ease;
 }
 
 .staffCard::before {
@@ -343,7 +372,7 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(0, 82, 204, 0.04),
+    rgba(255, 255, 255, 0.35),
     transparent
   );
   transform: translateX(-120%) skewX(-20deg);
@@ -352,8 +381,15 @@
 
 .staffCard:hover {
   transform: translateY(-6px);
-  border-color: #93c5fd;
-  box-shadow: 0 18px 36px rgba(0, 82, 204, 0.11);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.86) 0%,
+    rgba(255, 255, 255, 0.64) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.98);
+  box-shadow:
+    0 18px 40px rgba(0, 82, 204, 0.11),
+    inset 0 1px 1px rgba(255, 255, 255, 0.98);
 }
 
 .staffCard:hover::before {
@@ -386,8 +422,8 @@
   height: 48px;
   flex-shrink: 0;
   border-radius: 16px;
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  border: 1px solid #bfdbfe;
+  background: linear-gradient(135deg, rgba(239, 246, 255, 0.9) 0%, rgba(219, 234, 254, 0.9) 100%);
+  border: 1px solid rgba(191, 219, 254, 0.9);
   color: #0052cc;
   display: flex;
   align-items: center;
@@ -449,8 +485,8 @@
 }
 
 .statusBadgeActive {
-  background: #ecfdf5;
-  border: 1px solid #a7f3d0;
+  background: rgba(236, 253, 245, 0.85);
+  border: 1px solid rgba(167, 243, 208, 0.8);
   color: #059669;
 }
 
@@ -464,8 +500,8 @@
 }
 
 .statusBadgePaused {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: rgba(254, 242, 242, 0.85);
+  border: 1px solid rgba(254, 202, 202, 0.8);
   color: #dc2626;
 }
 
@@ -482,17 +518,17 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.85);
   padding: 0.65rem 0.95rem;
-  border-radius: 14px;
+  border-radius: 16px;
   font-size: 0.83rem;
   transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
 .staffCard:hover .staffDetailsRow {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(255, 255, 255, 0.95);
 }
 
 .staffPermsBadges {
@@ -509,8 +545,8 @@
   gap: 0.25rem;
   padding: 0.28rem 0.72rem;
   border-radius: 999px;
-  background: #eff6ff;
-  border: 1px solid #dbeafe;
+  background: rgba(239, 246, 255, 0.85);
+  border: 1px solid rgba(219, 234, 254, 0.9);
   color: #1d4ed8;
   font-size: 0.75rem;
   font-weight: 700;
@@ -526,9 +562,9 @@
 
 /* صندوق التعديل المدمج داخل الكرت (الصلاحيات / كلمة المرور) */
 .inlineEditBox {
-  background: #f8fafc;
-  border: 1px solid #cbd5e1;
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 18px;
   padding: 0.85rem;
   display: flex;
   flex-direction: column;
@@ -554,9 +590,9 @@
   width: 100%;
   box-sizing: border-box;
   padding: 0.55rem 0.85rem;
-  border-radius: 12px;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
+  border-radius: 50px;
+  border: 1px solid rgba(203, 213, 225, 0.85);
+  background: rgba(255, 255, 255, 0.9);
   font-size: 0.85rem;
   color: #0f172a;
   outline: none;
@@ -565,10 +601,11 @@
 
 .inlinePassInput:focus {
   border-color: #0052cc;
+  background: #ffffff;
   box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.12);
 }
 
-/* أزرار الحفظ والإلغاء داخل صندوق التعديل (متساوية ومضمونة داخل حدود الكرت) */
+/* أزرار الحفظ والإلغاء داخل صندوق التعديل */
 .inlineEditActions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -584,7 +621,7 @@
   gap: 0.35rem;
   width: 100%;
   padding: 0.55rem 0.75rem;
-  border-radius: 12px;
+  border-radius: 50px;
   border: none;
   background: linear-gradient(135deg, #0052cc 0%, #0747a6 100%);
   color: #ffffff;
@@ -615,9 +652,9 @@
   justify-content: center;
   width: 100%;
   padding: 0.55rem 0.75rem;
-  border-radius: 12px;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
+  border-radius: 50px;
+  border: 1px solid rgba(203, 213, 225, 0.85);
+  background: rgba(255, 255, 255, 0.85);
   color: #475569;
   font-size: 0.8rem;
   font-weight: 700;
@@ -626,7 +663,7 @@
 }
 
 .inlineCancelBtn:hover {
-  background: #f1f5f9;
+  background: #ffffff;
   border-color: #94a3b8;
   color: #0f172a;
   transform: translateY(-2px);
@@ -643,7 +680,7 @@
   gap: 0.5rem;
   margin-top: auto;
   padding-top: 0.8rem;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid rgba(203, 213, 225, 0.55);
 }
 
 .toggleActiveBtn {
@@ -653,9 +690,9 @@
   gap: 0.35rem;
   width: 100%;
   padding: 0.56rem 0.75rem;
-  border-radius: 12px;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
+  border-radius: 50px;
+  border: 1px solid rgba(203, 213, 225, 0.85);
+  background: rgba(255, 255, 255, 0.85);
   color: #1e293b;
   font-size: 0.8rem;
   font-weight: 700;
@@ -696,9 +733,9 @@
   gap: 0.35rem;
   width: 100%;
   padding: 0.56rem 0.75rem;
-  border-radius: 12px;
-  border: 1px solid #fecaca;
-  background: #fef2f2;
+  border-radius: 50px;
+  border: 1px solid rgba(254, 202, 202, 0.85);
+  background: rgba(254, 242, 242, 0.85);
   color: #dc2626;
   font-size: 0.8rem;
   font-weight: 700;
@@ -721,9 +758,9 @@
 .emptyStateBox {
   text-align: center;
   padding: 2.75rem 1.25rem;
-  border: 1.5px dashed #cbd5e1;
-  border-radius: 22px;
-  background: #f8fafc;
+  border: 1.5px dashed rgba(148, 163, 184, 0.55);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.45);
   color: #64748b;
   animation: cardFadeSlideUp 0.35s ease both;
 }
@@ -732,7 +769,7 @@
 @media (max-width: 768px) {
   .mainCard {
     padding: 1.1rem;
-    border-radius: 20px;
+    border-radius: 22px;
   }
 
   .pageMainTitle {
@@ -774,7 +811,7 @@
   }
 }
 
-/* نافذة الإشعار والتأكيد الاحترافية في منتصف الشاشة */
+/* نافذة الإشعار والتأكيد الاحترافية الزجاجية في منتصف الشاشة */
 @keyframes modalBackdropFadeIn {
   from {
     opacity: 0;
@@ -802,8 +839,9 @@
 .feedbackBackdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
-  backdrop-filter: blur(5px);
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -813,9 +851,15 @@
 }
 
 .feedbackCard {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 26px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.8) 100%
+  );
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 28px;
   padding: 2rem 1.75rem;
   max-width: 400px;
   width: 100%;
@@ -867,7 +911,7 @@
 .feedbackCloseBtn {
   width: 100%;
   padding: 0.78rem 1.25rem;
-  border-radius: 14px;
+  border-radius: 50px;
   border: none;
   background: linear-gradient(135deg, #0052cc 0%, #0747a6 100%);
   color: #ffffff;
@@ -897,7 +941,7 @@
 .modalCancelBtn {
   width: 100%;
   padding: 0.75rem 1rem;
-  border-radius: 14px;
+  border-radius: 50px;
   font-size: 0.88rem;
   font-weight: 800;
   cursor: pointer;
@@ -912,8 +956,8 @@
 }
 
 .modalCancelBtn {
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
+  border: 1px solid rgba(203, 213, 225, 0.85);
+  background: rgba(255, 255, 255, 0.88);
   color: #475569;
 }
 
